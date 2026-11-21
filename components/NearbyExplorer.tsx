@@ -5,8 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 import { DEFAULT_CITY, findCity } from "@/lib/cities";
 import { titlesByBand, type NearbyResult } from "@/lib/nearby";
+import { passportSummary } from "@/lib/passport";
+import { toggleWatched } from "@/lib/passport-store";
+import { usePassport } from "@/lib/use-passport";
 import type { LatLng } from "@/lib/types";
 import { CityPicker } from "./CityPicker";
+import { PassportBar } from "./PassportBar";
 import { TitleCard } from "./TitleCard";
 
 const NearbyMap = dynamic(() => import("./NearbyMap"), {
@@ -37,6 +41,7 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
   const [message, setMessage] = useState<string | null>(null);
   const requestId = useRef(0);
   const mapTracked = useRef(false);
+  const passport = usePassport();
 
   const load = useCallback((next: Origin, query: string) => {
     const id = ++requestId.current; // ignore answers to older requests
@@ -93,6 +98,8 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
   };
 
   const groups = data ? titlesByBand(data.titles) : [];
+  const watched = new Set(passport.watched);
+  const startCity = origin.id === "me" ? null : origin.id;
 
   return (
     <>
@@ -117,13 +124,15 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
             <ul className="mt-2 space-y-3">
               {g.titles.map((t) => (
                 <li key={t.workId}>
-                  <TitleCard title={t} />
+                  <TitleCard title={t} watched={watched.has(t.workId)} onToggle={() => toggleWatched(t.workId, startCity)} />
                 </li>
               ))}
             </ul>
           </div>
         ))}
       </section>
+
+      <PassportBar summary={passportSummary(passport.watched, data)} passportId={passport.id} sync={passport.sync} />
     </>
   );
 }

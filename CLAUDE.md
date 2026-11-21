@@ -12,7 +12,7 @@ Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature f
 2. **Ways in, in order:** near-me map → "Watched it" taps on title cards → search box that only selects titles from our database → optional screenshot upload where Claude reads titles. Free text that matches nothing becomes a request, never an AI answer.
 3. **Every location has a source.** No row in `locations` without `source_url`. Trusted sources: official tourism and city sites, established location guides and major media (see the add-filming-locations skill); not Wikipedia or fan wikis. Claude never invents locations, coordinates or scenes. Only `status = 'live'` locations are shown.
 4. **Code for facts, Claude for words and images.** Distance, sorting, matching, check-in radius, collections and which stops a trip has (and their order) are plain code. Claude is used only to read titles from screenshots, for fuzzy title matching, to research requested titles (saved as `unverified` for human approval), and to write a trip's title, intro, stop times, travel steps, "why fans love it" and tips. For trips Claude gets only the chosen live locations, must use only their IDs and never adds places, prices or opening hours; every returned location ID is checked in code, with one retry and then a plain code-built plan.
-5. **Privacy:** no accounts, no emails, no raw uploads stored. Screenshots are read and discarded. Postcard photos are composed in the browser and never uploaded unless the user shares them. Passports store only title IDs, location IDs, start city and an optional display name. Trips store title IDs, the start label and point, mode, length, date and time, meeting point, the plan, and first names only (organiser and people who join). Trips and joins are read and written only through server routes with the service role key; no public RLS policies. Trip pages carry a short safety note (meet in public, no personal details needed).
+5. **Privacy:** no accounts, no emails, no raw uploads stored. Screenshots are read and discarded. Postcard photos are composed in the browser and never uploaded unless the user shares them. Passports store only title IDs, location IDs, start city and an optional display name. Trips store title IDs, the start label and point, mode, length, date and time with its time zone, meeting point, the plan, and first names only (organiser and people who join). Rate limits and reports store only a salted sha256 of the IP (`RATE_LIMIT_SALT`), never the raw IP. Trips and joins are read and written only through server routes with the service role key; no public RLS policies. Trip pages carry a short safety note (meet in public, no personal details needed).
 6. **No copyrighted media:** no film stills, scraped posters, logos or script quotes. Postcards use the user's own photo. Location photos only from Wikimedia Commons with credit.
 7. **No private homes** and no closed studio sets, even if a guide lists them.
 8. **Honest numbers:** stage metrics come from real events only.
@@ -30,6 +30,9 @@ Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature f
 - Location card actions: Directions (Google Maps), Source link, "Plan the rest with Layla" (opens Layla; copies a ready prompt to clipboard)
 - Requests table for unknown titles; admin page to approve researched locations
 - Trips: `/trip/new?works=<ids>&from=<lat,lng or city>` (mode walk/transit/car, half or full day, date and time, first name) → `/trip/[id]` with numbered stops on a map and in a list, "Open all in Google Maps" (up to 9 waypoints), Layla handoff, Join (first name, max 30 characters, max 50 joins), Web Share and Open Graph preview. Stops: live locations of the chosen works within 30 km (walk), 60 km (transit) or 150 km (car) of the start, ordered nearest-next-stop, up to 8 (half day 4–5). "Create a trip" on each title card and on the passport
+- Trip safety: /api/trip max 5 trips per IP per day; at most 300 Claude trip plans per day in total, then the code-built plan; joins max 20 per IP per day and 50 per trip; friendly messages when a limit is hit. No links or offensive words in first names, trip titles, meeting points or any Claude text. "Report this trip" hides a trip after 3 reports (one per IP). The organiser gets a secret link (`/trip/[id]#key=…`, key kept in localStorage) to delete the trip.
+- Trip times are shown in the trip's time zone with its city ("10:00 London time"): the picked city's `tz`, or the browser's zone when the user shared their location
+- `/impressum` and `/privacy`, linked from every page
 - Analytics events
 
 **Nice to have:** screenshot upload (Claude vision reads titles), compare passports with a friend, show pages `/t/[id]`.
@@ -71,11 +74,13 @@ screen-passport/
   lib/
     distance.ts      # haversine, distance bands
     match.ts         # normalise + alias matching
-    cities.ts        # German start cities with coordinates
+    cities.ts        # German start cities with coordinates and time zone
     collections.ts   # progress calculation
     layla.ts         # Layla handoff prompt + link
     route.ts         # nearest-next-stop order, total km, Google Maps route link
-    trip.ts          # trip stop selection, plan validation, fallback plan
+    trip.ts          # trip stop selection, plan validation, fallback plan, time zones
+    moderation.ts    # no links or offensive words in public text
+    rate-limit.ts    # daily limits via the take_rate database function
     supabase.ts  analytics.ts  ids.ts (random passport ids)
   supabase/migrations/001_init.sql
   data/seed/titles.csv  data/seed/locations.csv  data/seed/collections.csv
@@ -93,8 +98,9 @@ Seed CSVs use exactly these column names, so the import needs no mapping. Seed r
 - `passports(id text pk, display_name null, start_city, lat, lng, watched text[], visited int[], created_at, updated_at)`
 - `requests(id serial pk, raw_title, normalised_title unique, count int, status ['open','researched','approved','rejected'], created_at)`
 - `events(id serial pk, name, props jsonb, created_at)`
-- `trips(id text pk, title, intro, work_ids text[], start_label, start_lat, start_lng, mode ['walk','transit','car'], length ['half','full'], starts_at timestamptz, meeting_point, organiser_name, plan jsonb, created_at)`
+- `trips(id text pk, title, intro, work_ids text[], start_label, start_lat, start_lng, mode ['walk','transit','car'], length ['half','full'], starts_at timestamptz, timezone, meeting_point, organiser_name, plan jsonb, delete_key_hash, hidden_at, created_at)`
 - `trip_joins(id serial pk, trip_id fk, first_name, created_at)`
+- `trip_reports(trip_id fk, ip_hash, created_at, pk(trip_id, ip_hash))`, `rate_events(id, bucket, key_hash, created_at)` (rows older than 2 days are deleted)
 
 Row-level security: anyone can insert a passport and read one by exact id; nobody can list passports. Locations/works/collections are public read. Requests are insert-only for the public. Admin actions go through server routes with `ADMIN_PASSWORD`.
 

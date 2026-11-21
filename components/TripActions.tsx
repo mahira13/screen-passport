@@ -17,13 +17,14 @@ const btn = "inline-flex items-center justify-center rounded-full px-4 py-2.5 te
 type Props = {
   tripId: string;
   routeUrl: string | null;
+  transit: boolean;
   laylaPrompt: string;
   shareTitle: string;
   shareText: string; // "Join me on <title> on <date>: <link>"
   shareUrl: string;
 };
 
-export function TripActions({ tripId, routeUrl, laylaPrompt, shareTitle, shareText, shareUrl }: Props) {
+export function TripActions({ tripId, routeUrl, transit, laylaPrompt, shareTitle, shareText, shareUrl }: Props) {
   const [note, setNote] = useState<string | null>(null);
 
   const onLayla = () => {
@@ -49,10 +50,13 @@ export function TripActions({ tripId, routeUrl, laylaPrompt, shareTitle, shareTe
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={onShare} className={`${btn} bg-navy text-cream`}>Share</button>
         {routeUrl && (
-          <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={`${btn} border border-navy/30 bg-white`}
-            onClick={() => track("directions_clicked", { from: "trip", trip: tripId })}>
-            Open all in Google Maps
-          </a>
+          <span className="inline-flex flex-col">
+            <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={`${btn} border border-navy/30 bg-white`}
+              onClick={() => track("directions_clicked", { from: "trip", trip: tripId })}>
+              Open all in Google Maps
+            </a>
+            {transit && <span className="mt-1 px-2 text-xs text-navy/70">Pick public transport in Google Maps.</span>}
+          </span>
         )}
         <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${btn} bg-gold text-navy`}>
           Plan travel and stays with Layla

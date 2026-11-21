@@ -3,12 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache, Suspense } from "react";
 import { JoinTrip } from "@/components/JoinTrip";
+import { OrganiserPanel } from "@/components/OrganiserPanel";
+import { ReportTrip } from "@/components/ReportTrip";
 import { TripActions, TripMapBox } from "@/components/TripActions";
 import { formatDistance } from "@/lib/distance";
 import { isTripId } from "@/lib/ids";
 import { directionsUrl } from "@/lib/links";
 import { googleMapsRouteUrl, kmBetweenStops } from "@/lib/route";
-import { formatTripDate, LENGTH_LABEL, MODE_LABEL, shareText, tripLaylaPrompt } from "@/lib/trip";
+import { formatTripDate, LENGTH_LABEL, MODE_LABEL, shareText, tripLaylaPrompt, tzLabel } from "@/lib/trip";
 import { getTrip } from "@/lib/trip-server";
 
 const loadTrip = cache(async (id: string) => (isTripId(id) && process.env.SUPABASE_SERVICE_ROLE_KEY ? getTrip(id) : null));
@@ -18,7 +20,7 @@ export async function generateMetadata(props: PageProps<"/trip/[id]">): Promise<
   const { id } = await props.params;
   const trip = await loadTrip(id);
   if (!trip) return { title: "Trip · Screen Passport", robots: { index: false } };
-  const description = `${formatTripDate(trip.startsAt)} · ${trip.stops.length} filming places · meet at ${trip.meetingPoint}. Join ${trip.organiser} on Screen Passport.`;
+  const description = `${formatTripDate(trip.startsAt, trip.timeZone)} · ${trip.stops.length} filming places · meet at ${trip.meetingPoint}. Join ${trip.organiser} on Screen Passport.`;
   return {
     metadataBase: new URL(siteUrl()),
     title: `${trip.title} · Screen Passport`,
@@ -53,7 +55,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
       <header className="rounded-2xl bg-navy p-6 text-cream">
         <p className="font-display text-sm uppercase tracking-widest text-gold">Screen Passport · fan trip</p>
         <h1 className="mt-2 font-display text-3xl font-bold leading-tight">{trip.title}</h1>
-        <p className="mt-3 text-lg font-semibold">{formatTripDate(trip.startsAt)}</p>
+        <p className="mt-3 text-lg font-semibold">{formatTripDate(trip.startsAt, trip.timeZone)}</p>
         <p className="mt-1 text-sm text-cream/80">
           {MODE_LABEL[trip.mode]} · {LENGTH_LABEL[trip.length]} · {trip.stops.length} {trip.stops.length === 1 ? "stop" : "stops"}
           {trip.stops.length > 1 && ` · ${formatDistance(km)} between stops`}
@@ -64,9 +66,9 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
       {trip.intro && <p className="mt-4 text-base">{trip.intro}</p>}
 
       <div className="mt-4">
-        <TripActions tripId={trip.id} routeUrl={googleMapsRouteUrl(trip.stops, trip.mode)}
-          laylaPrompt={tripLaylaPrompt(trip.startsAt, trip.stops)} shareTitle={trip.title}
-          shareText={shareText(trip.title, trip.startsAt, url)} shareUrl={url} />
+        <TripActions tripId={trip.id} routeUrl={googleMapsRouteUrl(trip.stops, trip.mode)} transit={trip.mode === "transit"}
+          laylaPrompt={tripLaylaPrompt(trip.startsAt, trip.timeZone, trip.stops)} shareTitle={trip.title}
+          shareText={shareText(trip.title, trip.startsAt, trip.timeZone, url)} shareUrl={url} />
       </div>
 
       <section className="mt-6">
@@ -74,7 +76,8 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
         <p className="mt-1 font-semibold">{trip.meetingPoint}</p>
         {meeting && (
           <p className="text-sm">
-            Stop 1 on the map{meeting.city && `, ${meeting.city}`} ·{" "}
+            {trip.meetingIsFirstStop ? "Stop 1 on the map" : `Then start at stop 1, ${meeting.name}`}
+            {meeting.city && `, ${meeting.city}`} ·{" "}
             <a href={directionsUrl(meeting)} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">
               Directions
             </a>
@@ -108,7 +111,9 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
             </li>
           ))}
         </ol>
-        <p className="mt-2 text-xs text-navy/60">Distances are straight-line and approximate. Times are a rough guide.</p>
+        <p className="mt-2 text-xs text-navy/60">
+          Distances are straight-line and approximate. Times are a rough guide, in {tzLabel(trip.timeZone)} time.
+        </p>
       </section>
 
       {trip.plan.tips.length > 0 && (
@@ -125,6 +130,11 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
       <p className="mt-4 rounded-xl bg-cream p-3 text-xs text-navy/80 ring-1 ring-navy/10">
         Stay safe: meet in a public place, and don&apos;t share personal details. A first name is all you need here.
       </p>
+      <div className="mt-3">
+        <ReportTrip tripId={trip.id} />
+      </div>
+
+      <OrganiserPanel tripId={trip.id} url={url} />
 
       <Link href="/" className="mt-8 block rounded-full bg-navy px-5 py-3 text-center font-semibold text-cream">
         Find filming places near you

@@ -43,11 +43,11 @@ const SCHEMA = {
   additionalProperties: false,
 };
 
-type Context = { start: TripStart; mode: TravelMode; length: TripLength; startsAt: string };
+type Context = { start: TripStart; mode: TravelMode; length: TripLength; startsAt: string; tz: string };
 
 async function askClaude(client: Anthropic, model: string, stops: TripStop[], ctx: Context): Promise<unknown> {
   const user = [
-    `Trip: ${LENGTH_LABEL[ctx.length]}, ${MODE_LABEL[ctx.mode].toLowerCase()}, starting ${formatTripDate(ctx.startsAt)} from ${ctx.start.label}.`,
+    `Trip: ${LENGTH_LABEL[ctx.length]}, ${MODE_LABEL[ctx.mode].toLowerCase()}, starting ${formatTripDate(ctx.startsAt, ctx.tz)} from ${ctx.start.label}. Give stop times in that local time.`,
     `<locations>\n${JSON.stringify(claudeInput(stops))}\n</locations>`,
   ].join("\n\n");
   const res = await client.messages.create({

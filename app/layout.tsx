@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -15,7 +16,14 @@ export const viewport: Viewport = { themeColor: "#16213A", width: "device-width"
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${grotesk.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <footer className="mx-auto mt-auto w-full max-w-xl px-4 pb-24 pt-6 text-xs text-navy/60">
+          <Link href="/impressum" className="underline underline-offset-2">Impressum</Link>
+          {" · "}
+          <Link href="/privacy" className="underline underline-offset-2">Privacy</Link>
+        </footer>
+      </body>
     </html>
   );
 }

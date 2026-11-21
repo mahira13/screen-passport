@@ -19,7 +19,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1.1 }}>{trip?.title ?? "Filming places trip"}</div>
           {trip && (
             <div style={{ fontSize: 40, marginTop: 24 }}>
-              {formatTripDate(trip.startsAt)} · {trip.stops.length} stops · meet at {trip.meetingPoint}
+              {formatTripDate(trip.startsAt, trip.timeZone)} · {trip.stops.length} stops · meet at {trip.meetingPoint}
             </div>
           )}
         </div>

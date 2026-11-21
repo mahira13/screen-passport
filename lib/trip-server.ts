@@ -1,30 +1,44 @@
 import { haversineKm } from "./distance";
-import { randomId } from "./ids";
+import { randomEditKey, randomId } from "./ids";
 import { getLiveData } from "./live-data";
+import { editKeyMatches, hashEditKey } from "./passport-server";
+import { LIMITS, takeRate } from "./rate-limit";
+import type { TravelMode } from "./route";
 import { supabaseAdmin } from "./supabase";
 import {
-  nearestCity, parseFrom, parseStartsAt, parseWorkIds, isTravelMode, isTripLength, selectTripStops,
-  validateFirstName, type TripPlan, type TripStop,
+  DEFAULT_TIME_ZONE, isTravelMode, isTripLength, isValidTimeZone, nearestCity, parseFrom, parseStartsAt,
+  codePlan, parseWorkIds, selectTripStops, validateFirstName, validateMeetingPoint, type TripPlan, type TripStop,
 } from "./trip";
 import { writeTripPlan } from "./trip-ai";
-import type { TravelMode } from "./route";
 import type { LatLng } from "./types";
 
+export const MESSAGES = {
+  tripLimit: "You've created 5 trips today. That's the daily limit, so please try again tomorrow.",
+  joinLimit: "You've joined 20 trips today. That's the daily limit, so please try again tomorrow.",
+  reportLimit: "Thanks, you've sent a lot of reports today. Please try again tomorrow.",
+  name: "Add your first name: letters only, up to 30, no links or rude words.",
+  meetingPoint: "Pick a different meeting point: up to 200 characters, no links or rude words.",
+};
+
 export type CreateResult =
-  | { ok: true; id: string; stops: number; source: TripPlan["source"] }
+  | { ok: true; id: string; deleteKey: string; stops: number; source: TripPlan["source"] }
   | { ok: false; status: number; error: string; nearestCity?: string | null };
 
-/** Validates the form, picks stops in code, lets Claude write the words, saves. */
-export async function createTrip(body: Record<string, unknown>): Promise<CreateResult> {
+/** Validates the form, picks stops in code, lets Claude write the words (within the daily cap), saves. */
+export async function createTrip(body: Record<string, unknown>, ipHash: string): Promise<CreateResult> {
   const workIds = parseWorkIds(Array.isArray(body.works) ? body.works.join(",") : String(body.works ?? ""));
   const start = parseFrom(typeof body.from === "string" ? body.from : null);
-  const startsAt = parseStartsAt(body.startsAt);
+  // A picked city has its own zone; a shared location uses the browser's.
+  const tz = start?.tz ?? (isValidTimeZone(body.timeZone) ? body.timeZone : DEFAULT_TIME_ZONE);
+  const startsAt = parseStartsAt(body.startsLocal, tz);
   const name = validateFirstName(body.firstName);
+  const meetingPoint = validateMeetingPoint(body.meetingPoint);
   const { mode, length } = body;
   if (!workIds.length || !start || !isTravelMode(mode) || !isTripLength(length))
     return { ok: false, status: 400, error: "Pick at least one title, a start, a mode and a length." };
   if (!startsAt) return { ok: false, status: 400, error: "Pick a date and time from today on." };
-  if (!name) return { ok: false, status: 400, error: "Add your first name (letters only, up to 30)." };
+  if (!name) return { ok: false, status: 400, error: MESSAGES.name };
+  if (meetingPoint === null) return { ok: false, status: 400, error: MESSAGES.meetingPoint };
 
   const live = await getLiveData();
   const known = workIds.filter((id) => live.works.some((w) => w.id === id));
@@ -32,7 +46,12 @@ export async function createTrip(body: Record<string, unknown>): Promise<CreateR
   if (stops.length === 0)
     return { ok: false, status: 422, error: "none_in_range", nearestCity: nearestCity(live.locations, known, start) };
 
-  const plan = await writeTripPlan(stops, { start, mode, length, startsAt: startsAt.toISOString() });
+  if (!(await takeRate(LIMITS.tripsPerIp, ipHash))) return { ok: false, status: 429, error: MESSAGES.tripLimit };
+  const ctx = { start, mode, length, startsAt: startsAt.toISOString(), tz };
+  // Past the daily cap of Claude generations, trips get the plain plan.
+  const plan = (await takeRate(LIMITS.claudeGlobal, "global")) ? await writeTripPlan(stops, ctx) : codePlan(stops, start, mode);
+
+  const deleteKey = randomEditKey();
   const db = supabaseAdmin();
   for (let attempt = 0; attempt < 3; attempt++) {
     const id = randomId();
@@ -47,11 +66,13 @@ export async function createTrip(body: Record<string, unknown>): Promise<CreateR
       mode,
       length,
       starts_at: startsAt.toISOString(),
-      meeting_point: stops[0].name, // defaults to the first stop
+      timezone: tz,
+      meeting_point: meetingPoint || stops[0].name, // defaults to the first stop
       organiser_name: name,
       plan,
+      delete_key_hash: hashEditKey(deleteKey),
     });
-    if (!error) return { ok: true, id, stops: stops.length, source: plan.source };
+    if (!error) return { ok: true, id, deleteKey, stops: stops.length, source: plan.source };
     if (error.code !== "23505") {
       console.error("trip insert failed:", error.message);
       return { ok: false, status: 500, error: "Could not save the trip." };
@@ -67,19 +88,21 @@ export interface TripView {
   mode: TravelMode;
   length: "half" | "full";
   startsAt: string;
+  timeZone: string;
   startLabel: string;
   meetingPoint: string;
+  meetingIsFirstStop: boolean;
   organiser: string;
   plan: TripPlan;
   stops: (TripStop & { plan: TripPlan["stops"][number] })[];
   joined: string[];
 }
 
-/** A trip with its stops joined to live locations (stops no longer live are left out). */
+/** A visible trip with its stops joined to live locations (stops no longer live are left out). */
 export async function getTrip(id: string): Promise<TripView | null> {
   const db = supabaseAdmin();
   const [{ data: trip, error }, { data: joins, error: joinErr }] = await Promise.all([
-    db.from("trips").select("*").eq("id", id).maybeSingle(),
+    db.from("trips").select("*").eq("id", id).is("hidden_at", null).maybeSingle(),
     db.from("trip_joins").select("first_name").eq("trip_id", id).order("created_at"),
   ]);
   if (error) throw new Error(error.message);
@@ -108,8 +131,10 @@ export async function getTrip(id: string): Promise<TripView | null> {
     mode: trip.mode,
     length: trip.length,
     startsAt: trip.starts_at,
+    timeZone: isValidTimeZone(trip.timezone) ? trip.timezone : DEFAULT_TIME_ZONE,
     startLabel: trip.start_label,
     meetingPoint: trip.meeting_point,
+    meetingIsFirstStop: stops[0]?.name === trip.meeting_point,
     organiser: trip.organiser_name,
     plan,
     stops,
@@ -117,12 +142,32 @@ export async function getTrip(id: string): Promise<TripView | null> {
   };
 }
 
-export type JoinResult = "ok" | "full" | "not_found" | "bad_name";
+export type JoinResult = "ok" | "full" | "not_found" | "bad_name" | "limit";
 
-export async function joinTrip(id: string, firstName: unknown): Promise<JoinResult> {
+export async function joinTrip(id: string, firstName: unknown, ipHash: string): Promise<JoinResult> {
   const name = validateFirstName(firstName);
   if (!name) return "bad_name";
+  if (!(await takeRate(LIMITS.joinsPerIp, ipHash))) return "limit";
   const { data, error } = await supabaseAdmin().rpc("join_trip", { p_trip_id: id, p_first_name: name });
   if (error) throw new Error(error.message);
   return data as JoinResult;
+}
+
+export async function reportTrip(id: string, ipHash: string): Promise<"ok" | "not_found" | "limit"> {
+  if (!(await takeRate(LIMITS.reportsPerIp, ipHash))) return "limit";
+  const { data, error } = await supabaseAdmin().rpc("report_trip", { p_trip_id: id, p_ip_hash: ipHash });
+  if (error) throw new Error(error.message);
+  return data as "ok" | "not_found";
+}
+
+/** Deletes a trip (and its joins and reports) if the organiser's secret key matches. */
+export async function deleteTrip(id: string, key: unknown): Promise<"ok" | "not_found" | "forbidden"> {
+  const db = supabaseAdmin();
+  const { data, error } = await db.from("trips").select("delete_key_hash").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return "not_found";
+  if (!editKeyMatches(key, data.delete_key_hash)) return "forbidden";
+  const { error: delErr } = await db.from("trips").delete().eq("id", id);
+  if (delErr) throw new Error(delErr.message);
+  return "ok";
 }

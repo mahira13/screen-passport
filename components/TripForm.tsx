@@ -1,15 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { track } from "@/lib/analytics";
 import type { TravelMode } from "@/lib/route";
-import { FIRST_NAME_MAX, LENGTH_LABEL, MODE_LABEL, RADIUS_KM, TRIP_LENGTHS, TRIP_MODES, type TripLength } from "@/lib/trip";
+import {
+  FIRST_NAME_MAX, LENGTH_LABEL, MEETING_POINT_MAX, MODE_LABEL, RADIUS_KM, TRIP_LENGTHS, TRIP_MODES, tzLabel, type TripLength,
+} from "@/lib/trip";
+import { browserTimeZone, saveTripKey } from "@/lib/trip-keys";
 import { RequestBox } from "./RequestBox";
 
 type Props = {
   works: { id: string; title: string }[];
-  from: { param: string; label: string };
+  from: { param: string; label: string; tz: string | null };
   placesByMode: Record<TravelMode, number>; // live places of these works within each mode's radius
   nearestCity: string | null;
 };
@@ -23,6 +26,10 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
   const [length, setLength] = useState<TripLength>("half");
   const [when, setWhen] = useState("");
   const [name, setName] = useState("");
+  const [meetingPoint, setMeetingPoint] = useState("");
+  // A picked city has its own zone; a shared location uses this browser's. Unknown during server render.
+  const browserTz = useSyncExternalStore(() => () => {}, browserTimeZone, () => null);
+  const tz = from.tz ?? browserTz;
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nearest, setNearest] = useState<string | null | undefined>(undefined); // set when the server finds none
@@ -39,7 +46,7 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           works: works.map((w) => w.id), from: from.param, mode, length,
-          startsAt: new Date(when).toISOString(), firstName: name,
+          startsLocal: when, timeZone: tz, firstName: name, meetingPoint,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -48,6 +55,7 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
         return;
       }
       if (!res.ok) throw new Error(json.error ?? "Couldn't create the trip. Try again.");
+      saveTripKey(json.id, json.deleteKey);
       track("trip_created", { mode, length, stops: json.stops, works: works.length, plan: json.source });
       router.push(`/trip/${json.id}`);
     } catch (err) {
@@ -102,6 +110,14 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
             <label htmlFor="trip-when" className="text-sm font-semibold">Date and start time</label>
             <input id="trip-when" type="datetime-local" required value={when} onChange={(e) => setWhen(e.target.value)}
               className="mt-1 block w-full rounded-xl border border-navy/30 bg-white px-4 py-2" />
+            {tz && <p className="mt-1 text-xs text-navy/70">In {tzLabel(tz)} time.</p>}
+          </div>
+
+          <div>
+            <label htmlFor="trip-meet" className="text-sm font-semibold">Meeting point <span className="font-normal">(optional)</span></label>
+            <input id="trip-meet" maxLength={MEETING_POINT_MAX} value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)}
+              placeholder="The first stop" className="mt-1 block w-full rounded-xl border border-navy/30 bg-white px-4 py-2" />
+            <p className="mt-1 text-xs text-navy/70">Pick a public place. Leave empty to meet at the first stop.</p>
           </div>
 
           <div>

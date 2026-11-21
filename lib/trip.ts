@@ -1,6 +1,7 @@
 import { findCity } from "./cities";
 import { formatDistance, haversineKm, parseLatLng } from "./distance";
 import { joinNames, mainCity } from "./layla";
+import { isCleanText } from "./moderation";
 import type { LiveLocation } from "./nearby";
 import { orderNearestNext, type TravelMode } from "./route";
 import type { LatLng, Work } from "./types";
@@ -13,7 +14,8 @@ export const MAX_STOPS: Record<TripLength, number> = { half: 5, full: 8 };
 export const MAX_WORKS = 10;
 export const MAX_JOINS = 50;
 export const FIRST_NAME_MAX = 30;
-export const TRIP_TIME_ZONE = "Europe/Berlin"; // all start cities are in Germany
+export const DEFAULT_TIME_ZONE = "Europe/Berlin";
+export const MEETING_POINT_MAX = 200;
 
 export const MODE_LABEL: Record<TravelMode, string> = { walk: "On foot", transit: "Public transport", car: "By car" };
 export const LENGTH_LABEL: Record<TripLength, string> = { half: "Half day", full: "Full day" };
@@ -25,20 +27,21 @@ export const isTripLength = (x: unknown): x is TripLength => TRIP_LENGTHS.includ
 export interface TripStart extends LatLng {
   label: string;
   param: string; // what goes back into ?from=
+  tz: string | null; // the city's time zone; null for a shared location (the browser's is used)
 }
 
 /** "berlin" or "52.520,13.405". Coordinates are rounded to about 100 m. */
 export function parseFrom(raw: string | null | undefined): TripStart | null {
   if (!raw) return null;
   const city = findCity(raw);
-  if (city) return { label: city.name, param: city.id, lat: city.lat, lng: city.lng };
+  if (city) return { label: city.name, param: city.id, lat: city.lat, lng: city.lng, tz: city.tz };
   const [a, b, extra] = raw.split(",");
   if (extra !== undefined) return null;
   const p = parseLatLng(a, b);
   if (!p) return null;
   const lat = Number(p.lat.toFixed(3));
   const lng = Number(p.lng.toFixed(3));
-  return { label: "your location", param: `${lat},${lng}`, lat, lng };
+  return { label: "your location", param: `${lat},${lng}`, lat, lng, tz: null };
 }
 
 /** "dark,queens-gambit" -> ids, deduped, at most MAX_WORKS. */
@@ -149,7 +152,10 @@ export function validatePlan(raw: unknown, stops: TripStop[]): TripPlan | null {
     });
   }
   const tips = Array.isArray(r.tips) ? r.tips.map((t) => str(t, 200)).filter((t): t is string => !!t).slice(0, 5) : [];
-  return { source: "claude", title, intro: str(r.intro, 600), stops: planStops, tips };
+  const intro = str(r.intro, 600);
+  const texts = [title, intro, ...tips, ...planStops.flatMap((p) => [p.time, p.travel_from_previous, p.why_fans_love_it])];
+  if (!texts.every((t) => t === null || isCleanText(t))) return null;
+  return { source: "claude", title, intro, stops: planStops, tips };
 }
 
 export function travelStep(km: number, first: boolean): string {
@@ -178,42 +184,93 @@ export function validateFirstName(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const name = raw.normalize("NFC").trim().replace(/\s+/g, " ");
   if (name.length < 1 || name.length > FIRST_NAME_MAX) return null;
-  return /^\p{L}[\p{L}\p{M} '’.-]*$/u.test(name) ? name : null;
+  return /^\p{L}[\p{L}\p{M} '’.-]*$/u.test(name) && isCleanText(name) ? name : null;
 }
 
-/** ISO date from the form: not more than an hour in the past, at most a year ahead. */
-export function parseStartsAt(raw: unknown, now = new Date()): Date | null {
+/** Optional meeting point: "" when left empty (the first stop is used), null when not allowed. */
+export function validateMeetingPoint(raw: unknown): string | null {
+  if (raw === undefined || raw === null) return "";
   if (typeof raw !== "string") return null;
-  const d = new Date(raw);
+  const text = raw.trim().replace(/\s+/g, " ");
+  if (text.length > MEETING_POINT_MAX) return null;
+  return text === "" || isCleanText(text) ? text : null;
+}
+
+// ---- Time zones ----
+
+export function isValidTimeZone(tz: unknown): tz is string {
+  if (typeof tz !== "string" || tz.length > 64) return false;
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** "Europe/London" -> "London", "America/Argentina/Buenos_Aires" -> "Buenos Aires". */
+export function tzLabel(tz: string): string {
+  return (tz.split("/").pop() ?? tz).replace(/_/g, " ");
+}
+
+function offsetMs(utcMs: number, tz: string): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    }).formatToParts(new Date(utcMs)).map((p) => [p.type, p.value]),
+  );
+  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  return asUtc - Math.floor(utcMs / 1000) * 1000;
+}
+
+/** "2026-11-28T10:00" as wall-clock time in tz -> the real instant. Null if not that shape. */
+export function zonedTimeToUtc(local: string, tz: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(local);
+  if (!m) return null;
+  const wall = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  if (!Number.isFinite(wall)) return null;
+  // Two passes so times next to a DST switch get the right offset.
+  let utc = wall - offsetMs(wall, tz);
+  utc = wall - offsetMs(utc, tz);
+  return new Date(utc);
+}
+
+/** Wall-clock time from the form in the trip's zone: not more than an hour ago, at most a year ahead. */
+export function parseStartsAt(raw: unknown, tz: string, now = new Date()): Date | null {
+  if (typeof raw !== "string") return null;
+  const d = zonedTimeToUtc(raw, tz);
+  if (!d) return null;
   const t = d.getTime();
   if (!Number.isFinite(t)) return null;
   if (t < now.getTime() - 3600_000 || t > now.getTime() + 366 * 86400_000) return null;
   return d;
 }
 
-/** "Sat 28 Nov, 10:00" in Berlin time. */
-export function formatTripDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TRIP_TIME_ZONE,
+/** "Sat 28 Nov, 10:00 Berlin time". */
+export function formatTripDate(iso: string, tz: string): string {
+  const s = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: tz,
   }).format(new Date(iso));
+  return `${s} ${tzLabel(tz)} time`;
 }
 
-/** "Sat 28 Nov" in Berlin time. */
-export function formatTripDay(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: TRIP_TIME_ZONE })
+/** "Sat 28 Nov" in the trip's time zone. */
+export function formatTripDay(iso: string, tz: string): string {
+  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: tz })
     .format(new Date(iso));
 }
 
-export function shareText(title: string, iso: string, link: string): string {
-  return `Join me on ${title} on ${formatTripDay(iso)}: ${link}`;
+export function shareText(title: string, iso: string, tz: string, link: string): string {
+  return `Join me on ${title} on ${formatTripDay(iso, tz)}: ${link}`;
 }
 
 /** Prompt copied for Layla: travel and stays around the trip's stops. */
-export function tripLaylaPrompt(iso: string, stops: { name: string; city: string | null; title: string }[]): string {
+export function tripLaylaPrompt(iso: string, tz: string, stops: { name: string; city: string | null; title: string }[]): string {
   const cities = [...new Set(stops.map((s) => mainCity(s.city)).filter((c): c is string => !!c))];
   const titles = [...new Set(stops.map((s) => s.title))];
   const where = cities.length ? ` in ${joinNames(cities.slice(0, 3))}` : "";
-  return `Plan travel and a place to stay for ${formatTripDay(iso)}${where}. I'm visiting ${joinNames(
+  return `Plan travel and a place to stay for ${formatTripDay(iso, tz)}${where}. I'm visiting ${joinNames(
     stops.slice(0, 5).map((s) => s.name),
   )} where ${joinNames(titles.slice(0, 3))} ${titles.length === 1 ? "was" : "were"} filmed.`;
 }

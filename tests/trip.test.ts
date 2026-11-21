@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { LiveLocation } from "@/lib/nearby";
 import {
-  codePlan, nearestCity, parseFrom, parseStartsAt, parseWorkIds, selectTripStops, shareText, tripLaylaPrompt,
-  validateFirstName, validatePlan,
+  codePlan, formatTripDate, isValidTimeZone, nearestCity, parseFrom, parseStartsAt, parseWorkIds, selectTripStops,
+  shareText, tripLaylaPrompt, tzLabel, validateFirstName, validateMeetingPoint, validatePlan, zonedTimeToUtc,
 } from "@/lib/trip";
 import type { Work } from "@/lib/types";
 
@@ -25,8 +25,8 @@ const locations = [
 
 describe("parseFrom", () => {
   it("takes a city id or rounded lat,lng", () => {
-    expect(berlin).toMatchObject({ label: "Berlin", param: "berlin" });
-    expect(parseFrom("52.52049,13.40499")).toMatchObject({ lat: 52.52, lng: 13.405, param: "52.52,13.405" });
+    expect(berlin).toMatchObject({ label: "Berlin", param: "berlin", tz: "Europe/Berlin" });
+    expect(parseFrom("52.52049,13.40499")).toMatchObject({ lat: 52.52, lng: 13.405, param: "52.52,13.405", tz: null });
   });
   it("rejects anything else", () => {
     expect(parseFrom("atlantis")).toBeNull();
@@ -87,6 +87,10 @@ describe("validatePlan", () => {
     expect(validatePlan(withIds([stops[0].id, stops[0].id, stops[2].id]), stops)).toBeNull();
     expect(validatePlan({ ...good, stops: good.stops.map((s) => ({ ...s, location_id: String(s.location_id) })) }, stops)).toBeNull();
   });
+  it("rejects links and offensive words anywhere in the text", () => {
+    expect(validatePlan({ ...good, tips: ["More at spam.com"] }, stops)).toBeNull();
+    expect(validatePlan({ ...good, intro: "A shit day." }, stops)).toBeNull();
+  });
   it("rejects non-objects and missing titles", () => {
     expect(validatePlan("nope", stops)).toBeNull();
     expect(validatePlan({ ...good, title: " " }, stops)).toBeNull();
@@ -116,26 +120,58 @@ describe("validateFirstName", () => {
     expect(validateFirstName("")).toBeNull();
     expect(validateFirstName("x".repeat(31))).toBeNull();
     expect(validateFirstName(42)).toBeNull();
+    expect(validateFirstName("Fotze")).toBeNull();
+  });
+});
+
+describe("validateMeetingPoint", () => {
+  it("allows empty, normal text; refuses links, slurs and long text", () => {
+    expect(validateMeetingPoint(undefined)).toBe("");
+    expect(validateMeetingPoint("  ")).toBe("");
+    expect(validateMeetingPoint(" By the  World Clock ")).toBe("By the World Clock");
+    expect(validateMeetingPoint("www.x.de")).toBeNull();
+    expect(validateMeetingPoint("fuck")).toBeNull();
+    expect(validateMeetingPoint("x".repeat(201))).toBeNull();
+    expect(validateMeetingPoint(5)).toBeNull();
+  });
+});
+
+describe("time zones", () => {
+  it("checks and labels zones", () => {
+    expect(isValidTimeZone("Europe/London")).toBe(true);
+    expect(isValidTimeZone("Mars/Base")).toBe(false);
+    expect(tzLabel("America/Argentina/Buenos_Aires")).toBe("Buenos Aires");
+  });
+  it("turns wall-clock time into the right instant, also across DST", () => {
+    expect(zonedTimeToUtc("2026-11-28T10:00", "Europe/Berlin")!.toISOString()).toBe("2026-11-28T09:00:00.000Z");
+    expect(zonedTimeToUtc("2026-07-01T10:00", "Europe/Berlin")!.toISOString()).toBe("2026-07-01T08:00:00.000Z");
+    expect(zonedTimeToUtc("2026-11-28T10:00", "Europe/London")!.toISOString()).toBe("2026-11-28T10:00:00.000Z");
+    expect(zonedTimeToUtc("2027-03-28T03:30", "Europe/Berlin")!.toISOString()).toBe("2027-03-28T01:30:00.000Z");
+    expect(zonedTimeToUtc("28.11.2026 10:00", "Europe/Berlin")).toBeNull();
+  });
+  it("shows times with the zone's city", () => {
+    expect(formatTripDate("2026-11-28T10:00:00Z", "Europe/London")).toBe("Sat 28 Nov, 10:00 London time");
+    expect(formatTripDate("2026-11-28T10:00:00Z", "Europe/Berlin")).toBe("Sat 28 Nov, 11:00 Berlin time");
   });
 });
 
 describe("parseStartsAt", () => {
   const now = new Date("2026-11-21T12:00:00Z");
   it("accepts the next year, refuses the past and far future", () => {
-    expect(parseStartsAt("2026-11-28T09:00:00Z", now)).not.toBeNull();
-    expect(parseStartsAt("2026-11-20T09:00:00Z", now)).toBeNull();
-    expect(parseStartsAt("2028-01-01T09:00:00Z", now)).toBeNull();
-    expect(parseStartsAt("soon", now)).toBeNull();
+    expect(parseStartsAt("2026-11-28T10:00", "Europe/Berlin", now)!.toISOString()).toBe("2026-11-28T09:00:00.000Z");
+    expect(parseStartsAt("2026-11-20T09:00", "Europe/Berlin", now)).toBeNull();
+    expect(parseStartsAt("2028-01-01T09:00", "Europe/Berlin", now)).toBeNull();
+    expect(parseStartsAt("soon", "Europe/Berlin", now)).toBeNull();
   });
 });
 
 describe("share and Layla text", () => {
   it("uses the Berlin date", () => {
-    expect(shareText("Dark walk", "2026-11-28T09:00:00Z", "https://x.de/trip/abc")).toBe(
+    expect(shareText("Dark walk", "2026-11-28T09:00:00Z", "Europe/Berlin", "https://x.de/trip/abc")).toBe(
       "Join me on Dark walk on Sat 28 Nov: https://x.de/trip/abc",
     );
     expect(
-      tripLaylaPrompt("2026-11-28T09:00:00Z", [
+      tripLaylaPrompt("2026-11-28T09:00:00Z", "Europe/Berlin", [
         { name: "A", city: "Berlin", title: "Dark" },
         { name: "B", city: "Berlin/Potsdam", title: "Dark" },
       ]),

@@ -53,7 +53,7 @@ async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, 
         We pick the closest filming places and put them in a sensible order. Friends can join with a link.
       </p>
       <div className="mt-6">
-        <TripForm works={works} from={{ param: start.param, label: start.label }} placesByMode={placesByMode}
+        <TripForm works={works} from={{ param: start.param, label: start.label, tz: start.tz }} placesByMode={placesByMode}
           nearestCity={nearestCity(live.locations, ids, start)} />
       </div>
     </>

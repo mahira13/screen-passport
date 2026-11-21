@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ShareCard } from "@/components/ShareCard";
 import { YourPassportNote } from "@/components/YourPassportNote";
 import { DEFAULT_CITY, findCity } from "@/lib/cities";
 import { formatDistance } from "@/lib/distance";
 import { isPassportId } from "@/lib/ids";
 import { getLiveData } from "@/lib/live-data";
 import { buildNearby } from "@/lib/nearby";
+import { buildCardData } from "@/lib/share-card";
 import { supabasePublic } from "@/lib/supabase";
 
 export const metadata: Metadata = {
@@ -50,6 +52,12 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
     })
     .filter((s) => !!s);
   const allPlaces = stamps.flatMap((s) => s.places).sort((a, b) => a.distanceKm - b.distanceKm);
+  const card = buildCardData({
+    cityName: city.name,
+    displayName: passport.display_name,
+    collections: live.collections,
+    stamps: stamps.map((s) => ({ workId: s.work.id, title: s.work.title, places: s.places, visited: s.visited })),
+  });
   const closest = allPlaces[0];
 
   return (
@@ -69,6 +77,7 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
       </header>
 
       <YourPassportNote passportId={passport.id} />
+      {stamps.length > 0 && <ShareCard passportId={passport.id} data={card} />}
 
       {stamps.length === 0 ? (
         <p className="mt-6 text-sm">No titles in this passport yet.</p>

@@ -37,7 +37,7 @@ export function formatDistance(km: number): string {
 export function sortByDistance<T extends { lat: number | null; lng: number | null }>(
   items: T[],
   from: LatLng,
-): (T & { distanceKm: number })[] {
+): (T & LatLng & { distanceKm: number })[] {
   return items
     .filter((i): i is T & LatLng => i.lat !== null && i.lng !== null)
     .map((i) => ({ ...i, distanceKm: haversineKm(from, i) }))

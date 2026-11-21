@@ -1,9 +1,10 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { ADMIN_COOKIE, adminToken, isValidPassword, isValidToken } from "@/lib/admin";
 import { parseLatLng } from "@/lib/distance";
+import { LIVE_TAG } from "@/lib/live-data";
 import { isUntrustedSource } from "@/lib/sources";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -61,6 +62,7 @@ export async function setLive(id: number): Promise<ActionResult> {
   }
   const { error: upErr } = await db.from("locations").update({ status: "live" }).eq("id", id);
   if (upErr) return { ok: false, message: upErr.message };
+  updateTag(LIVE_TAG); // the public map shows it on the next load
   refresh();
   return { ok: true, message: "Live." };
 }

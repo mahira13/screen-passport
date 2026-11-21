@@ -35,7 +35,7 @@ export default function PinMap({ lat, lng, onPick }: Props) {
   return (
     <MapContainer center={has ? [lat, lng] : BERLIN} zoom={has ? 16 : 10} className="h-48 w-full rounded">
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
       <ClickToPlace onPick={onPick} />

@@ -2,27 +2,11 @@
 
 import { useState } from "react";
 import { track } from "@/lib/analytics";
+import { copyText } from "@/lib/clipboard";
 import { formatDistance } from "@/lib/distance";
 import { LAYLA_URL, laylaPrompt } from "@/lib/layla";
 import { directionsUrl } from "@/lib/links";
 import type { NearbyPlace } from "@/lib/nearby";
-
-// Works on http too (e.g. a phone on the local network), where navigator.clipboard is missing.
-function copyText(text: string): boolean {
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {});
-    return true;
-  }
-  const area = Object.assign(document.createElement("textarea"), { value: text });
-  area.setAttribute("readonly", "");
-  area.style.position = "fixed";
-  area.style.opacity = "0";
-  document.body.appendChild(area);
-  area.select();
-  const ok = document.execCommand("copy");
-  area.remove();
-  return ok;
-}
 
 const linkBtn = "inline-flex items-center justify-center rounded-full px-3 py-2 text-sm font-medium";
 

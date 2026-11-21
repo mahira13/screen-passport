@@ -1,0 +1,13 @@
+import Link from "next/link";
+
+export default function TripNotFound() {
+  return (
+    <main className="mx-auto w-full max-w-xl px-4 pt-16 text-center">
+      <h1 className="font-display text-2xl font-bold">We couldn&apos;t find this trip</h1>
+      <p className="mt-2 text-navy/80">Check the link, or plan your own in a few taps.</p>
+      <Link href="/" className="mt-6 inline-block rounded-full bg-navy px-5 py-3 font-semibold text-cream">
+        Find filming places near you
+      </Link>
+    </main>
+  );
+}

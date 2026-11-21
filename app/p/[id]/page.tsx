@@ -77,6 +77,12 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
       </header>
 
       <YourPassportNote passportId={passport.id} />
+      {stamps.length > 0 && (
+        <Link href={`/trip/new?works=${encodeURIComponent(stamps.slice(0, 10).map((s) => s.work.id).join(","))}&from=${city.id}`}
+          className="mt-4 block rounded-full border border-navy/30 bg-white px-5 py-3 text-center font-semibold">
+          Create a trip
+        </Link>
+      )}
       {stamps.length > 0 && <ShareCard passportId={passport.id} data={card} />}
 
       {stamps.length === 0 ? (

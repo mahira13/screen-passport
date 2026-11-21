@@ -4,6 +4,7 @@ import { cleanProps, isEventName } from "@/lib/analytics";
 describe("isEventName", () => {
   it("accepts only the events in CLAUDE.md", () => {
     expect(isEventName("map_viewed")).toBe(true);
+    expect(isEventName("trip_created")).toBe(true);
     expect(isEventName("page_view")).toBe(false);
     expect(isEventName(42)).toBe(false);
   });

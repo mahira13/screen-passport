@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { formatDistance } from "@/lib/distance";
 import type { NearbyPlace, NearbyTitle } from "@/lib/nearby";
@@ -11,11 +12,12 @@ type Props = {
   colour: string;
   watched: boolean;
   selected: boolean;
+  tripFrom: string; // city id or "lat,lng" for /trip/new
   onToggle: () => void;
   onSelect: () => void;
 };
 
-export function TitleCard({ title: t, places, colour, watched, selected, onToggle, onSelect }: Props) {
+export function TitleCard({ title: t, places, colour, watched, selected, tripFrom, onToggle, onSelect }: Props) {
   const [open, setOpen] = useState(false);
   const listId = `places-${t.workId}`;
   return (
@@ -54,15 +56,21 @@ export function TitleCard({ title: t, places, colour, watched, selected, onToggl
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls={listId}
-        className="mt-2 text-sm font-medium text-navy underline underline-offset-2"
-      >
-        {open ? "Hide places" : `Show ${places.length === 1 ? "the place" : `all ${places.length} places`}`}
-      </button>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls={listId}
+          className="text-sm font-medium text-navy underline underline-offset-2"
+        >
+          {open ? "Hide places" : `Show ${places.length === 1 ? "the place" : `all ${places.length} places`}`}
+        </button>
+        <Link href={`/trip/new?works=${encodeURIComponent(t.workId)}&from=${encodeURIComponent(tripFrom)}`}
+          className="shrink-0 rounded-full border border-navy/30 px-3 py-1.5 text-sm font-medium">
+          Create a trip
+        </Link>
+      </div>
       {open && (
         <ul id={listId} className="mt-3 space-y-2">
           {places.map((p) => (

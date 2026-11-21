@@ -22,3 +22,6 @@ export function isPassportId(x: unknown): x is string {
 export function randomEditKey(): string {
   return randomId(32);
 }
+
+/** Trip ids use the same random format as passport ids. */
+export const isTripId = isPassportId;

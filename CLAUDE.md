@@ -2,7 +2,7 @@
 
 Collect the places your favourite films and series were shot. Visit them, stamp them, share them.
 
-Open the link and within seconds you see what was filmed near you. Tap "Watched it" on the titles you've seen and your Screen Passport fills with stamps. Check in on site to turn a stamp gold, frame your own photo as a scene postcard, and share your passport as an Instagram story. "Plan the rest with Layla" hands the trip over to Layla.
+Open the link and within seconds you see what was filmed near you. Tap "Watched it" on the titles you've seen and your Screen Passport fills with stamps. Check in on site to turn a stamp gold, frame your own photo as a scene postcard, and share your passport as an Instagram story. "Create a trip" turns your titles into a dated fan trip that friends can join; "Plan travel and stays with Layla" hands the rest over to Layla.
 
 Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature freeze Sunday 14:00, submission 15:30 (live link, 3 slides, real numbers).
 
@@ -11,8 +11,8 @@ Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature f
 1. **Instant value, no downloads.** The first screen shows filming locations near the user with zero input. No login, no CSV upload, no Netflix connection (Netflix has no public API; never ask for passwords or scrape accounts).
 2. **Ways in, in order:** near-me map → "Watched it" taps on title cards → search box that only selects titles from our database → optional screenshot upload where Claude reads titles. Free text that matches nothing becomes a request, never an AI answer.
 3. **Every location has a source.** No row in `locations` without `source_url`. Trusted sources: official tourism and city sites, established location guides and major media (see the add-filming-locations skill); not Wikipedia or fan wikis. Claude never invents locations, coordinates or scenes. Only `status = 'live'` locations are shown.
-4. **Code for facts, Claude for words and images.** Distance, sorting, matching, check-in radius and collections are plain code. Claude is used only to read titles from screenshots, for fuzzy title matching, and to research requested titles (saved as `unverified` for human approval).
-5. **Privacy:** no accounts, no emails, no raw uploads stored. Screenshots are read and discarded. Postcard photos are composed in the browser and never uploaded unless the user shares them. Passports store only title IDs, location IDs, start city and an optional display name.
+4. **Code for facts, Claude for words and images.** Distance, sorting, matching, check-in radius, collections and which stops a trip has (and their order) are plain code. Claude is used only to read titles from screenshots, for fuzzy title matching, to research requested titles (saved as `unverified` for human approval), and to write a trip's title, intro, stop times, travel steps, "why fans love it" and tips. For trips Claude gets only the chosen live locations, must use only their IDs and never adds places, prices or opening hours; every returned location ID is checked in code, with one retry and then a plain code-built plan.
+5. **Privacy:** no accounts, no emails, no raw uploads stored. Screenshots are read and discarded. Postcard photos are composed in the browser and never uploaded unless the user shares them. Passports store only title IDs, location IDs, start city and an optional display name. Trips store title IDs, the start label and point, mode, length, date and time, meeting point, the plan, and first names only (organiser and people who join). Trips and joins are read and written only through server routes with the service role key; no public RLS policies. Trip pages carry a short safety note (meet in public, no personal details needed).
 6. **No copyrighted media:** no film stills, scraped posters, logos or script quotes. Postcards use the user's own photo. Location photos only from Wikimedia Commons with credit.
 7. **No private homes** and no closed studio sets, even if a guide lists them.
 8. **Honest numbers:** stage metrics come from real events only.
@@ -29,11 +29,12 @@ Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature f
 - Scene postcard: user photo + frame (title, place, "Filmed here") composed client-side
 - Location card actions: Directions (Google Maps), Source link, "Plan the rest with Layla" (opens Layla; copies a ready prompt to clipboard)
 - Requests table for unknown titles; admin page to approve researched locations
+- Trips: `/trip/new?works=<ids>&from=<lat,lng or city>` (mode walk/transit/car, half or full day, date and time, first name) → `/trip/[id]` with numbered stops on a map and in a list, "Open all in Google Maps" (up to 9 waypoints), Layla handoff, Join (first name, max 30 characters, max 50 joins), Web Share and Open Graph preview. Stops: live locations of the chosen works within 30 km (walk), 60 km (transit) or 150 km (car) of the start, ordered nearest-next-stop, up to 8 (half day 4–5). "Create a trip" on each title card and on the passport
 - Analytics events
 
 **Nice to have:** screenshot upload (Claude vision reads titles), compare passports with a friend, show pages `/t/[id]`.
 
-**Out:** login, Netflix/Spotify connections, trip planner (Layla does that), books, native app, live prices.
+**Out:** login, Netflix/Spotify connections, travel and stays booking (Layla does that), books, native app, live prices, opening hours.
 
 ## Stack
 
@@ -53,11 +54,15 @@ screen-passport/
   app/
     page.tsx                     # near-me map + title cards (first screen)
     p/[id]/page.tsx              # a saved passport (shareable)
+    trip/new/page.tsx            # create a trip
+    trip/[id]/page.tsx           # a trip: stops, map, join, share
     t/[id]/page.tsx              # title page: where it was filmed (nice to have)
     admin/requests/page.tsx      # approve researched requests (ADMIN_PASSWORD)
     api/nearby/route.ts          # live locations sorted by distance
     api/passport/route.ts        # create/update passport -> id
     api/request/route.ts         # unknown title -> requests (+count)
+    api/trip/route.ts            # create a trip (Claude writes the words) -> id
+    api/trip/[id]/join/route.ts  # join a trip with a first name
     api/read-screenshot/route.ts # Claude vision -> {titles: []} (nice to have)
   components/
     CityPicker.tsx  NearbyMap.tsx  TitleCard.tsx  LocationCard.tsx
@@ -69,6 +74,8 @@ screen-passport/
     cities.ts        # German start cities with coordinates
     collections.ts   # progress calculation
     layla.ts         # Layla handoff prompt + link
+    route.ts         # nearest-next-stop order, total km, Google Maps route link
+    trip.ts          # trip stop selection, plan validation, fallback plan
     supabase.ts  analytics.ts  ids.ts (random passport ids)
   supabase/migrations/001_init.sql
   data/seed/titles.csv  data/seed/locations.csv  data/seed/collections.csv
@@ -86,6 +93,8 @@ Seed CSVs use exactly these column names, so the import needs no mapping. Seed r
 - `passports(id text pk, display_name null, start_city, lat, lng, watched text[], visited int[], created_at, updated_at)`
 - `requests(id serial pk, raw_title, normalised_title unique, count int, status ['open','researched','approved','rejected'], created_at)`
 - `events(id serial pk, name, props jsonb, created_at)`
+- `trips(id text pk, title, intro, work_ids text[], start_label, start_lat, start_lng, mode ['walk','transit','car'], length ['half','full'], starts_at timestamptz, meeting_point, organiser_name, plan jsonb, created_at)`
+- `trip_joins(id serial pk, trip_id fk, first_name, created_at)`
 
 Row-level security: anyone can insert a passport and read one by exact id; nobody can list passports. Locations/works/collections are public read. Requests are insert-only for the public. Admin actions go through server routes with `ADMIN_PASSWORD`.
 
@@ -95,7 +104,7 @@ Under 2 km "Near you", 2–30 km "Day trip", 30–250 km "Weekend by train", abo
 
 ## Analytics events
 
-`map_viewed`, `title_watched`, `passport_created`, `share_clicked`, `checkin_success`, `postcard_made`, `layla_clicked`, `directions_clicked`, `request_created`, `screenshot_read`.
+`map_viewed`, `title_watched`, `passport_created`, `share_clicked`, `checkin_success`, `postcard_made`, `layla_clicked`, `directions_clicked`, `request_created`, `screenshot_read`, `trip_created`, `trip_joined`, `trip_shared`.
 
 ## Commands
 

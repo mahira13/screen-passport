@@ -118,6 +118,7 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
   const groups = data ? titlesByBand(data.titles) : [];
   const watched = new Set(passport.watched);
   const startCity = origin.id === "me" ? null : origin.id;
+  const tripFrom = origin.id === "me" ? `${origin.lat},${origin.lng}` : origin.id;
 
   return (
     <>
@@ -150,6 +151,7 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
                     colour={colours.get(t.workId) ?? OTHER_COLOUR}
                     watched={watched.has(t.workId)}
                     selected={selected === t.workId}
+                    tripFrom={tripFrom}
                     onToggle={() => toggleWatched(t.workId, startCity)}
                     onSelect={() => selectFromCard(t.workId)}
                   />

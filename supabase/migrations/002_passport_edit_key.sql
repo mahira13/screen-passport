@@ -1,9 +1,9 @@
 -- The share link /p/[id] is public, so the id alone must not allow edits.
 -- The creator's browser keeps a secret edit key; only its SHA-256 is stored here.
-alter table public.passports add column edit_key_hash text;
+alter table public.passports add column if not exists edit_key_hash text;
 
 -- Readers get the public fields only, never the key hash.
-drop function public.get_passport(text);
+drop function if exists public.get_passport(text);
 create function public.get_passport(p_id text)
 returns table (
   id text, display_name text, start_city text,

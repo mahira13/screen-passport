@@ -6,6 +6,14 @@ Open the link and within seconds you see what was filmed near you. Tap "Watched 
 
 Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature freeze Sunday 14:00, submission 15:30 (live link, 3 slides, real numbers).
 
+## The idea changed (read this first)
+
+This repo started as a Spotify-based concept: connect Spotify, a listening summary, a "vibe" page and people nearby (see the old `claude.md` on `main` and the `bogdan/initial_version` branch). The team refactored the idea into **Screen Passport**: films and series instead of music, filming locations instead of listening data, fan trips instead of people nearby.
+
+- This file is the source of truth. The old `claude.md` and its Spotify features are superseded; don't build on them.
+- No Spotify, Netflix or other account connections (see product rule 1). Titles come from taps, search over our own database, or a screenshot.
+- Code from the old branch is not reused here; Screen Passport has its own stack and data model below.
+
 ## Product rules (read before changing anything)
 
 1. **Instant value, no downloads.** The first screen shows filming locations near the user with zero input. No login, no CSV upload, no Netflix connection (Netflix has no public API; never ask for passwords or scrape accounts).

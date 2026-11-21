@@ -1,13 +1,28 @@
 @import "tailwindcss";
 
-/* Dark, minimal. Colour roles, not colour names: ink on paper, cards on surface, one red accent. */
+/*
+ * Cinematic editorial look. Role tokens (ink, paper, surface, accent) are what most
+ * components use; the named colours are for light editorial sections and highlights.
+ */
 @theme inline {
-  --color-ink: #f5f5f1;
-  --color-paper: #141414;
-  --color-surface: #1f1f1f;
-  --color-accent: #e50914;
+  --color-ink: #faf8f3;
+  --color-paper: #101012;
+  --color-surface: #1c1c1f;
+  --color-accent: #e5b83f;
+
+  --color-night: #101012;
+  --color-charcoal: #171719;
+  --color-cream: #f3ebdd;
+  --color-bone: #faf8f3;
+  --color-mustard: #e5b83f;
+  --color-burgundy: #713c48;
+  --color-pink: #ebaad7;
+  --color-smoke: #929092;
+
   --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-instrument), Georgia, "Times New Roman", serif;
+  --font-condensed: var(--font-bebas), "Arial Narrow", system-ui, sans-serif;
 }
 
 html {
@@ -20,24 +35,89 @@ body {
   font-family: var(--font-sans);
 }
 
-/* OpenStreetMap tiles turned dark to match the page (attribution stays visible). */
+::selection {
+  background: var(--color-mustard);
+  color: var(--color-night);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-mustard);
+  outline-offset: 2px;
+}
+
+/* Small uppercase metadata: "Vol. 01 · Berlin edition". */
+.label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Film grain over atmospheric blocks. Pure SVG noise, no image files. */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 1;
+}
+
+/* Sprocket holes along a film strip. */
+.sprockets {
+  background-image: radial-gradient(circle, rgba(250, 248, 243, 0.22) 2.5px, transparent 3px);
+  background-size: 18px 12px;
+  background-repeat: repeat-x;
+  background-position: center;
+}
+
+/* OpenStreetMap tiles in warm charcoal to match the page (attribution stays visible). */
 .leaflet-tile-pane {
-  filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.4);
+  filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.25) sepia(0.25);
 }
 .leaflet-container {
-  background: #1a1a1a;
+  background: #171719;
+  font-family: var(--font-sans);
 }
 .leaflet-control-attribution {
-  background: rgba(20, 20, 20, 0.8) !important;
-  color: #aaa !important;
+  background: rgba(16, 16, 18, 0.85) !important;
+  color: #929092 !important;
 }
 .leaflet-control-attribution a {
-  color: #ddd !important;
+  color: #f3ebdd !important;
+}
+.leaflet-bar {
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
 }
 .leaflet-bar a {
-  background: #1f1f1f !important;
-  color: #f5f5f1 !important;
-  border-color: #333 !important;
+  background: #171719 !important;
+  color: #f3ebdd !important;
+  border-color: #2a2a2e !important;
+}
+.leaflet-bar a:hover {
+  background: #e5b83f !important;
+  color: #101012 !important;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #171719;
+  color: #f3ebdd;
+  border-radius: 2px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.leaflet-popup-content-wrapper {
+  border-top: 3px solid #e5b83f;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: #929092;
 }
 
 /* Hide the scrollbar on horizontal rows (title chips), keep them scrollable. */
@@ -46,4 +126,21 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker {
+  animation: ticker 40s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker {
+    animation: none;
+  }
 }

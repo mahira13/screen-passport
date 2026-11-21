@@ -65,11 +65,10 @@ function ShareCardInner({ data }: { data: CardData }) {
   };
 
   return (
-    <section className="mt-8">
-      <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-ink/70">Share your passport</h2>
-      <div className="mt-3 flex flex-col items-center gap-4">
+    <section className="grid items-center gap-10 py-14 sm:py-20 md:grid-cols-[auto_1fr] md:gap-16">
+      <div className="order-2 flex flex-col items-center gap-4 md:order-1">
         <div
-          className="overflow-hidden rounded-md shadow-lg ring-1 ring-ink/10"
+          className="rotate-[-2deg] overflow-hidden shadow-2xl shadow-black/70 ring-1 ring-accent/40"
           style={{ width: CARD_WIDTH * PREVIEW_SCALE, height: CARD_HEIGHT * PREVIEW_SCALE }}
           aria-label="Preview of your share card"
           role="img"
@@ -80,16 +79,23 @@ function ShareCardInner({ data }: { data: CardData }) {
             </div>
           </div>
         </div>
+      </div>
+      <div className="order-1 md:order-2">
+        <p className="label text-accent">Share</p>
+        <h2 className="mt-3 font-serif text-5xl leading-[0.95] tracking-tight sm:text-6xl">
+          Your passport, <span className="italic">as a story.</span>
+        </h2>
+        <p className="mt-4 max-w-md text-ink/70">A 1080×1920 card with your stamps, places and link, drawn on your phone.</p>
         <button
           type="button"
           onClick={onShare}
           disabled={busy}
-          className="w-full max-w-xs rounded bg-accent px-5 py-3 font-semibold text-ink disabled:opacity-60"
+          className="label mt-6 w-full max-w-xs bg-accent px-5 py-4 text-night transition-colors hover:bg-ink disabled:opacity-60"
         >
           {busy ? "Drawing your card…" : canShare ? "Share to your story" : "Download image"}
         </button>
-        {message && <p role="status" className="text-sm">{message}</p>}
-        {!canShare && <p className="text-xs text-ink/60">Then post the image from your photos.</p>}
+        {message && <p role="status" className="mt-3 text-sm">{message}</p>}
+        {!canShare && <p className="mt-2 text-xs text-ink/60">Then post the image from your photos.</p>}
       </div>
     </section>
   );

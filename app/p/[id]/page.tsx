@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ShareCard } from "@/components/ShareCard";
 import { YourPassportNote } from "@/components/YourPassportNote";
 import { DEFAULT_CITY, findCity } from "@/lib/cities";
+import { startedCollections } from "@/lib/collections";
 import { formatDistance } from "@/lib/distance";
 import { isPassportId } from "@/lib/ids";
 import { getLiveData } from "@/lib/live-data";
@@ -22,8 +23,8 @@ type Passport = { id: string; display_name: string | null; start_city: string | 
 
 export default function PassportPage(props: PageProps<"/p/[id]">) {
   return (
-    <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 pb-16 pt-6">
-      <Suspense fallback={<p className="text-sm text-ink/60">Opening passport…</p>}>
+    <main className="w-full">
+      <Suspense fallback={<p className="label px-4 py-16 text-center text-smoke">Opening passport…</p>}>
         <PassportView params={props.params} />
       </Suspense>
     </main>
@@ -59,76 +60,178 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
     stamps: stamps.map((s) => ({ workId: s.work.id, title: s.work.title, places: s.places, visited: s.visited })),
   });
   const closest = allPlaces[0];
+  const goldStamps = stamps.filter((s) => s.visited).length;
+  const collections = startedCollections(live.collections, passport.watched);
+  const complete = collections.filter((c) => c.complete).length;
+  const mrz = `P<SCREEN<PASSPORT<<${city.name.toUpperCase().normalize("NFKD").replace(/[^A-Z]/g, "")}`.padEnd(44, "<");
+  const mrz2 = `${passport.id.toUpperCase().replace(/[^A-Z0-9]/g, "")}<<${allPlaces.length}PLACES<<${stamps.length}TITLES`.padEnd(44, "<").slice(0, 44);
+  const stats: [number, string][] = [
+    [allPlaces.length, allPlaces.length === 1 ? "Place" : "Places"],
+    [stamps.length, stamps.length === 1 ? "Title" : "Titles"],
+    [goldStamps, goldStamps === 1 ? "Gold stamp" : "Gold stamps"],
+    [complete, "Collections done"],
+  ];
+  const tripHref = `/trip/new?works=${encodeURIComponent(stamps.slice(0, 10).map((s) => s.work.id).join(","))}&from=${city.id}`;
+  const WRAP = "mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12";
 
   return (
     <>
-      <header className="pb-4 pt-2 sm:pt-6">
-        <p className="text-xs font-bold uppercase tracking-[0.25em] text-accent">Screen Passport · {city.name} edition</p>
-        {passport.display_name && <p className="mt-2 text-xl font-semibold">{passport.display_name}</p>}
-        <p className="mt-4 text-7xl font-black leading-none tracking-tight sm:text-8xl">{allPlaces.length}</p>
-        <p className="mt-2 text-lg text-ink/70">
-          filming {allPlaces.length === 1 ? "place" : "places"} from {stamps.length} {stamps.length === 1 ? "title" : "titles"} near {city.name}
-        </p>
-        {closest && (
-          <p className="mt-3 text-sm text-ink/60">
-            Closest: {closest.name} ({closest.title}), {formatDistance(closest.distanceKm)}
-          </p>
-        )}
-      </header>
+      {/* Cover and data page */}
+      <section className="relative overflow-hidden bg-night">
+        <div aria-hidden className="pointer-events-none absolute -right-32 top-0 h-[32rem] w-[32rem] rounded-full bg-burgundy/40 blur-[120px]" />
+        <div className={`${WRAP} relative grid gap-10 pb-14 pt-10 sm:pt-14 lg:grid-cols-[minmax(0,340px)_1fr] lg:gap-16`}>
+          <div className="grain mx-auto flex aspect-[5/7] w-full max-w-[300px] flex-col items-center justify-between bg-burgundy px-6 py-10 text-center text-accent shadow-2xl shadow-black/60 lg:mx-0">
+            <p className="label relative z-[2]">{city.name} edition</p>
+            <div className="relative z-[2]">
+              <svg viewBox="0 0 100 100" className="mx-auto h-24 w-24" aria-hidden>
+                <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="2" />
+                <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="2 4" />
+                {[0, 60, 120, 180, 240, 300].map((a) => (
+                  <circle key={a} cx={50 + 20 * Math.cos((a * Math.PI) / 180)} cy={50 + 20 * Math.sin((a * Math.PI) / 180)} r="6" fill="none" stroke="currentColor" strokeWidth="2" />
+                ))}
+                <circle cx="50" cy="50" r="4" fill="currentColor" />
+              </svg>
+              <p className="mt-6 font-condensed text-4xl leading-none tracking-[0.14em]">Screen</p>
+              <p className="font-condensed text-4xl leading-none tracking-[0.14em]">Passport</p>
+            </div>
+            <p className="relative z-[2] font-serif text-lg italic">Discover · Explore · Collect</p>
+          </div>
 
-      <YourPassportNote passportId={passport.id} />
-      {stamps.length > 0 && (
-        <Link href={`/trip/new?works=${encodeURIComponent(stamps.slice(0, 10).map((s) => s.work.id).join(","))}&from=${city.id}`}
-          className="mt-4 block rounded border border-ink/30 bg-surface px-5 py-3 text-center font-semibold">
-          Create a trip
-        </Link>
-      )}
-      {stamps.length > 0 && <ShareCard passportId={passport.id} data={card} />}
+          <div className="flex min-w-0 flex-col">
+            <p className="label text-smoke">Passport no. <span className="text-ink">{passport.id}</span></p>
+            <p className="label mt-6 text-smoke">Holder</p>
+            <h1 className="mt-1 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+              {passport.display_name ?? <span className="italic">A film lover</span>}
+            </h1>
+            <p className="mt-3 text-lg text-ink/70">
+              {allPlaces.length} filming {allPlaces.length === 1 ? "place" : "places"} from {stamps.length} {stamps.length === 1 ? "title" : "titles"} near {city.name}
+            </p>
 
-      {stamps.length === 0 ? (
-        <p className="mt-6 text-sm">No titles in this passport yet.</p>
-      ) : (
-        <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {stamps.map((s) => (
-            <li key={s.work.id}
-              className={`flex aspect-square flex-col items-center justify-center rounded-full border-2 border-dashed p-3 text-center ${
-                s.visited ? "border-accent bg-accent text-white" : "border-ink/30 bg-surface"
-              }`}>
-              <span className="text-sm font-bold leading-tight">{s.work.title}</span>
-              <span className="mt-1 text-xs opacity-70">
-                {s.places.length} {s.places.length === 1 ? "place" : "places"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+            <dl className="mt-8 grid grid-cols-2 border-t border-ink/15 sm:grid-cols-4">
+              {stats.map(([n, label]) => (
+                <div key={label} className="border-b border-ink/15 py-4 pr-4 sm:border-b-0">
+                  <dt className="label text-smoke">{label}</dt>
+                  <dd className="mt-1 font-condensed text-6xl leading-none text-accent">{n}</dd>
+                </div>
+              ))}
+            </dl>
+            {closest && (
+              <p className="mt-4 text-sm text-ink/60">
+                Closest: <span className="text-ink">{closest.name}</span> ({closest.title}), {formatDistance(closest.distanceKm)}
+              </p>
+            )}
 
-      {stamps.some((s) => s.places.length > 0) && (
-        <section className="mt-10">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-ink/50">Places to visit</h2>
-          <div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
-          {stamps.filter((s) => s.places.length > 0).map((s) => (
-            <div key={s.work.id} className="mt-3">
-              <h3 className="font-bold">{s.work.title}</h3>
-              <ul className="mt-1 space-y-1 text-sm">
-                {s.places.map((p) => (
-                  <li key={p.id}>
-                    {visited.has(p.id) && "★ "}
-                    {p.name}
-                    {p.city && <span className="text-ink/60">, {p.city}</span>}
-                    <span className="text-ink/60"> · {formatDistance(p.distanceKm)}</span>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {stamps.length > 0 && (
+                <Link href={tripHref} className="label bg-accent px-5 py-3.5 text-night transition-colors hover:bg-ink">
+                  Create a trip →
+                </Link>
+              )}
+              <Link href="/#index" className="label border border-ink/30 px-5 py-3.5 transition-colors hover:border-accent hover:text-accent">
+                Add more titles
+              </Link>
+            </div>
+            <YourPassportNote passportId={passport.id} />
+
+            <p aria-hidden className="mt-auto select-none overflow-hidden whitespace-nowrap pt-10 font-mono text-[11px] leading-relaxed tracking-[0.2em] text-ink/30 sm:text-xs">
+              {mrz}<br />{mrz2}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Stamp pages */}
+      <section className="bg-cream py-14 text-night sm:py-20">
+        <div className={WRAP}>
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-night pb-5">
+            <h2 className="font-serif text-5xl leading-none tracking-tight sm:text-6xl">Stamps<span className="italic text-burgundy">.</span></h2>
+            <p className="label text-night/55">Gold means checked in on site</p>
+          </div>
+          {stamps.length === 0 ? (
+            <p className="mt-8 font-serif text-2xl italic text-night/70">No titles in this passport yet.</p>
+          ) : (
+            <ul className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {stamps.map((s, i) => (
+                <li key={s.work.id} style={{ transform: `rotate(${TILT[i % TILT.length]}deg)` }}
+                  className={`mx-auto flex aspect-square w-full max-w-[180px] flex-col items-center justify-center rounded-full border-[3px] border-double p-4 text-center ${
+                    s.visited ? "border-night bg-mustard text-night" : i % 2 ? "border-burgundy text-burgundy" : "border-night/70 text-night"
+                  }`}>
+                  <span className="label text-[9px] opacity-70">{s.work.type === "series" ? "Series" : "Film"}{s.work.year ? ` · ${s.work.year}` : ""}</span>
+                  <span className="mt-1 font-serif text-xl leading-[1.05]">{s.work.title}</span>
+                  <span className="mt-1.5 font-condensed text-base tracking-[0.15em]">
+                    {s.visited ? "Checked in" : `${s.places.length} ${s.places.length === 1 ? "place" : "places"}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {collections.length > 0 && (
+            <div className="mt-16">
+              <p className="label text-burgundy">Collections</p>
+              <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {collections.map((c) => (
+                  <li key={c.id} className={`relative p-5 ${c.complete ? "bg-night text-cream" : "bg-bone"}`}>
+                    <p className="font-serif text-2xl leading-tight">{c.name}</p>
+                    <p className={`mt-2 font-condensed text-4xl leading-none ${c.complete ? "text-mustard" : "text-burgundy"}`}>
+                      {c.done}<span className="opacity-50">/{c.total}</span>
+                    </p>
+                    <div className="mt-3 flex gap-1">
+                      {Array.from({ length: c.total }, (_, k) => (
+                        <span key={k} className={`h-1 flex-1 ${k < c.done ? (c.complete ? "bg-mustard" : "bg-burgundy") : "bg-night/15"}`} />
+                      ))}
+                    </div>
+                    {c.complete && <span className="label absolute right-4 top-4 rotate-[8deg] border border-mustard px-2 py-0.5 text-mustard">Complete</span>}
                   </li>
                 ))}
               </ul>
             </div>
-          ))}
+          )}
+        </div>
+      </section>
+
+      {/* Travel journal */}
+      {stamps.some((s) => s.places.length > 0) && (
+        <section className="bg-charcoal py-14 sm:py-20">
+          <div className={WRAP}>
+            <p className="label text-accent">Travel journal</p>
+            <h2 className="mt-3 font-serif text-5xl leading-none tracking-tight sm:text-6xl">Places to visit</h2>
+            <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              {stamps.filter((s) => s.places.length > 0).map((s) => (
+                <div key={s.work.id} className="border-t border-ink/15 pt-4">
+                  <h3 className="font-serif text-2xl italic text-accent">{s.work.title}</h3>
+                  <ul className="mt-3 space-y-2 text-sm">
+                    {s.places.map((p) => (
+                      <li key={p.id} className="flex items-baseline gap-2">
+                        <span aria-hidden className={visited.has(p.id) ? "text-accent" : "text-ink/25"}>{visited.has(p.id) ? "★" : "○"}</span>
+                        <span className="min-w-0 flex-1">
+                          {p.name}
+                          {p.city && <span className="text-ink/50">, {p.city}</span>}
+                        </span>
+                        <span className="label shrink-0 text-smoke">{formatDistance(p.distanceKm)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
 
-      <Link href="/" className="mt-10 inline-block rounded bg-ink px-6 py-3 font-bold text-paper hover:bg-ink/85">
-        Find filming places near you
-      </Link>
+      {stamps.length > 0 && (
+        <div className={WRAP}>
+          <ShareCard passportId={passport.id} data={card} />
+        </div>
+      )}
+
+      <div className={`${WRAP} py-14`}>
+        <Link href="/" className="group inline-flex items-baseline gap-3 font-serif text-4xl tracking-tight hover:text-accent sm:text-5xl">
+          Find filming places near you <span className="italic text-accent transition-transform group-hover:translate-x-1">→</span>
+        </Link>
+      </div>
     </>
   );
 }
+
+const TILT = [-6, 4, -2, 7, -4, 2];

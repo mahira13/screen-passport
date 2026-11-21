@@ -11,25 +11,29 @@ type Props = {
 
 export function CityPicker({ value, locating, onCity, onMyLocation }: Props) {
   return (
-    <div className="flex gap-2">
-      <label className="sr-only" htmlFor="city">Start from</label>
-      <select
-        id="city"
-        value={value}
-        onChange={(e) => onCity(e.target.value)}
-        className="min-w-0 flex-1 rounded-lg border border-ink/20 bg-surface px-3 py-2.5 text-base"
-      >
-        {value === "me" && <option value="me">My location</option>}
-        {CITIES.map((c) => (
-          <option key={c.id} value={c.id}>{c.name}</option>
-        ))}
-      </select>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <div className="min-w-0 flex-1">
+        <label className="label text-smoke" htmlFor="city">Start from</label>
+        <select
+          id="city"
+          value={value}
+          onChange={(e) => onCity(e.target.value)}
+          className="mt-1 block w-full cursor-pointer appearance-none border-b-2 border-ink/40 bg-transparent py-2 pr-8 font-serif text-3xl text-ink focus:border-accent focus:outline-none"
+          style={{ backgroundImage: "linear-gradient(45deg, transparent 50%, #e5b83f 50%), linear-gradient(135deg, #e5b83f 50%, transparent 50%)", backgroundPosition: "calc(100% - 14px) 55%, calc(100% - 8px) 55%", backgroundSize: "6px 6px", backgroundRepeat: "no-repeat" }}
+        >
+          {value === "me" && <option value="me">My location</option>}
+          {CITIES.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
       <button
         type="button"
         onClick={onMyLocation}
         disabled={locating}
-        className="shrink-0 rounded-lg bg-ink px-3 py-2.5 text-sm font-medium text-paper disabled:opacity-60"
+        className="label inline-flex shrink-0 items-center justify-center gap-2 border border-accent px-4 py-3 text-accent transition-colors hover:bg-accent hover:text-night disabled:opacity-60"
       >
+        <span aria-hidden>◎</span>
         {locating ? "Locating…" : "Use my location"}
       </button>
     </div>

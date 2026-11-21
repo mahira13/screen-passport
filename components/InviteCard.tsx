@@ -65,12 +65,13 @@ export function InviteCard({ tripId, data }: { tripId: string; data: InviteData 
   };
 
   return (
-    <section className="mt-8 rounded-md bg-surface p-5">
-      <h2 className="text-xs font-bold uppercase tracking-widest text-ink/50">Invite friends</h2>
+    <section className="mt-6 bg-burgundy/25 p-5 sm:p-6">
+      <h2 className="label text-accent">Invite friends</h2>
+      <p className="mt-2 font-serif text-2xl leading-tight">Now showing, <span className="italic">in your story.</span></p>
       <p className="mt-1 text-sm text-ink/70">A &quot;Now showing&quot; ticket for your story, with the trip link.</p>
       <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-end">
         <div
-          className="shrink-0 overflow-hidden rounded-md shadow-lg ring-1 ring-ink/10"
+          className="shrink-0 rotate-[-2deg] overflow-hidden shadow-2xl shadow-black/60"
           style={{ width: INVITE_WIDTH * PREVIEW_SCALE, height: INVITE_HEIGHT * PREVIEW_SCALE }}
           aria-label={`Preview of the invite: Now showing ${data.tripTitle}, ${data.when}, venue ${data.venue}`}
           role="img"
@@ -83,10 +84,10 @@ export function InviteCard({ tripId, data }: { tripId: string; data: InviteData 
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto">
           <button type="button" onClick={onShare} disabled={busy}
-            className="rounded bg-accent px-5 py-3 font-bold text-white disabled:opacity-60">
+            className="label bg-accent px-5 py-3.5 text-night transition-colors hover:bg-ink disabled:opacity-60">
             {busy ? "Drawing your invite…" : canShare ? "Share to your story" : "Download invite"}
           </button>
-          <button type="button" onClick={onCaption} className="rounded bg-ink/10 px-5 py-3 text-sm font-semibold hover:bg-ink/20">
+          <button type="button" onClick={onCaption} className="label border border-ink/30 px-5 py-3.5 transition-colors hover:border-accent hover:text-accent">
             Copy caption
           </button>
           {message && <p role="status" className="max-w-xs text-sm">{message}</p>}

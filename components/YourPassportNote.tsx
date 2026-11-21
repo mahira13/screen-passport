@@ -8,8 +8,8 @@ export function YourPassportNote({ passportId }: { passportId: string }) {
   const { id } = usePassport();
   if (id !== passportId) return null;
   return (
-    <p className="mt-4 rounded-md bg-surface p-3 text-sm ring-1 ring-ink/10">
-      This is your passport. <Link href="/" className="font-semibold underline">Add more titles</Link> on the map.
+    <p className="mt-5 border-l-2 border-accent pl-3 text-sm text-ink/75">
+      This is your passport. <Link href="/#index" className="font-semibold text-accent underline-offset-4 hover:underline">Add more titles</Link> from the index.
     </p>
   );
 }

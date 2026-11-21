@@ -7,27 +7,36 @@ import type { SyncStatus } from "@/lib/passport-store";
 
 type Props = { summary: PassportSummary; passportId: string | null; sync: SyncStatus };
 
+const Stat = ({ n, label }: { n: string | number; label: string }) => (
+  <span className="flex items-baseline gap-1.5">
+    <span className="font-condensed text-2xl leading-none text-ink">{n}</span>
+    <span className="label text-smoke">{label}</span>
+  </span>
+);
+
 export function PassportBar({ summary: s, passportId, sync }: Props) {
   if (s.titles === 0) return null;
-  const parts = [
-    `${s.titles} ${s.titles === 1 ? "title" : "titles"}`,
-    `${s.places} ${s.places === 1 ? "place" : "places"}`,
-    ...(s.closestKm !== null ? [`closest ${formatDistance(s.closestKm)}`] : []),
-  ];
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[1000] border-t border-ink/10 bg-[#181818]/95 text-ink backdrop-blur">
-      <div className="mx-auto flex max-w-screen-2xl items-center gap-3 px-4 py-3 sm:px-8 lg:px-12 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div className="fixed inset-x-0 bottom-0 z-[1000] border-t-2 border-accent bg-night/95 text-ink backdrop-blur">
+      <div className="mx-auto flex max-w-screen-2xl items-center gap-4 px-4 py-3 sm:px-8 lg:px-12 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <span aria-hidden className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-accent font-serif text-lg italic text-accent sm:flex">
+          SP
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent">Your Screen Passport</p>
-          <p className="truncate text-sm">{parts.join(" · ")}</p>
+          <p className="font-serif text-lg italic leading-none text-accent">Your Screen Passport</p>
+          <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
+            <Stat n={s.titles} label={s.titles === 1 ? "title" : "titles"} />
+            <Stat n={s.places} label={s.places === 1 ? "place" : "places"} />
+            {s.closestKm !== null && <span className="label hidden self-center text-smoke sm:inline">closest {formatDistance(s.closestKm)}</span>}
+          </p>
           {sync === "error" && <p className="text-xs text-ink/60">Not saved yet, retrying…</p>}
         </div>
         {passportId ? (
-          <Link href={`/p/${passportId}`} className="shrink-0 rounded bg-accent px-4 py-2 text-sm font-bold text-white">
-            Open
+          <Link href={`/p/${passportId}`} className="label shrink-0 bg-accent px-5 py-3 text-night transition-colors hover:bg-ink">
+            Open passport →
           </Link>
         ) : (
-          <span className="shrink-0 text-xs text-ink/60">Saving…</span>
+          <span className="label shrink-0 text-smoke">Saving…</span>
         )}
       </div>
     </div>

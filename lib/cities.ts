@@ -26,3 +26,12 @@ export const DEFAULT_CITY = CITIES[0];
 export function findCity(id: string | null | undefined): City | undefined {
   return CITIES.find((c) => c.id === id);
 }
+
+const foldName = (s: string) => s.toLowerCase().replace(/ß/g, "ss").normalize("NFKD").replace(/[^a-z]/g, "");
+
+/** "Görlitz" or "goerlitz" -> the start city, if it is one. */
+export function findCityByName(name: string | null | undefined): City | undefined {
+  if (!name) return undefined;
+  const key = foldName(name);
+  return CITIES.find((c) => foldName(c.name) === key || foldName(c.id) === key);
+}

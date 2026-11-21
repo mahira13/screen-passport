@@ -1,34 +1,54 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Bebas_Neue, Instrument_Serif, Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
+import { SiteHeader, Wordmark } from "@/components/SiteHeader";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+// Space Grotesk stays for the share and invite images (see the share-card skill).
 const grotesk = Space_Grotesk({ variable: "--font-grotesk", subsets: ["latin"] });
+const serif = Instrument_Serif({ variable: "--font-instrument", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
+const condensed = Bebas_Neue({ variable: "--font-bebas", subsets: ["latin"], weight: "400" });
 
 export const metadata: Metadata = {
   title: "Screen Passport",
   description: "See where your favourite films and series were filmed near you. Visit them, stamp them, share them.",
 };
 
-export const viewport: Viewport = { themeColor: "#141414", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#101012", width: "device-width", initialScale: 1 };
+
+const PILLARS = [
+  ["Discover", "your cinema", "Real filming places from the films and series you love, each with a source."],
+  ["Explore", "the world", "Turn them into a dated trip, walk it with friends, let Layla plan the rest."],
+  ["Collect", "your stories", "Stamps, gold check-ins and collections in a passport worth sharing."],
+] as const;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${grotesk.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${grotesk.variable} ${serif.variable} ${condensed.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <header className="sticky top-0 z-[1100] bg-gradient-to-b from-paper via-paper/95 to-paper/0">
-          <div className="mx-auto flex w-full max-w-screen-2xl items-center px-4 py-4 sm:px-8 lg:px-12">
-            <Link href="/" className="text-lg font-black uppercase tracking-tight text-accent sm:text-xl">
-              Screen Passport
-            </Link>
-          </div>
-        </header>
+        <SiteHeader />
         {children}
-        <footer className="mt-auto border-t border-ink/10">
-          <div className="mx-auto flex w-full max-w-screen-2xl gap-4 px-4 pb-24 pt-6 text-xs text-ink/50 sm:px-8 lg:px-12">
-            <Link href="/impressum" className="hover:text-ink">Impressum</Link>
-            <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+        <footer className="mt-auto bg-night">
+          <div className="mx-auto w-full max-w-screen-2xl px-4 pb-28 pt-16 sm:px-8 lg:px-12">
+            <ol className="grid gap-10 border-t border-ink/15 pt-10 md:grid-cols-3">
+              {PILLARS.map(([verb, rest, text], i) => (
+                <li key={verb}>
+                  <p className="label text-smoke">0{i + 1}</p>
+                  <p className="mt-3 font-serif text-4xl leading-none sm:text-5xl">
+                    {verb} <span className="italic text-accent">{rest}.</span>
+                  </p>
+                  <p className="mt-3 max-w-xs text-sm text-ink/60">{text}</p>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-16 flex flex-wrap items-end justify-between gap-6 border-t border-ink/15 pt-6">
+              <Wordmark />
+              <nav aria-label="Legal" className="label flex gap-6 text-ink/50">
+                <Link href="/impressum" className="hover:text-accent">Impressum</Link>
+                <Link href="/privacy" className="hover:text-accent">Privacy</Link>
+              </nav>
+            </div>
           </div>
         </footer>
       </body>

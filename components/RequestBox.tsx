@@ -6,8 +6,10 @@ import { track } from "@/lib/analytics";
 type State = { kind: "idle" | "sending" } | { kind: "done" | "error"; text: string };
 
 /** "Which title should we add?" -> /api/request. Never answers with AI, only counts the request. */
-export function RequestBox({ near }: { near?: string }) {
-  const [title, setTitle] = useState("");
+type Props = { near?: string; initialTitle?: string; source?: "trip" | "search" };
+
+export function RequestBox({ near, initialTitle = "", source = "trip" }: Props) {
+  const [title, setTitle] = useState(initialTitle);
   const [state, setState] = useState<State>({ kind: "idle" });
 
   const submit = async (e: React.FormEvent) => {
@@ -24,7 +26,7 @@ export function RequestBox({ near }: { near?: string }) {
       if (json.known) {
         setState({ kind: "done", text: "We already have that one. Its places show up when they're near your start." });
       } else {
-        track("request_created", { from: "trip" });
+        track("request_created", { from: source });
         setState({ kind: "done", text: "Thanks, we'll add it." });
         setTitle("");
       }
@@ -35,14 +37,14 @@ export function RequestBox({ near }: { near?: string }) {
 
   return (
     <form onSubmit={submit} className="mt-3">
-      <label htmlFor="request-title" className="text-sm font-medium">
-        Which film or series should we add{near ? ` near ${near}` : ""}?
+      <label htmlFor={`request-title-${source}`} className="text-sm font-medium">
+        {source === "search" ? "Ask us to add it" : `Which film or series should we add${near ? ` near ${near}` : ""}?`}
       </label>
       <div className="mt-1 flex gap-2">
-        <input id="request-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required
-          className="min-w-0 flex-1 rounded border border-ink/30 bg-surface px-4 py-2" placeholder="Title" />
+        <input id={`request-title-${source}`} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required
+          className="min-w-0 flex-1 border border-ink/25 bg-surface px-4 py-2.5 focus:border-accent focus:outline-none" placeholder="Title" />
         <button type="submit" disabled={state.kind === "sending"}
-          className="shrink-0 rounded bg-ink px-4 py-2 font-semibold text-paper disabled:opacity-60">
+          className="label shrink-0 bg-accent px-5 py-2.5 text-night transition-colors hover:bg-ink disabled:opacity-60">
           Request
         </button>
       </div>

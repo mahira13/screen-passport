@@ -21,13 +21,14 @@ type Props = {
   onReady?: () => void;
 };
 
-const INK = "#141414"; // marker ring, matches the page background
-const ACCENT = "#E50914";
+const INK = "#101012"; // marker ring, matches the page background
+const CREAM = "#F3EBDD";
+const GOLD = "#E5B83F";
 
 function dotIcon(colour: string) {
   return L.divIcon({
     className: "",
-    html: `<span style="display:block;width:18px;height:18px;border-radius:50%;background:${colour};border:3px solid ${INK};box-shadow:0 0 0 2px #fff"></span>`,
+    html: `<span style="display:block;width:18px;height:18px;border-radius:50%;background:${colour};border:3px solid ${INK};box-shadow:0 0 0 2px ${GOLD},0 2px 8px rgba(0,0,0,.5)"></span>`,
     iconSize: [18, 18],
     iconAnchor: [9, 9],
     popupAnchor: [0, -10],
@@ -57,7 +58,7 @@ function clusterIcon(cluster: L.MarkerCluster) {
   const ring = colourRing(cluster.getAllChildMarkers().map((m) => markerColour.get(m) ?? OTHER_COLOUR));
   return L.divIcon({
     className: "",
-    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:${ring};box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.3)"><span style="display:flex;align-items:center;justify-content:center;width:${size - 14}px;height:${size - 14}px;border-radius:50%;background:${INK};color:#F5F5F1;font:600 14px var(--font-inter),system-ui,sans-serif">${n}</span></span>`,
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:${ring};box-shadow:0 0 0 2px ${GOLD},0 2px 8px rgba(0,0,0,.5)"><span style="display:flex;align-items:center;justify-content:center;width:${size - 14}px;height:${size - 14}px;border-radius:50%;background:${INK};color:${CREAM};font:400 18px var(--font-bebas),system-ui,sans-serif;letter-spacing:.04em">${n}</span></span>`,
     iconSize: [size, size],
   });
 }
@@ -70,13 +71,15 @@ function popupContent(p: NearbyPlace): HTMLElement {
     if (style) e.setAttribute("style", style);
     return e;
   };
-  const box = el("div", "", "font-family:var(--font-inter),system-ui,sans-serif;color:#16213A;min-width:180px");
+  const box = el("div", "", `font-family:var(--font-inter),system-ui,sans-serif;color:${CREAM};min-width:190px;max-width:240px`);
   box.append(
-    el("strong", p.name, "display:block;font-size:15px;line-height:1.2"),
-    el("div", `${p.title} · ${formatDistance(p.distanceKm)}`, "font-size:12px;opacity:.75;margin-top:2px"),
+    el("div", `${p.title} · ${formatDistance(p.distanceKm)}`,
+      `font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:${GOLD}`),
+    el("strong", p.name, "display:block;font:400 22px/1.05 var(--font-instrument),Georgia,serif;margin-top:4px"),
   );
-  if (p.sceneNote) box.append(el("div", p.sceneNote, "font-size:13px;margin-top:6px"));
-  const a = el("a", "Directions", "display:inline-block;margin-top:8px;font-weight:600;color:#16213A;text-decoration:underline");
+  if (p.sceneNote) box.append(el("div", p.sceneNote, "font:italic 14px/1.3 var(--font-instrument),Georgia,serif;margin-top:6px;opacity:.8"));
+  const a = el("a", "Directions →",
+    `display:inline-block;margin-top:10px;font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:${GOLD};text-decoration:none`);
   Object.assign(a, { href: directionsUrl(p), target: "_blank", rel: "noopener noreferrer" });
   a.addEventListener("click", () => track("directions_clicked", { location: p.id, from: "map" }));
   box.append(a);
@@ -122,7 +125,7 @@ export default function NearbyMap({ origin, places, focus, colours, onReady }: P
   useEffect(() => {
     if (!map) return;
     const start = L.circleMarker([origin.lat, origin.lng], {
-      radius: 8, color: ACCENT, weight: 4, fillColor: "#ffffff", fillOpacity: 1,
+      radius: 9, color: GOLD, weight: 4, fillColor: INK, fillOpacity: 1,
     }).addTo(map);
     return () => {
       start.remove();

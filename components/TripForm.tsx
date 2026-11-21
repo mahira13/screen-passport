@@ -18,7 +18,9 @@ type Props = {
 };
 
 const choice = (on: boolean) =>
-  `rounded px-4 py-2 text-sm font-medium ${on ? "bg-accent text-white" : "border border-ink/30 bg-surface"}`;
+  `label px-5 py-3 transition-colors ${on ? "bg-accent text-night" : "border border-ink/25 hover:border-accent hover:text-accent"}`;
+const legend = "label text-smoke";
+const field = "mt-2 block w-full border-b-2 border-ink/30 bg-transparent px-1 py-2.5 text-lg focus:border-accent focus:outline-none";
 
 export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
   const router = useRouter();
@@ -66,9 +68,9 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <fieldset>
-        <legend className="text-sm font-semibold">How will you get around?</legend>
+        <legend className={legend}>How will you get around?</legend>
         <div className="mt-2 flex flex-wrap gap-2">
           {TRIP_MODES.map((m) => (
             <button key={m} type="button" aria-pressed={mode === m} className={choice(mode === m)}
@@ -77,14 +79,14 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
             </button>
           ))}
         </div>
-        <p className="mt-1 text-xs text-ink/70">
+        <p className="mt-2 text-xs text-ink/70">
           Places within about {RADIUS_KM[mode]} km of {from.label}: {placesByMode[mode]}
         </p>
       </fieldset>
 
       {none ? (
-        <div className="rounded-md bg-surface p-4 ring-1 ring-ink/10">
-          <p className="font-semibold">
+        <div className="border-l-2 border-accent bg-surface p-5">
+          <p className="font-serif text-2xl">
             No films near you yet.
             {(nearest ?? nearestCity) && ` The nearest are in ${nearest ?? nearestCity}.`}
           </p>
@@ -95,9 +97,9 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
         </div>
       ) : (
         // The request box above is its own form, so the trip form starts here (forms can't nest).
-        <form onSubmit={submit} className="space-y-5">
+        <form onSubmit={submit} className="space-y-8">
           <fieldset>
-            <legend className="text-sm font-semibold">How long?</legend>
+            <legend className={legend}>How long?</legend>
             <div className="mt-2 flex gap-2">
               {TRIP_LENGTHS.map((l) => (
                 <button key={l} type="button" aria-pressed={length === l} className={choice(length === l)} onClick={() => setLength(l)}>
@@ -108,30 +110,30 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
           </fieldset>
 
           <div>
-            <label htmlFor="trip-when" className="text-sm font-semibold">Date and start time</label>
+            <label htmlFor="trip-when" className={legend}>Date and start time</label>
             <input id="trip-when" type="datetime-local" required value={when} onChange={(e) => setWhen(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-ink/30 bg-surface px-4 py-2" />
+              className={field} />
             {tz && <p className="mt-1 text-xs text-ink/70">In {tzLabel(tz)} time.</p>}
           </div>
 
           <div>
-            <label htmlFor="trip-meet" className="text-sm font-semibold">Meeting point <span className="font-normal">(optional)</span></label>
+            <label htmlFor="trip-meet" className={legend}>Meeting point <span className="normal-case tracking-normal">(optional)</span></label>
             <input id="trip-meet" maxLength={MEETING_POINT_MAX} value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)}
-              placeholder="The first stop" className="mt-1 block w-full rounded-md border border-ink/30 bg-surface px-4 py-2" />
+              placeholder="The first stop" className={`${field} placeholder:text-ink/30`} />
             <p className="mt-1 text-xs text-ink/70">Pick a public place. Leave empty to meet at the first stop.</p>
           </div>
 
           <div>
-            <label htmlFor="trip-name" className="text-sm font-semibold">Your first name</label>
+            <label htmlFor="trip-name" className={legend}>Your first name</label>
             <input id="trip-name" required maxLength={FIRST_NAME_MAX} autoComplete="given-name" value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-ink/30 bg-surface px-4 py-2" />
+              className={field} />
             <p className="mt-1 text-xs text-ink/70">Shown on the trip page. No surname or contact details needed.</p>
           </div>
 
           {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
           <button type="submit" disabled={sending}
-            className="w-full rounded bg-ink px-5 py-3 font-semibold text-paper disabled:opacity-60">
+            className="label w-full bg-accent px-5 py-4 text-night transition-colors hover:bg-ink disabled:opacity-60">
             {sending ? "Planning your trip…" : "Create the trip"}
           </button>
         </form>

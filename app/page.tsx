@@ -1,31 +1,45 @@
+import { CollectionChallenges, type ChallengeCollection } from "@/components/CollectionChallenges";
 import { NearbyExplorer } from "@/components/NearbyExplorer";
 import { DEFAULT_CITY } from "@/lib/cities";
+import { destinations, type Destination } from "@/lib/destinations";
 import { getLiveData } from "@/lib/live-data";
 import { buildNearby, type NearbyResult } from "@/lib/nearby";
 
+type Initial = { nearby: NearbyResult | null; destinations: Destination[]; collections: ChallengeCollection[] };
+
 // The Berlin list is rendered on the server from cached data, so it shows
 // before any JavaScript runs. The map loads after it.
-async function initialNearby(): Promise<NearbyResult | null> {
+async function initialData(): Promise<Initial> {
   try {
     const data = await getLiveData();
-    return buildNearby(data.locations, data.works, DEFAULT_CITY);
+    const live = new Set(data.locations.map((l) => l.work_id));
+    const titleOf = new Map(data.works.map((w) => [w.id, w.title]));
+    return {
+      nearby: buildNearby(data.locations, data.works, DEFAULT_CITY),
+      destinations: destinations(data.locations),
+      collections: data.collections.map((c) => ({
+        id: c.id,
+        name: c.name,
+        city: c.city,
+        description: c.description,
+        works: [...new Set(c.work_ids)].flatMap((id) => {
+          const title = titleOf.get(id);
+          return title ? [{ id, title, live: live.has(id) }] : [];
+        }),
+      })),
+    };
   } catch (e) {
     console.error("nearby prerender failed:", e instanceof Error ? e.message : e);
-    return null; // the browser fetches /api/nearby instead
+    return { nearby: null, destinations: [], collections: [] }; // the browser fetches /api/nearby instead
   }
 }
 
 export default async function Home() {
-  const initial = await initialNearby();
+  const initial = await initialData();
   return (
-    <main className="w-full pb-28">
-      <section className="mx-auto w-full max-w-screen-2xl px-4 pb-6 pt-4 sm:px-8 lg:px-12">
-        <h1 className="max-w-3xl text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">
-          Films and series shot near you.
-        </h1>
-        <p className="mt-3 text-lg text-ink/70 sm:text-xl">Visit them, stamp them, share them.</p>
-      </section>
-      <NearbyExplorer initial={initial} />
+    <main className="w-full">
+      <NearbyExplorer initial={initial.nearby} destinations={initial.destinations} />
+      <CollectionChallenges collections={initial.collections} />
     </main>
   );
 }

@@ -10,12 +10,16 @@ export const metadata: Metadata = { title: "Create a trip · Screen Passport", r
 
 export default function NewTripPage(props: PageProps<"/trip/new">) {
   return (
-    <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 pb-16 pt-6 [&>*]:max-w-2xl">
-      <Link href="/" className="text-sm text-ink/60 hover:text-ink">← Back</Link>
-      <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Create a trip</h1>
-      <Suspense fallback={<p className="mt-4 text-sm text-ink/60">Loading…</p>}>
+    <main className="relative w-full overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute -left-40 top-0 h-[28rem] w-[28rem] rounded-full bg-burgundy/35 blur-[120px]" />
+      <div className="relative mx-auto w-full max-w-screen-2xl px-4 pb-20 pt-8 sm:px-8 sm:pt-12 lg:px-12 [&>*]:max-w-2xl">
+      <Link href="/" className="label text-smoke hover:text-accent">← Back</Link>
+      <p className="label mt-8 text-accent">02 — Explore</p>
+      <h1 className="mt-3 font-serif text-6xl leading-[0.92] tracking-tight sm:text-8xl">Create a <span className="italic text-accent">trip.</span></h1>
+      <Suspense fallback={<p className="label mt-6 text-smoke">Loading…</p>}>
         <NewTrip searchParams={props.searchParams} />
       </Suspense>
+      </div>
     </main>
   );
 }
@@ -32,9 +36,9 @@ async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, 
 
   if (works.length === 0) {
     return (
-      <p className="mt-4">
+      <p className="mt-6 text-lg text-ink/80">
         Pick a title first: tap <strong>Create a trip</strong> on a title card.{" "}
-        <Link href="/" className="underline">Find filming places</Link>
+        <Link href="/#index" className="text-accent underline underline-offset-4">Find filming places</Link>
       </p>
     );
   }
@@ -46,13 +50,13 @@ async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, 
 
   return (
     <>
-      <p className="mt-1 text-ink/80">
-        {works.map((w) => w.title).join(", ")} · from {start.label}
+      <p className="mt-6 font-serif text-2xl italic leading-snug text-ink/90">
+        {works.map((w) => w.title).join(", ")} <span className="not-italic text-smoke">· from {start.label}</span>
       </p>
-      <p className="mt-1 text-sm text-ink/70">
+      <p className="mt-2 text-sm text-ink/70">
         We pick the closest filming places and put them in a sensible order. Friends can join with a link.
       </p>
-      <div className="mt-6">
+      <div className="mt-10 border-t border-ink/15 pt-8">
         <TripForm works={works} from={{ param: start.param, label: start.label, tz: start.tz }} placesByMode={placesByMode}
           nearestCity={nearestCity(live.locations, ids, start)} />
       </div>

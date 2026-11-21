@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Privacy · Screen Passport" };
 
 const H = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="mt-6 font-display text-lg font-semibold">{children}</h2>
+  <h2 className="mt-6 label text-accent">{children}</h2>
 );
 
 // Fill in every [placeholder] before launch.
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 space-y-2 pb-16 pt-6 text-base text-ink/85 [&>*]:max-w-2xl">
-      <h1 className="text-4xl font-black tracking-tight text-ink sm:text-5xl">Privacy</h1>
+    <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 space-y-2 pb-20 pt-10 sm:pt-16 text-base text-ink/85 [&>*]:max-w-2xl">
+      <h1 className="font-serif text-5xl tracking-tight text-ink sm:text-7xl">Privacy</h1>
       <p className="text-sm text-ink/70">Last updated: [date]</p>
 
       <H>Who is responsible</H>

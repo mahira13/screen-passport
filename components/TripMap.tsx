@@ -6,18 +6,20 @@ import { useEffect } from "react";
 import type { LatLng } from "@/lib/types";
 import { useLeafletMap } from "@/lib/use-leaflet-map";
 
-const ACCENT = "#E50914";
+const GOLD = "#E5B83F";
+const INK = "#101012";
+const CREAM = "#F3EBDD";
 
 function numberIcon(n: number) {
   return L.divIcon({
     className: "",
-    html: `<span style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:${n === 1 ? ACCENT : "#F5F5F1"};color:${n === 1 ? "#fff" : "#141414"};border:2px solid #141414;box-shadow:0 1px 4px rgba(0,0,0,.35);font:700 13px var(--font-inter),system-ui,sans-serif">${n}</span>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:${n === 1 ? GOLD : INK};color:${n === 1 ? INK : CREAM};border:2px solid ${n === 1 ? INK : GOLD};box-shadow:0 2px 8px rgba(0,0,0,.5);font:400 18px var(--font-bebas),system-ui,sans-serif">${n}</span>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
   });
 }
 
-/** Numbered stops joined by a line in visiting order. Stop 1 (the meeting point) is red. */
+/** Numbered stops joined by a line in visiting order. Stop 1 (the meeting point) is gold. */
 export default function TripMap({ stops }: { stops: (LatLng & { name: string })[] }) {
   const first = stops[0] ?? { lat: 52.52, lng: 13.405 };
   const [ref, map] = useLeafletMap({ center: [first.lat, first.lng], zoom: 13, scrollWheelZoom: false });
@@ -26,7 +28,7 @@ export default function TripMap({ stops }: { stops: (LatLng & { name: string })[
     if (!map || stops.length === 0) return;
     const points = stops.map((s) => [s.lat, s.lng] as [number, number]);
     const layer = L.layerGroup([
-      L.polyline(points, { color: ACCENT, weight: 4, opacity: 0.9, dashArray: "8 8" }),
+      L.polyline(points, { color: GOLD, weight: 3, opacity: 0.9, dashArray: "2 8", lineCap: "round" }),
       ...stops.map((s, i) => L.marker([s.lat, s.lng], { icon: numberIcon(i + 1), title: `${i + 1}. ${s.name}`, alt: `${i + 1}. ${s.name}` })),
     ]).addTo(map);
     if (points.length === 1) map.setView(points[0], 15);

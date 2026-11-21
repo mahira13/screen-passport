@@ -36,27 +36,41 @@ export function JoinTrip({ tripId, organiser, joined }: { tripId: string; organi
   };
 
   return (
-    <section className="mt-8 rounded-md bg-surface p-4 ring-1 ring-ink/10">
-      <h2 className="font-display text-lg font-semibold">Who&apos;s coming</h2>
-      <ul className="mt-2 flex flex-wrap gap-2 text-sm">
-        <li className="rounded bg-accent px-3 py-1 font-medium">{organiser} (organiser)</li>
+    <section className="mt-12 border-t-2 border-accent bg-surface p-5 sm:p-6">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-serif text-3xl">Who&apos;s coming</h2>
+        <span className="label text-smoke">{joined.length + 1} going</span>
+      </div>
+      {/* First names only, as people typed them. */}
+      <ul className="mt-4 flex flex-wrap gap-2 text-sm">
+        <li className="flex items-center gap-2 bg-accent py-1 pl-1 pr-3 font-medium text-night">
+          <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-night font-condensed text-base text-accent">
+            {organiser.charAt(0).toUpperCase()}
+          </span>
+          {organiser} <span className="label text-[9px] text-night/70">organiser</span>
+        </li>
         {joined.map((n, i) => (
-          <li key={i} className="rounded bg-paper px-3 py-1 ring-1 ring-ink/10">{n}</li>
+          <li key={i} className="flex items-center gap-2 border border-ink/15 py-1 pl-1 pr-3">
+            <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-burgundy font-condensed text-base text-cream">
+              {n.charAt(0).toUpperCase()}
+            </span>
+            {n}
+          </li>
         ))}
       </ul>
       {done ? (
-        <p role="status" className="mt-3 text-sm font-medium">You&apos;re in. See you there!</p>
+        <p role="status" className="mt-4 font-serif text-xl italic text-accent">You&apos;re in. See you there!</p>
       ) : full ? (
         <p className="mt-3 text-sm">This trip is full.</p>
       ) : (
-        <form onSubmit={submit} className="mt-3">
-          <label htmlFor="join-name" className="text-sm font-medium">Join with your first name</label>
+        <form onSubmit={submit} className="mt-5">
+          <label htmlFor="join-name" className="label text-smoke">Join with your first name</label>
           <div className="mt-1 flex gap-2">
             <input id="join-name" required maxLength={FIRST_NAME_MAX} autoComplete="given-name" value={name}
               onChange={(e) => setName(e.target.value)}
-              className="min-w-0 flex-1 rounded border border-ink/30 bg-paper/40 px-4 py-2" />
+              className="min-w-0 flex-1 border-b-2 border-ink/30 bg-transparent px-1 py-2 text-lg focus:border-accent focus:outline-none" />
             <button type="submit" disabled={sending}
-              className="shrink-0 rounded bg-ink px-4 py-2 font-semibold text-paper disabled:opacity-60">
+              className="label shrink-0 bg-accent px-5 py-2.5 text-night transition-colors hover:bg-ink disabled:opacity-60">
               Join
             </button>
           </div>

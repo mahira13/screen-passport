@@ -12,8 +12,9 @@ import { supabaseAdmin } from "../lib/supabase";
 config({ path: ".env.local" });
 
 const ENDPOINT = "https://nominatim.openstreetmap.org/search";
-const DELAY_MS = 1100;
-const contact = process.env.GEOCODE_CONTACT; // an email or URL, required by the policy
+const DELAY_MS = 1000; // Nominatim allows at most one request per second
+// An email or URL so Nominatim can reach us; required by their policy.
+const contact = process.env.GEOCODER_CONTACT || process.env.GEOCODE_CONTACT;
 const USER_AGENT = `ScreenPassport/0.1 (${contact ?? "contact not set"})`;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -31,7 +32,7 @@ async function lookup(q: string): Promise<NominatimHit | null> {
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
   if (!contact) {
-    console.error("Set GEOCODE_CONTACT (your email or project URL) in .env.local first.");
+    console.error("Set GEOCODER_CONTACT (your email or project URL) in .env.local first.");
     process.exit(1);
   }
   const db = supabaseAdmin();

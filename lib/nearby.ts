@@ -80,3 +80,15 @@ export function initialMapPlaces(places: NearbyPlace[]): NearbyPlace[] {
   const near = places.filter((p) => p.distanceKm <= 30);
   return near.length >= 3 ? near : places.slice(0, 3);
 }
+
+/** Markers to draw: one title when a filter is set (and still present), else all. */
+export function visiblePlaces(places: NearbyPlace[], selected: string | null): NearbyPlace[] {
+  const only = selected ? places.filter((p) => p.workId === selected) : [];
+  return only.length ? only : places;
+}
+
+/** What the map zooms to: all of a filtered title's places, else the usual first view. */
+export function focusPlaces(places: NearbyPlace[], selected: string | null): NearbyPlace[] {
+  const only = selected ? places.filter((p) => p.workId === selected) : [];
+  return only.length ? only : initialMapPlaces(places);
+}

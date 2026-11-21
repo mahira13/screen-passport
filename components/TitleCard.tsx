@@ -5,23 +5,42 @@ import { formatDistance } from "@/lib/distance";
 import type { NearbyPlace, NearbyTitle } from "@/lib/nearby";
 import { LocationCard } from "./LocationCard";
 
-type Props = { title: NearbyTitle; places: NearbyPlace[]; watched: boolean; onToggle: () => void };
+type Props = {
+  title: NearbyTitle;
+  places: NearbyPlace[];
+  colour: string;
+  watched: boolean;
+  selected: boolean;
+  onToggle: () => void;
+  onSelect: () => void;
+};
 
-export function TitleCard({ title: t, places, watched, onToggle }: Props) {
+export function TitleCard({ title: t, places, colour, watched, selected, onToggle, onSelect }: Props) {
   const [open, setOpen] = useState(false);
   const listId = `places-${t.workId}`;
   return (
-    <article className={`rounded-xl bg-white p-4 shadow-sm ring-1 ${watched ? "ring-2 ring-gold" : "ring-navy/10"}`}>
+    <article
+      className={`rounded-xl bg-white p-4 shadow-sm ${
+        selected ? "ring-2 ring-navy" : watched ? "ring-2 ring-gold" : "ring-1 ring-navy/10"
+      }`}
+    >
       <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs uppercase tracking-wide text-navy/60">{t.type === "series" ? "Series" : "Film"}</p>
+        {/* Tapping the title shows only this title on the map (tap again for all). */}
+        <button type="button" onClick={onSelect} aria-pressed={selected}
+          aria-label={`${selected ? "Showing" : "Show"} ${t.title} on the map`}
+          className="min-w-0 flex-1 text-left">
+          <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-navy/60">
+            <span aria-hidden className="h-2.5 w-2.5 rounded-full ring-2 ring-navy" style={{ background: colour }} />
+            {t.type === "series" ? "Series" : "Film"}
+            {selected && <span className="normal-case tracking-normal text-navy"> · on the map</span>}
+          </p>
           <h3 className="font-display text-lg font-semibold leading-tight">{t.title}</h3>
           <p className="mt-1 text-sm">
             {t.placeCount} {t.placeCount === 1 ? "place" : "places"}
             <span className="text-navy/60"> · closest: </span>
             {t.closest.name}, {formatDistance(t.closest.distanceKm)}
           </p>
-        </div>
+        </button>
         <button
           type="button"
           onClick={onToggle}

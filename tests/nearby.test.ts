@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CITIES, DEFAULT_CITY, findCity } from "@/lib/cities";
-import { buildNearby, initialMapPlaces, titlesByBand, type LiveLocation } from "@/lib/nearby";
+import { buildNearby, focusPlaces, initialMapPlaces, titlesByBand, visiblePlaces, type LiveLocation } from "@/lib/nearby";
 import type { Work } from "@/lib/types";
 
 const works: Work[] = [
@@ -81,5 +81,20 @@ describe("buildNearby notes and source", () => {
     );
     expect(r.places[0]).toMatchObject({ sceneNote: "Meets Nicky", visitNote: "Public square", sourceName: "visitBerlin", sourceUrl: "https://visitberlin.de/x" });
     expect(r.places[1]).toMatchObject({ sceneNote: null, visitNote: null, sourceName: null, sourceUrl: null });
+  });
+});
+
+describe("visiblePlaces and focusPlaces", () => {
+  const r = buildNearby(locations, works, DEFAULT_CITY);
+  it("shows one title when filtered and everything otherwise", () => {
+    expect(visiblePlaces(r.places, "bourne").map((p) => p.id)).toEqual([1, 2]);
+    expect(visiblePlaces(r.places, null)).toHaveLength(4);
+  });
+  it("ignores a filter for a title that is not in the list", () => {
+    expect(visiblePlaces(r.places, "gone")).toHaveLength(4);
+  });
+  it("zooms to all of a filtered title's places, even far ones", () => {
+    expect(focusPlaces(r.places, "budapest").map((p) => p.id)).toEqual([5]);
+    expect(focusPlaces(r.places, null).map((p) => p.id)).toEqual([1, 2, 3]);
   });
 });

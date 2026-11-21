@@ -1,16 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 import { DEFAULT_CITY, findCity } from "@/lib/cities";
-import { titlesByBand, type NearbyResult } from "@/lib/nearby";
+import { colourMap, OTHER_COLOUR } from "@/lib/colours";
+import { focusPlaces, titlesByBand, visiblePlaces, type NearbyResult } from "@/lib/nearby";
 import { passportSummary } from "@/lib/passport";
 import { toggleWatched } from "@/lib/passport-store";
 import { usePassport } from "@/lib/use-passport";
 import type { LatLng } from "@/lib/types";
 import { CityPicker } from "./CityPicker";
 import { PassportBar } from "./PassportBar";
+import { TitleChips } from "./TitleChips";
 import { TitleCard } from "./TitleCard";
 
 const NearbyMap = dynamic(() => import("./NearbyMap"), {
@@ -42,6 +44,22 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
   const requestId = useRef(0);
   const mapTracked = useRef(false);
   const passport = usePassport();
+  const [selectedRaw, setSelected] = useState<string | null>(null);
+  const mapBox = useRef<HTMLDivElement>(null);
+
+  // Memoised so watching a title doesn't re-zoom the map.
+  const places = useMemo(() => data?.places ?? [], [data]);
+  const titles = useMemo(() => data?.titles ?? [], [data]);
+  const colours = useMemo(() => colourMap(titles.map((t) => t.workId)), [titles]);
+  const selected = selectedRaw && titles.some((t) => t.workId === selectedRaw) ? selectedRaw : null;
+  const mapPlaces = useMemo(() => visiblePlaces(places, selected), [places, selected]);
+  const mapFocus = useMemo(() => focusPlaces(places, selected), [places, selected]);
+
+  const selectFromCard = (workId: string) => {
+    setSelected(selected === workId ? null : workId);
+    const box = mapBox.current?.getBoundingClientRect();
+    if (box && box.bottom < 80) mapBox.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const load = useCallback((next: Origin, query: string) => {
     const id = ++requestId.current; // ignore answers to older requests
@@ -106,8 +124,10 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
       <CityPicker value={origin.id} locating={locating} onCity={pickCity} onMyLocation={useMyLocation} />
       {message && <p role="alert" className="mt-2 text-sm text-red-800">{message}</p>}
 
-      <div className="relative mt-3 h-[42vh] max-h-[420px] min-h-[240px] overflow-hidden rounded-xl ring-1 ring-navy/10">
-        <NearbyMap origin={origin} places={data?.places ?? []} onReady={onMapReady} />
+      <TitleChips titles={titles} colours={colours} selected={selected} onSelect={setSelected} />
+
+      <div ref={mapBox} className="relative mt-2 h-[42vh] max-h-[420px] min-h-[240px] scroll-mt-4 overflow-hidden rounded-xl ring-1 ring-navy/10">
+        <NearbyMap origin={origin} places={mapPlaces} focus={mapFocus} colours={colours} onReady={onMapReady} />
       </div>
 
       <section aria-live="polite" aria-busy={loading} className={`mt-6 transition-opacity ${loading ? "opacity-50" : ""}`}>
@@ -126,9 +146,12 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
                 <li key={t.workId}>
                   <TitleCard
                     title={t}
-                    places={data?.places.filter((p) => p.workId === t.workId) ?? []}
+                    places={places.filter((p) => p.workId === t.workId)}
+                    colour={colours.get(t.workId) ?? OTHER_COLOUR}
                     watched={watched.has(t.workId)}
+                    selected={selected === t.workId}
                     onToggle={() => toggleWatched(t.workId, startCity)}
+                    onSelect={() => selectFromCard(t.workId)}
                   />
                 </li>
               ))}

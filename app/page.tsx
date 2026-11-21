@@ -18,11 +18,13 @@ async function initialNearby(): Promise<NearbyResult | null> {
 export default async function Home() {
   const initial = await initialNearby();
   return (
-    <main className="mx-auto w-full max-w-xl px-4 pb-28 pt-6">
-      <header className="mb-4">
-        <h1 className="font-display text-3xl font-bold tracking-tight">Screen Passport</h1>
-        <p className="mt-1 text-base text-navy/80">Films and series shot near you. Visit them, stamp them, share them.</p>
-      </header>
+    <main className="w-full pb-28">
+      <section className="mx-auto w-full max-w-screen-2xl px-4 pb-6 pt-4 sm:px-8 lg:px-12">
+        <h1 className="max-w-3xl text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">
+          Films and series shot near you.
+        </h1>
+        <p className="mt-3 text-lg text-ink/70 sm:text-xl">Visit them, stamp them, share them.</p>
+      </section>
       <NearbyExplorer initial={initial} />
     </main>
   );

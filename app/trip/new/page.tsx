@@ -10,10 +10,10 @@ export const metadata: Metadata = { title: "Create a trip · Screen Passport", r
 
 export default function NewTripPage(props: PageProps<"/trip/new">) {
   return (
-    <main className="mx-auto w-full max-w-xl px-4 pb-16 pt-6">
-      <Link href="/" className="text-sm underline underline-offset-2">← Back</Link>
-      <h1 className="mt-3 font-display text-3xl font-bold tracking-tight">Create a trip</h1>
-      <Suspense fallback={<p className="mt-4 text-sm text-navy/60">Loading…</p>}>
+    <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 pb-16 pt-6 [&>*]:max-w-2xl">
+      <Link href="/" className="text-sm text-ink/60 hover:text-ink">← Back</Link>
+      <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Create a trip</h1>
+      <Suspense fallback={<p className="mt-4 text-sm text-ink/60">Loading…</p>}>
         <NewTrip searchParams={props.searchParams} />
       </Suspense>
     </main>
@@ -46,10 +46,10 @@ async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, 
 
   return (
     <>
-      <p className="mt-1 text-navy/80">
+      <p className="mt-1 text-ink/80">
         {works.map((w) => w.title).join(", ")} · from {start.label}
       </p>
-      <p className="mt-1 text-sm text-navy/70">
+      <p className="mt-1 text-sm text-ink/70">
         We pick the closest filming places and put them in a sensible order. Friends can join with a link.
       </p>
       <div className="mt-6">

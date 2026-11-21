@@ -40,14 +40,14 @@ export function RequestBox({ near }: { near?: string }) {
       </label>
       <div className="mt-1 flex gap-2">
         <input id="request-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required
-          className="min-w-0 flex-1 rounded-full border border-navy/30 bg-white px-4 py-2" placeholder="Title" />
+          className="min-w-0 flex-1 rounded border border-ink/30 bg-surface px-4 py-2" placeholder="Title" />
         <button type="submit" disabled={state.kind === "sending"}
-          className="shrink-0 rounded-full bg-navy px-4 py-2 font-semibold text-cream disabled:opacity-60">
+          className="shrink-0 rounded bg-ink px-4 py-2 font-semibold text-paper disabled:opacity-60">
           Request
         </button>
       </div>
       {(state.kind === "done" || state.kind === "error") && (
-        <p role="status" className={`mt-2 text-sm ${state.kind === "error" ? "text-red-800" : ""}`}>{state.text}</p>
+        <p role="status" className={`mt-2 text-sm ${state.kind === "error" ? "text-red-400" : ""}`}>{state.text}</p>
       )}
     </form>
   );

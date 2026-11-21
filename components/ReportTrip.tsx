@@ -13,13 +13,13 @@ export function ReportTrip({ tripId }: { tripId: string }) {
     else setState((await res?.json().catch(() => null))?.error ?? "Couldn't send the report. Try again.");
   };
 
-  if (state === "done") return <p role="status" className="text-xs text-navy/70">Thanks. We&apos;ve got your report.</p>;
+  if (state === "done") return <p role="status" className="text-xs text-ink/70">Thanks. We&apos;ve got your report.</p>;
   return (
     <div>
-      <button type="button" onClick={report} disabled={state === "sending"} className="text-xs text-navy/70 underline underline-offset-2">
+      <button type="button" onClick={report} disabled={state === "sending"} className="text-xs text-ink/70 underline underline-offset-2">
         Report this trip
       </button>
-      {state !== "idle" && state !== "sending" && <p role="alert" className="mt-1 text-xs text-red-800">{state}</p>}
+      {state !== "idle" && state !== "sending" && <p role="alert" className="mt-1 text-xs text-red-400">{state}</p>}
     </div>
   );
 }

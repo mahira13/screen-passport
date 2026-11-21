@@ -66,7 +66,7 @@ export function LocationReviewCard({ location: l }: { location: ReviewLocation }
         <a href={l.source_url} target="_blank" rel="noopener noreferrer" className="underline">
           {l.source_name ?? l.source_url}
         </a>
-        {untrusted && <span className="ml-2 rounded bg-red-100 px-1.5 text-red-800">not a trusted source</span>}
+        {untrusted && <span className="ml-2 rounded bg-red-500/15 px-1.5 text-red-400">not a trusted source</span>}
       </p>
 
       <div ref={ref} className="mt-3">
@@ -101,7 +101,7 @@ export function LocationReviewCard({ location: l }: { location: ReviewLocation }
           Set live
         </button>
       </div>
-      {result && <p className={`mt-2 text-sm ${result.ok ? "text-green-700" : "text-red-700"}`}>{result.message}</p>}
+      {result && <p className={`mt-2 text-sm ${result.ok ? "text-green-700" : "text-red-400"}`}>{result.message}</p>}
     </article>
   );
 }

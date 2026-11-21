@@ -36,7 +36,7 @@ async function AdminLocations() {
     .select("id, name, scene_note, address, city, lat, lng, coord_quality, visit_note, source_name, source_url, geocode_query, works(title)")
     .eq("status", "unverified")
     .order("id");
-  if (error) return <p className="mt-6 text-red-700">Could not load locations: {error.message}</p>;
+  if (error) return <p className="mt-6 text-red-400">Could not load locations: {error.message}</p>;
 
   const rows = data as unknown as ReviewLocation[];
   return (

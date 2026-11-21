@@ -17,7 +17,7 @@ export function CityPicker({ value, locating, onCity, onMyLocation }: Props) {
         id="city"
         value={value}
         onChange={(e) => onCity(e.target.value)}
-        className="min-w-0 flex-1 rounded-lg border border-navy/20 bg-white px-3 py-2.5 text-base"
+        className="min-w-0 flex-1 rounded-lg border border-ink/20 bg-surface px-3 py-2.5 text-base"
       >
         {value === "me" && <option value="me">My location</option>}
         {CITIES.map((c) => (
@@ -28,7 +28,7 @@ export function CityPicker({ value, locating, onCity, onMyLocation }: Props) {
         type="button"
         onClick={onMyLocation}
         disabled={locating}
-        className="shrink-0 rounded-lg bg-navy px-3 py-2.5 text-sm font-medium text-cream disabled:opacity-60"
+        className="shrink-0 rounded-lg bg-ink px-3 py-2.5 text-sm font-medium text-paper disabled:opacity-60"
       >
         {locating ? "Locating…" : "Use my location"}
       </button>

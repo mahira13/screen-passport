@@ -8,7 +8,7 @@ import { LAYLA_URL, laylaPrompt } from "@/lib/layla";
 import { directionsUrl } from "@/lib/links";
 import type { NearbyPlace } from "@/lib/nearby";
 
-const linkBtn = "inline-flex items-center justify-center rounded-full px-3 py-2 text-sm font-medium";
+const linkBtn = "inline-flex items-center justify-center rounded px-3 py-2 text-sm font-medium";
 
 type Props = { place: NearbyPlace; titlePlaces: NearbyPlace[] };
 
@@ -25,18 +25,18 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
   };
 
   return (
-    <article className="rounded-lg bg-cream/60 p-3 ring-1 ring-navy/10">
+    <article className="rounded-lg bg-paper/60 p-3 ring-1 ring-ink/10">
       <div className="flex items-baseline justify-between gap-2">
         <h4 className="font-display font-semibold leading-tight">{p.name}</h4>
-        <span className="shrink-0 text-xs text-navy/70">{formatDistance(p.distanceKm)}</span>
+        <span className="shrink-0 text-xs text-ink/70">{formatDistance(p.distanceKm)}</span>
       </div>
-      <p className="text-xs text-navy/60">
+      <p className="text-xs text-ink/60">
         {p.title}
         {p.city && ` · ${p.city}`}
       </p>
       {p.sceneNote && <p className="mt-1 text-sm">{p.sceneNote}</p>}
       {(p.visitNote || approximate) && (
-        <p className="mt-1 text-xs text-navy/70">
+        <p className="mt-1 text-xs text-ink/70">
           {p.visitNote}
           {p.visitNote && approximate && " · "}
           {approximate && "Pin is approximate"}
@@ -46,21 +46,21 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
       <div className="mt-3 flex flex-wrap gap-2">
         <a href={directionsUrl(p)} target="_blank" rel="noopener noreferrer"
           onClick={() => track("directions_clicked", { location: p.id })}
-          className={`${linkBtn} bg-navy text-cream`}>
+          className={`${linkBtn} bg-accent text-white`}>
           Directions
         </a>
         {p.sourceUrl && (
-          <a href={p.sourceUrl} target="_blank" rel="noopener noreferrer" className={`${linkBtn} border border-navy/30`}
+          <a href={p.sourceUrl} target="_blank" rel="noopener noreferrer" className={`${linkBtn} border border-ink/30`}
             title={p.sourceName ?? undefined}>
             Source
           </a>
         )}
-        <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${linkBtn} bg-gold text-navy`}>
+        <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${linkBtn} bg-ink text-paper`}>
           Plan the rest with Layla
         </a>
       </div>
       {copied !== null && (
-        <p role="status" className="mt-2 text-xs text-navy/80">
+        <p role="status" className="mt-2 text-xs text-ink/80">
           Copied. Paste it into Layla: <span className="italic">“{copied}”</span>
         </p>
       )}

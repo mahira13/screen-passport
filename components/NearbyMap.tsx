@@ -21,12 +21,13 @@ type Props = {
   onReady?: () => void;
 };
 
-const NAVY = "#16213A";
+const INK = "#141414"; // marker ring, matches the page background
+const ACCENT = "#E50914";
 
 function dotIcon(colour: string) {
   return L.divIcon({
     className: "",
-    html: `<span style="display:block;width:18px;height:18px;border-radius:50%;background:${colour};border:3px solid ${NAVY};box-shadow:0 0 0 2px #fff"></span>`,
+    html: `<span style="display:block;width:18px;height:18px;border-radius:50%;background:${colour};border:3px solid ${INK};box-shadow:0 0 0 2px #fff"></span>`,
     iconSize: [18, 18],
     iconAnchor: [9, 9],
     popupAnchor: [0, -10],
@@ -56,7 +57,7 @@ function clusterIcon(cluster: L.MarkerCluster) {
   const ring = colourRing(cluster.getAllChildMarkers().map((m) => markerColour.get(m) ?? OTHER_COLOUR));
   return L.divIcon({
     className: "",
-    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:${ring};box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.3)"><span style="display:flex;align-items:center;justify-content:center;width:${size - 14}px;height:${size - 14}px;border-radius:50%;background:${NAVY};color:#F4EFE4;font:600 14px var(--font-inter),system-ui,sans-serif">${n}</span></span>`,
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:${ring};box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.3)"><span style="display:flex;align-items:center;justify-content:center;width:${size - 14}px;height:${size - 14}px;border-radius:50%;background:${INK};color:#F5F5F1;font:600 14px var(--font-inter),system-ui,sans-serif">${n}</span></span>`,
     iconSize: [size, size],
   });
 }
@@ -145,7 +146,7 @@ export default function NearbyMap({ origin, places, focus, colours, onReady }: P
       />
       <ClusterLayer places={places} colours={colours} />
       <CircleMarker center={[origin.lat, origin.lng]} radius={8}
-        pathOptions={{ color: NAVY, weight: 3, fillColor: "#ffffff", fillOpacity: 1 }} />
+        pathOptions={{ color: ACCENT, weight: 4, fillColor: "#ffffff", fillOpacity: 1 }} />
       <FitTo origin={origin} focus={focus} />
     </MapContainer>
   );

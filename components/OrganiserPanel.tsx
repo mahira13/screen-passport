@@ -44,22 +44,22 @@ export function OrganiserPanel({ tripId, url }: { tripId: string; url: string })
   };
 
   return (
-    <section className="mt-6 rounded-xl border-2 border-dashed border-navy/30 p-4">
+    <section className="mt-6 rounded-md border-2 border-dashed border-ink/30 p-4">
       <h2 className="font-display font-semibold">You organise this trip</h2>
       <p className="mt-1 text-sm">
         Keep your secret organiser link to manage the trip from another phone. Don&apos;t share it: anyone with it can delete the trip.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" className="rounded-full border border-navy/30 bg-white px-4 py-2 text-sm font-semibold"
+        <button type="button" className="rounded border border-ink/30 bg-surface px-4 py-2 text-sm font-semibold"
           onClick={() => setNote(copyText(secretLink) ? "Secret link copied. Save it somewhere private." : secretLink)}>
           Copy secret organiser link
         </button>
         <button type="button" onClick={remove} disabled={deleting}
-          className="rounded-full border border-red-800 px-4 py-2 text-sm font-semibold text-red-800 disabled:opacity-60">
+          className="rounded border border-red-500 px-4 py-2 text-sm font-semibold text-red-400 disabled:opacity-60">
           Delete trip
         </button>
       </div>
-      {note && <p role="status" className="mt-2 break-all text-xs text-navy/80">{note}</p>}
+      {note && <p role="status" className="mt-2 break-all text-xs text-ink/80">{note}</p>}
     </section>
   );
 }

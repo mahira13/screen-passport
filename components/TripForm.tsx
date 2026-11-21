@@ -18,7 +18,7 @@ type Props = {
 };
 
 const choice = (on: boolean) =>
-  `rounded-full px-4 py-2 text-sm font-medium ${on ? "bg-navy text-cream" : "border border-navy/30 bg-white"}`;
+  `rounded px-4 py-2 text-sm font-medium ${on ? "bg-accent text-white" : "border border-ink/30 bg-surface"}`;
 
 export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
   const router = useRouter();
@@ -77,19 +77,19 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
             </button>
           ))}
         </div>
-        <p className="mt-1 text-xs text-navy/70">
+        <p className="mt-1 text-xs text-ink/70">
           Places within about {RADIUS_KM[mode]} km of {from.label}: {placesByMode[mode]}
         </p>
       </fieldset>
 
       {none ? (
-        <div className="rounded-xl bg-white p-4 ring-1 ring-navy/10">
+        <div className="rounded-md bg-surface p-4 ring-1 ring-ink/10">
           <p className="font-semibold">
             No films near you yet.
             {(nearest ?? nearestCity) && ` The nearest are in ${nearest ?? nearestCity}.`}
           </p>
           {TRIP_MODES.some((m) => placesByMode[m] > 0) && (
-            <p className="mt-1 text-sm text-navy/80">Try another way of getting around above.</p>
+            <p className="mt-1 text-sm text-ink/80">Try another way of getting around above.</p>
           )}
           <RequestBox near={from.label === "your location" ? undefined : from.label} />
         </div>
@@ -109,28 +109,28 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
           <div>
             <label htmlFor="trip-when" className="text-sm font-semibold">Date and start time</label>
             <input id="trip-when" type="datetime-local" required value={when} onChange={(e) => setWhen(e.target.value)}
-              className="mt-1 block w-full rounded-xl border border-navy/30 bg-white px-4 py-2" />
-            {tz && <p className="mt-1 text-xs text-navy/70">In {tzLabel(tz)} time.</p>}
+              className="mt-1 block w-full rounded-md border border-ink/30 bg-surface px-4 py-2" />
+            {tz && <p className="mt-1 text-xs text-ink/70">In {tzLabel(tz)} time.</p>}
           </div>
 
           <div>
             <label htmlFor="trip-meet" className="text-sm font-semibold">Meeting point <span className="font-normal">(optional)</span></label>
             <input id="trip-meet" maxLength={MEETING_POINT_MAX} value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)}
-              placeholder="The first stop" className="mt-1 block w-full rounded-xl border border-navy/30 bg-white px-4 py-2" />
-            <p className="mt-1 text-xs text-navy/70">Pick a public place. Leave empty to meet at the first stop.</p>
+              placeholder="The first stop" className="mt-1 block w-full rounded-md border border-ink/30 bg-surface px-4 py-2" />
+            <p className="mt-1 text-xs text-ink/70">Pick a public place. Leave empty to meet at the first stop.</p>
           </div>
 
           <div>
             <label htmlFor="trip-name" className="text-sm font-semibold">Your first name</label>
             <input id="trip-name" required maxLength={FIRST_NAME_MAX} autoComplete="given-name" value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded-xl border border-navy/30 bg-white px-4 py-2" />
-            <p className="mt-1 text-xs text-navy/70">Shown on the trip page. No surname or contact details needed.</p>
+              className="mt-1 block w-full rounded-md border border-ink/30 bg-surface px-4 py-2" />
+            <p className="mt-1 text-xs text-ink/70">Shown on the trip page. No surname or contact details needed.</p>
           </div>
 
-          {error && <p role="alert" className="text-sm text-red-800">{error}</p>}
+          {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
           <button type="submit" disabled={sending}
-            className="w-full rounded-full bg-navy px-5 py-3 font-semibold text-cream disabled:opacity-60">
+            className="w-full rounded bg-ink px-5 py-3 font-semibold text-paper disabled:opacity-60">
             {sending ? "Planning your trip…" : "Create the trip"}
           </button>
         </>

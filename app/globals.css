@@ -1,15 +1,49 @@
 @import "tailwindcss";
 
+/* Dark, minimal. Colour roles, not colour names: ink on paper, cards on surface, one red accent. */
 @theme inline {
-  --color-navy: #16213a;
-  --color-cream: #f4efe4;
-  --color-gold: #e3b04b;
+  --color-ink: #f5f5f1;
+  --color-paper: #141414;
+  --color-surface: #1f1f1f;
+  --color-accent: #e50914;
   --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-inter), system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark; /* native date pickers, selects and scrollbars match */
 }
 
 body {
-  background: var(--color-cream);
-  color: var(--color-navy);
+  background: var(--color-paper);
+  color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/* OpenStreetMap tiles turned dark to match the page (attribution stays visible). */
+.leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.4);
+}
+.leaflet-container {
+  background: #1a1a1a;
+}
+.leaflet-control-attribution {
+  background: rgba(20, 20, 20, 0.8) !important;
+  color: #aaa !important;
+}
+.leaflet-control-attribution a {
+  color: #ddd !important;
+}
+.leaflet-bar a {
+  background: #1f1f1f !important;
+  color: #f5f5f1 !important;
+  border-color: #333 !important;
+}
+
+/* Hide the scrollbar on horizontal rows (title chips), keep them scrollable. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

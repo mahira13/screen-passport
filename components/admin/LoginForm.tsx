@@ -10,7 +10,7 @@ export function LoginForm() {
       <label className="text-sm font-medium" htmlFor="password">Admin password</label>
       <input id="password" name="password" type="password" required autoComplete="current-password"
         className="rounded border border-neutral-300 px-3 py-2" />
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
       <button disabled={pending} className="rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50">
         {pending ? "Checking…" : "Sign in"}
       </button>

@@ -5,9 +5,9 @@ export const metadata: Metadata = { title: "Impressum · Screen Passport" };
 // Fill in every [placeholder] before launch.
 export default function ImpressumPage() {
   return (
-    <main className="mx-auto w-full max-w-xl px-4 pb-16 pt-6 text-base">
-      <h1 className="font-display text-3xl font-bold tracking-tight">Impressum</h1>
-      <p className="mt-1 text-sm text-navy/70">Information according to § 5 DDG</p>
+    <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 pb-16 pt-6 text-base text-ink/85 [&>*]:max-w-2xl">
+      <h1 className="text-4xl font-black tracking-tight text-ink sm:text-5xl">Impressum</h1>
+      <p className="mt-1 text-sm text-ink/70">Information according to § 5 DDG</p>
 
       <h2 className="mt-6 font-display text-lg font-semibold">Provider</h2>
       <p className="mt-1">

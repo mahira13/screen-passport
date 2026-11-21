@@ -9,10 +9,10 @@ import type { LatLng } from "@/lib/types";
 
 export const TripMapLazy = dynamic(() => import("./TripMap"), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-navy/10" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-ink/10" />,
 });
 
-const btn = "inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold";
+const btn = "inline-flex items-center justify-center rounded px-5 py-3 text-sm font-bold transition-colors";
 
 type Props = {
   tripId: string;
@@ -48,28 +48,29 @@ export function TripActions({ tripId, routeUrl, transit, laylaPrompt, shareTitle
   return (
     <div>
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={onShare} className={`${btn} bg-navy text-cream`}>Share</button>
+        <button type="button" onClick={onShare} className={`${btn} bg-accent text-white`}>Share</button>
         {routeUrl && (
           <span className="inline-flex flex-col">
-            <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={`${btn} border border-navy/30 bg-white`}
+            <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={`${btn} border border-ink/30 bg-surface`}
               onClick={() => track("directions_clicked", { from: "trip", trip: tripId })}>
               Open all in Google Maps
             </a>
-            {transit && <span className="mt-1 px-2 text-xs text-navy/70">Pick public transport in Google Maps.</span>}
+            {transit && <span className="mt-1 px-2 text-xs text-ink/70">Pick public transport in Google Maps.</span>}
           </span>
         )}
-        <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${btn} bg-gold text-navy`}>
+        <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${btn} bg-ink text-paper`}>
           Plan travel and stays with Layla
         </a>
       </div>
-      {note && <p role="status" className="mt-2 text-xs text-navy/80">{note}</p>}
+      {note && <p role="status" className="mt-2 text-xs text-ink/80">{note}</p>}
     </div>
   );
 }
 
-export function TripMapBox({ stops }: { stops: (LatLng & { name: string })[] }) {
+export function TripMapBox({ stops, tall = false }: { stops: (LatLng & { name: string })[]; tall?: boolean }) {
+  const size = tall ? "h-[calc(100vh-7rem)] min-h-[420px]" : "mt-4 h-[42vh] max-h-[420px] min-h-[240px]";
   return (
-    <div className="mt-3 h-[40vh] max-h-[380px] min-h-[220px] overflow-hidden rounded-xl ring-1 ring-navy/10">
+    <div className={`${size} overflow-hidden rounded-md ring-1 ring-ink/10`}>
       <TripMapLazy stops={stops} />
     </div>
   );

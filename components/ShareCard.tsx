@@ -102,10 +102,10 @@ function ShareCardInner({ data }: { data: CardData }) {
 
   return (
     <section className="mt-8">
-      <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-navy/70">Share your passport</h2>
+      <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-ink/70">Share your passport</h2>
       <div className="mt-3 flex flex-col items-center gap-4">
         <div
-          className="overflow-hidden rounded-xl shadow-lg ring-1 ring-navy/10"
+          className="overflow-hidden rounded-md shadow-lg ring-1 ring-ink/10"
           style={{ width: CARD_WIDTH * PREVIEW_SCALE, height: CARD_HEIGHT * PREVIEW_SCALE }}
           aria-label="Preview of your share card"
           role="img"
@@ -120,12 +120,12 @@ function ShareCardInner({ data }: { data: CardData }) {
           type="button"
           onClick={onShare}
           disabled={busy}
-          className="w-full max-w-xs rounded-full bg-gold px-5 py-3 font-semibold text-navy disabled:opacity-60"
+          className="w-full max-w-xs rounded bg-accent px-5 py-3 font-semibold text-ink disabled:opacity-60"
         >
           {busy ? "Drawing your card…" : canShare ? "Share to your story" : "Download image"}
         </button>
         {message && <p role="status" className="text-sm">{message}</p>}
-        {!canShare && <p className="text-xs text-navy/60">Then post the image from your photos.</p>}
+        {!canShare && <p className="text-xs text-ink/60">Then post the image from your photos.</p>}
       </div>
     </section>
   );

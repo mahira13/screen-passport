@@ -17,10 +17,12 @@ import { TitleCard } from "./TitleCard";
 
 const NearbyMap = dynamic(() => import("./NearbyMap"), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-navy/10" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-ink/10" />,
 });
 
 type Origin = LatLng & { id: string; label: string }; // id: a city id or "me"
+
+const WRAP = "mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12";
 
 const LOAD_ERROR = "Couldn't load places. Check your connection and try again.";
 
@@ -122,27 +124,31 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
 
   return (
     <>
-      <CityPicker value={origin.id} locating={locating} onCity={pickCity} onMyLocation={useMyLocation} />
-      {message && <p role="alert" className="mt-2 text-sm text-red-800">{message}</p>}
-
-      <TitleChips titles={titles} colours={colours} selected={selected} onSelect={setSelected} />
-
-      <div ref={mapBox} className="relative mt-2 h-[42vh] max-h-[420px] min-h-[240px] scroll-mt-4 overflow-hidden rounded-xl ring-1 ring-navy/10">
-        <NearbyMap origin={origin} places={mapPlaces} focus={mapFocus} colours={colours} onReady={onMapReady} />
+      <div className={WRAP}>
+        <div className="max-w-xl">
+          <CityPicker value={origin.id} locating={locating} onCity={pickCity} onMyLocation={useMyLocation} />
+        </div>
+        {message && <p role="alert" className="mt-2 text-sm text-red-400">{message}</p>}
+        <TitleChips titles={titles} colours={colours} selected={selected} onSelect={setSelected} />
       </div>
 
-      <section aria-live="polite" aria-busy={loading} className={`mt-6 transition-opacity ${loading ? "opacity-50" : ""}`}>
+      <div ref={mapBox} className="relative mt-3 h-[48vh] max-h-[560px] min-h-[260px] scroll-mt-16 overflow-hidden">
+        <NearbyMap origin={origin} places={mapPlaces} focus={mapFocus} colours={colours} onReady={onMapReady} />
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[500] h-16 bg-gradient-to-t from-paper to-transparent" />
+      </div>
+
+      <section aria-live="polite" aria-busy={loading} className={`${WRAP} mt-6 transition-opacity ${loading ? "opacity-50" : ""}`}>
         {data && groups.length === 0 && !loading && (
-          <p className="rounded-xl bg-white p-4 text-sm ring-1 ring-navy/10">
+          <p className="rounded-md bg-surface p-4 text-sm">
             No filming places to show yet. We&apos;re checking our sources and adding them now.
           </p>
         )}
         {groups.map((g) => (
-          <div key={g.key} className="mb-6">
-            <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-navy/70">
-              {g.label} <span className="font-normal">from {origin.label}</span>
+          <div key={g.key} className="mb-10">
+            <h2 className="text-xl font-bold sm:text-2xl">
+              {g.label} <span className="font-normal text-ink/50">from {origin.label}</span>
             </h2>
-            <ul className="mt-2 space-y-3">
+            <ul className="mt-3 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {g.titles.map((t) => (
                 <li key={t.workId}>
                   <TitleCard

@@ -9,9 +9,9 @@ const H = ({ children }: { children: React.ReactNode }) => (
 // Fill in every [placeholder] before launch.
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto w-full max-w-xl space-y-2 px-4 pb-16 pt-6 text-base">
-      <h1 className="font-display text-3xl font-bold tracking-tight">Privacy</h1>
-      <p className="text-sm text-navy/70">Last updated: [date]</p>
+    <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 space-y-2 pb-16 pt-6 text-base text-ink/85 [&>*]:max-w-2xl">
+      <h1 className="text-4xl font-black tracking-tight text-ink sm:text-5xl">Privacy</h1>
+      <p className="text-sm text-ink/70">Last updated: [date]</p>
 
       <H>Who is responsible</H>
       <p>[Full name or company name], [address], [email address]. See the Impressum.</p>

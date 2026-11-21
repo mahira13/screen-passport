@@ -36,12 +36,12 @@ export function JoinTrip({ tripId, organiser, joined }: { tripId: string; organi
   };
 
   return (
-    <section className="mt-8 rounded-xl bg-white p-4 ring-1 ring-navy/10">
+    <section className="mt-8 rounded-md bg-surface p-4 ring-1 ring-ink/10">
       <h2 className="font-display text-lg font-semibold">Who&apos;s coming</h2>
       <ul className="mt-2 flex flex-wrap gap-2 text-sm">
-        <li className="rounded-full bg-gold px-3 py-1 font-medium">{organiser} (organiser)</li>
+        <li className="rounded bg-accent px-3 py-1 font-medium">{organiser} (organiser)</li>
         {joined.map((n, i) => (
-          <li key={i} className="rounded-full bg-cream px-3 py-1 ring-1 ring-navy/10">{n}</li>
+          <li key={i} className="rounded bg-paper px-3 py-1 ring-1 ring-ink/10">{n}</li>
         ))}
       </ul>
       {done ? (
@@ -54,13 +54,13 @@ export function JoinTrip({ tripId, organiser, joined }: { tripId: string; organi
           <div className="mt-1 flex gap-2">
             <input id="join-name" required maxLength={FIRST_NAME_MAX} autoComplete="given-name" value={name}
               onChange={(e) => setName(e.target.value)}
-              className="min-w-0 flex-1 rounded-full border border-navy/30 bg-cream/40 px-4 py-2" />
+              className="min-w-0 flex-1 rounded border border-ink/30 bg-paper/40 px-4 py-2" />
             <button type="submit" disabled={sending}
-              className="shrink-0 rounded-full bg-navy px-4 py-2 font-semibold text-cream disabled:opacity-60">
+              className="shrink-0 rounded bg-ink px-4 py-2 font-semibold text-paper disabled:opacity-60">
               Join
             </button>
           </div>
-          {message && <p role="alert" className="mt-2 text-sm text-red-800">{message}</p>}
+          {message && <p role="alert" className="mt-2 text-sm text-red-400">{message}</p>}
         </form>
       )}
     </section>

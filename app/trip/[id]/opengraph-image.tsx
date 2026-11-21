@@ -10,7 +10,7 @@ export const contentType = "image/png";
 // Text only: no film stills or posters.
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const trip = isTripId(id) && process.env.SUPABASE_SERVICE_ROLE_KEY ? await getTrip(id) : null;
+  const trip = isTripId(id) && process.env.SUPABASE_SERVICE_ROLE_KEY ? await getTrip(id).catch(() => null) : null;
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#16213A", color: "#F4EFE4", padding: 72 }}>

@@ -9,3 +9,11 @@ export async function readJson(req: Request, maxChars = 5_000): Promise<Record<s
     return null;
   }
 }
+
+export const SERVER_ERROR = "Something went wrong on our side. Please try again in a minute.";
+
+/** Logs the real error and returns a friendly 503 instead of a crash page. */
+export function serverError(where: string, e: unknown): Response {
+  console.error(`${where}:`, e instanceof Error ? e.message : e);
+  return Response.json({ error: SERVER_ERROR }, { status: 503 });
+}

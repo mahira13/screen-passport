@@ -11,15 +11,24 @@ import { isTripId } from "@/lib/ids";
 import { directionsUrl } from "@/lib/links";
 import { googleMapsRouteUrl, kmBetweenStops } from "@/lib/route";
 import { formatTripDate, LENGTH_LABEL, MODE_LABEL, shareText, tripLaylaPrompt, tzLabel } from "@/lib/trip";
-import { getTrip } from "@/lib/trip-server";
+import { getTrip, type TripView } from "@/lib/trip-server";
 
-const loadTrip = cache(async (id: string) => (isTripId(id) && process.env.SUPABASE_SERVICE_ROLE_KEY ? getTrip(id) : null));
+// "failed": the database couldn't be read. Shown as a friendly message, not a crash page.
+const loadTrip = cache(async (id: string): Promise<TripView | null | "failed"> => {
+  if (!isTripId(id) || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  try {
+    return await getTrip(id);
+  } catch (e) {
+    console.error("trip page:", e instanceof Error ? e.message : e);
+    return "failed";
+  }
+});
 const siteUrl = () => (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export async function generateMetadata(props: PageProps<"/trip/[id]">): Promise<Metadata> {
   const { id } = await props.params;
   const trip = await loadTrip(id);
-  if (!trip) return { title: "Trip · Screen Passport", robots: { index: false } };
+  if (!trip || trip === "failed") return { title: "Trip · Screen Passport", robots: { index: false } };
   const description = `${formatTripDate(trip.startsAt, trip.timeZone)} · ${trip.stops.length} filming places · meet at ${trip.meetingPoint}. Join ${trip.organiser} on Screen Passport.`;
   return {
     metadataBase: new URL(siteUrl()),
@@ -45,6 +54,17 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const trip = await loadTrip(id);
   if (!trip) notFound();
+  if (trip === "failed") {
+    return (
+      <div className="pt-10 text-center">
+        <h1 className="font-display text-2xl font-bold">We can&apos;t open this trip right now</h1>
+        <p className="mt-2 text-navy/80">Something went wrong on our side. Please try again in a minute.</p>
+        <Link href="/" className="mt-6 inline-block rounded-full bg-navy px-5 py-3 font-semibold text-cream">
+          Find filming places near you
+        </Link>
+      </div>
+    );
+  }
 
   const url = `${siteUrl()}/trip/${trip.id}`;
   const km = kmBetweenStops(trip.stops);

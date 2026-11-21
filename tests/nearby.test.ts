@@ -71,3 +71,15 @@ describe("cities", () => {
     expect(findCity("nope")).toBeUndefined();
   });
 });
+
+describe("buildNearby notes and source", () => {
+  it("passes scene note, visit note and source through, null when missing", () => {
+    const r = buildNearby(
+      [{ ...loc(1, "bourne", 52.52, 13.41), scene_note: "Meets Nicky", visit_note: "Public square", source_name: "visitBerlin", source_url: "https://visitberlin.de/x" }, loc(2, "dark", 52.4, 13.2)],
+      works,
+      DEFAULT_CITY,
+    );
+    expect(r.places[0]).toMatchObject({ sceneNote: "Meets Nicky", visitNote: "Public square", sourceName: "visitBerlin", sourceUrl: "https://visitberlin.de/x" });
+    expect(r.places[1]).toMatchObject({ sceneNote: null, visitNote: null, sourceName: null, sourceUrl: null });
+  });
+});

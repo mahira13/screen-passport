@@ -4,7 +4,8 @@ import type { CoordQuality, FilmLocation, LatLng, Work } from "./types";
 export type LiveLocation = Pick<
   FilmLocation,
   "id" | "work_id" | "name" | "city" | "lat" | "lng" | "coord_quality"
->;
+> &
+  Partial<Pick<FilmLocation, "scene_note" | "visit_note" | "source_name" | "source_url">>;
 
 export interface NearbyPlace {
   id: number;
@@ -17,6 +18,10 @@ export interface NearbyPlace {
   coordQuality: CoordQuality | null;
   distanceKm: number;
   band: BandKey;
+  sceneNote: string | null;
+  visitNote: string | null;
+  sourceName: string | null;
+  sourceUrl: string | null;
 }
 
 export interface NearbyTitle {
@@ -48,6 +53,10 @@ export function buildNearby(locations: LiveLocation[], works: Work[], from: LatL
       coordQuality: l.coord_quality,
       distanceKm: Math.round(l.distanceKm * 100) / 100,
       band: distanceBand(l.distanceKm).key,
+      sceneNote: l.scene_note ?? null,
+      visitNote: l.visit_note ?? null,
+      sourceName: l.source_name ?? null,
+      sourceUrl: l.source_url ?? null,
     }));
 
   const titles = new Map<string, NearbyTitle>();

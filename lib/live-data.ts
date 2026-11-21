@@ -27,7 +27,9 @@ export async function getLiveData(): Promise<LiveData> {
   }
   const db = supabasePublic();
   const [locs, works, cols] = await Promise.all([
-    db.from("mappable_locations").select("id, work_id, name, city, lat, lng, coord_quality"),
+    db
+      .from("mappable_locations")
+      .select("id, work_id, name, city, lat, lng, coord_quality, scene_note, visit_note, source_name, source_url"),
     db.from("works").select("id, title, type, aliases, year"),
     db.from("collections").select("id, name, city, work_ids, description"),
   ]);

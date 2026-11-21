@@ -124,7 +124,12 @@ export function NearbyExplorer({ initial }: { initial: NearbyResult | null }) {
             <ul className="mt-2 space-y-3">
               {g.titles.map((t) => (
                 <li key={t.workId}>
-                  <TitleCard title={t} watched={watched.has(t.workId)} onToggle={() => toggleWatched(t.workId, startCity)} />
+                  <TitleCard
+                    title={t}
+                    places={data?.places.filter((p) => p.workId === t.workId) ?? []}
+                    watched={watched.has(t.workId)}
+                    onToggle={() => toggleWatched(t.workId, startCity)}
+                  />
                 </li>
               ))}
             </ul>

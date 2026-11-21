@@ -10,7 +10,7 @@ Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature f
 
 1. **Instant value, no downloads.** The first screen shows filming locations near the user with zero input. No login, no CSV upload, no Netflix connection (Netflix has no public API; never ask for passwords or scrape accounts).
 2. **Ways in, in order:** near-me map → "Watched it" taps on title cards → search box that only selects titles from our database → optional screenshot upload where Claude reads titles. Free text that matches nothing becomes a request, never an AI answer.
-3. **Every location has a source.** No row in `locations` without `source_url`. Claude never invents locations, coordinates or scenes. Only `status = 'live'` locations are shown.
+3. **Every location has a source.** No row in `locations` without `source_url`. Trusted sources: official tourism and city sites, established location guides and major media (see the add-filming-locations skill); not Wikipedia or fan wikis. Claude never invents locations, coordinates or scenes. Only `status = 'live'` locations are shown.
 4. **Code for facts, Claude for words and images.** Distance, sorting, matching, check-in radius and collections are plain code. Claude is used only to read titles from screenshots, for fuzzy title matching, and to research requested titles (saved as `unverified` for human approval).
 5. **Privacy:** no accounts, no emails, no raw uploads stored. Screenshots are read and discarded. Postcard photos are composed in the browser and never uploaded unless the user shares them. Passports store only title IDs, location IDs, start city and an optional display name.
 6. **No copyrighted media:** no film stills, scraped posters, logos or script quotes. Postcards use the user's own photo. Location photos only from Wikimedia Commons with credit.
@@ -25,7 +25,7 @@ Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature f
 - Passport saved under a random unguessable ID, shareable URL `/p/[id]`, last passport remembered in localStorage
 - Share card image (story format 1080×1920) generated in the browser, one-tap share/download
 - Collections with progress (e.g. "Cold War Berlin 2/4", "Görliwood 1/4")
-- "I'm here" check-in: browser geolocation within 200 m of a location → gold stamp
+- "I'm here" check-in: browser geolocation within 200 m of a location → gold stamp. Only offered where `coord_quality` is `source` or `verified`; geocoded or approximate points can be kilometres off (a district search returns the district centre)
 - Scene postcard: user photo + frame (title, place, "Filmed here") composed client-side
 - Location card actions: Directions (Google Maps), Source link, "Plan the rest with Layla" (opens Layla; copies a ready prompt to clipboard)
 - Requests table for unknown titles; admin page to approve researched locations
@@ -79,7 +79,9 @@ screen-passport/
 ## Data model
 
 - `works(id text pk, title, type ['series','film'], aliases text[], year int null)`
-- `locations(id serial pk, work_id fk, name, scene_note, address, city, region, lat, lng, coord_quality ['source','approx','geocoded','verified'], visit_note, source_name, source_url not null, status ['live','unverified'] default 'live')`
+- `locations(id serial pk, work_id fk, name, scene_note, address, city, region, lat, lng, coord_quality ['source','approx','geocoded','verified'] null, visit_note, source_name, source_url not null, status ['live','unverified'] default 'unverified', geocode_query)`
+
+Seed CSVs use exactly these column names, so the import needs no mapping. Seed rows arrive as `unverified`: a teammate checks each source and coordinate in the admin page before setting it `live`.
 - `collections(id text pk, name, city, work_ids text[], description)`
 - `passports(id text pk, display_name null, start_city, lat, lng, watched text[], visited int[], created_at, updated_at)`
 - `requests(id serial pk, raw_title, normalised_title unique, count int, status ['open','researched','approved','rejected'], created_at)`

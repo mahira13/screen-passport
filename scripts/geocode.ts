@@ -1,8 +1,12 @@
-// Fills empty lat/lng with OpenStreetMap Nominatim, one request per second.
-// Usage: npm run geocode            (writes to Supabase)
-//        npm run geocode -- --dry-run (look up and print only)
+// Fills empty lat/lng from each location's geocode_query with OpenStreetMap
+// Nominatim, one request per second. Results that are only a district,
+// suburb, city or road are flagged and not saved: fix those by hand in
+// /admin/locations. Nothing here ever sets coord_quality = 'verified'.
+// Usage: npm run geocode              (saves precise results as 'geocoded')
+//        npm run geocode -- --dry-run (prints results, saves nothing)
 // Nominatim policy: https://operations.osmfoundation.org/policies/nominatim/
 import { config } from "dotenv";
+import { isCoarse, placeType, type NominatimHit } from "../lib/geocode";
 import { supabaseAdmin } from "../lib/supabase";
 
 config({ path: ".env.local" });
@@ -10,52 +14,78 @@ config({ path: ".env.local" });
 const ENDPOINT = "https://nominatim.openstreetmap.org/search";
 const DELAY_MS = 1100;
 const contact = process.env.GEOCODE_CONTACT; // an email or URL, required by the policy
-const USER_AGENT = `ScreenPassport/0.1 (${contact ?? "set GEOCODE_CONTACT in .env.local"})`;
+const USER_AGENT = `ScreenPassport/0.1 (${contact ?? "contact not set"})`;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function lookup(q: string): Promise<{ lat: number; lng: number; label: string } | null> {
-  const url = `${ENDPOINT}?${new URLSearchParams({ q, format: "jsonv2", limit: "1", countrycodes: "de" })}`;
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT, "Accept-Language": "de,en" } });
+async function lookup(q: string): Promise<NominatimHit | null> {
+  const params = new URLSearchParams({ q, format: "jsonv2", limit: "1", countrycodes: "de" });
+  const res = await fetch(`${ENDPOINT}?${params}`, {
+    headers: { "User-Agent": USER_AGENT, "Accept-Language": "de,en" },
+  });
   if (!res.ok) throw new Error(`Nominatim ${res.status} for "${q}"`);
-  const hits = (await res.json()) as { lat: string; lon: string; display_name: string }[];
-  return hits[0] ? { lat: Number(hits[0].lat), lng: Number(hits[0].lon), label: hits[0].display_name } : null;
+  const hits = (await res.json()) as NominatimHit[];
+  return hits[0] ?? null;
 }
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
-  if (!contact && !dryRun) {
+  if (!contact) {
     console.error("Set GEOCODE_CONTACT (your email or project URL) in .env.local first.");
     process.exit(1);
   }
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("locations")
-    .select("id, name, address, city")
+    .select("id, name, geocode_query")
     .or("lat.is.null,lng.is.null")
     .order("id");
   if (error) throw error;
-  console.log(`${data.length} locations without coordinates.`);
+  console.log(`${data.length} locations without coordinates.${dryRun ? " Dry run: nothing is saved." : ""}\n`);
 
-  let filled = 0;
-  for (const [i, loc] of data.entries()) {
-    if (i > 0) await sleep(DELAY_MS);
-    const q = [loc.address, loc.city].filter(Boolean).join(", ");
-    const hit = await lookup(q);
-    if (!hit) {
-      console.log(`  #${loc.id} ${loc.name}: no result for "${q}"`);
+  const flagged: string[] = [];
+  const missing: string[] = [];
+  let saved = 0;
+  let requests = 0;
+
+  for (const loc of data) {
+    const label = `#${loc.id} ${loc.name}`;
+    if (!loc.geocode_query) {
+      missing.push(`${label}: no geocode_query`);
       continue;
     }
-    console.log(`  #${loc.id} ${loc.name}: ${hit.lat}, ${hit.lng}  (${hit.label})`);
+    if (requests++ > 0) await sleep(DELAY_MS);
+    const hit = await lookup(loc.geocode_query);
+    if (!hit) {
+      missing.push(`${label}: no result for "${loc.geocode_query}"`);
+      console.log(`  ✗  ${label}\n     no result for "${loc.geocode_query}"`);
+      continue;
+    }
+    const coarse = isCoarse(hit);
+    console.log(
+      `  ${coarse ? "⚠ " : "✓ "} ${label}\n` +
+        `     ${placeType(hit)} · ${hit.lat}, ${hit.lon}\n` +
+        `     ${hit.display_name}`,
+    );
+    if (coarse) {
+      flagged.push(`${label}: ${placeType(hit)}`);
+      continue;
+    }
     if (dryRun) continue;
     const { error: upErr } = await db
       .from("locations")
-      .update({ lat: hit.lat, lng: hit.lng, coord_quality: "geocoded" })
-      .eq("id", loc.id);
+      .update({ lat: Number(hit.lat), lng: Number(hit.lon), coord_quality: "geocoded" })
+      .eq("id", loc.id)
+      .is("lat", null);
     if (upErr) throw upErr;
-    filled++;
+    saved++;
   }
-  console.log(dryRun ? "Dry run: nothing written." : `Filled ${filled} of ${data.length}.`);
+
+  console.log(`\n${dryRun ? "Would save" : "Saved"} ${dryRun ? data.length - flagged.length - missing.length : saved} of ${data.length}.`);
+  if (flagged.length) {
+    console.log(`\nFlagged, not saved (area or road, fix by hand in /admin/locations):\n- ${flagged.join("\n- ")}`);
+  }
+  if (missing.length) console.log(`\nNot found:\n- ${missing.join("\n- ")}`);
 }
 
 main().catch((e) => {

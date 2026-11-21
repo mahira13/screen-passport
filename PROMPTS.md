@@ -8,8 +8,8 @@ Read CLAUDE.md and every SKILL.md in .claude/skills before writing code. Then:
 
 1. Set up a Next.js (App Router, TypeScript, Tailwind) project in this folder, plus Supabase client, Leaflet and html-to-image.
 2. Write `supabase/migrations/001_init.sql` for the data model in CLAUDE.md, including the row-level security rules.
-3. Write `scripts/import-seed.ts` that loads `data/seed/titles.csv`, `locations.csv` and `collections.csv` into Supabase (aliases and work_ids are `|`-separated). Rows with empty lat/lng are imported but skipped by the nearby query until geocoded.
-4. Write `scripts/geocode.ts` that fills empty lat/lng from `address + city` with OpenStreetMap Nominatim (one request per second, a proper User-Agent) and sets `coord_quality = 'geocoded'`.
+3. Write `scripts/import-seed.ts` that loads `data/seed/titles.csv` (into `works`), `locations.csv` and `collections.csv` into Supabase. Column names already match the data model; aliases and work_ids are `|`-separated; empty `coord_quality` stays null. Rows keep `status = 'unverified'`. Rows with empty lat/lng are skipped by the nearby query until they have coordinates.
+4. Write `scripts/geocode.ts` that fills empty lat/lng using the `geocode_query` column (place name + city) with OpenStreetMap Nominatim (one request per second, a proper User-Agent), sets `coord_quality = 'geocoded'`, and has a `--dry-run` that prints each result with Nominatim's place type and display name. Flag results whose type is a district, suburb, city or road so we fix them by hand; never mark them `verified`.
 5. Add `lib/distance.ts`, `lib/match.ts`, `lib/collections.ts` with unit tests.
 
 Stop when `npm test` passes and the seed import works. Show me the commands to run.
@@ -44,7 +44,7 @@ CheckInButton: browser geolocation; success if within 200 m of the location (hav
 
 ## 8. Admin page
 
-`/admin/requests` behind ADMIN_PASSWORD: list open requests by count; for a researched request show its unverified locations with source links; Approve sets them live and the request to approved.
+`/admin/requests` behind ADMIN_PASSWORD: list open requests by count; for a researched request show its unverified locations with source links; Approve sets them live and the request to approved. Add `/admin/locations`: every unverified location with its source link, a small map pin and editable lat/lng; buttons "Verify coordinates" (sets `coord_quality = 'verified'`) and "Set live".
 
 ## 9. Nice to have: screenshot upload
 

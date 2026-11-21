@@ -25,6 +25,7 @@ export interface FilmLocation {
   source_name: string | null;
   source_url: string;
   status: LocationStatus;
+  geocode_query: string | null;
 }
 
 export interface Collection {

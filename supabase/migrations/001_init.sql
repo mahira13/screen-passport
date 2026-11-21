@@ -20,12 +20,14 @@ create table public.locations (
   region        text,
   lat           double precision check (lat between -90 and 90),
   lng           double precision check (lng between -180 and 180),
-  -- null until coordinates exist (then `npm run geocode` sets 'geocoded')
+  -- null until coordinates exist; only a human sets 'verified' (admin page)
   coord_quality text check (coord_quality in ('source', 'approx', 'geocoded', 'verified')),
   visit_note    text,
   source_name   text,
   source_url    text not null check (source_url ~ '^https?://'),
-  status        text not null default 'live' check (status in ('live', 'unverified')),
+  status        text not null default 'unverified' check (status in ('live', 'unverified')),
+  -- what scripts/geocode.ts sends to Nominatim, e.g. "Reinfelder Schule, Berlin, Germany"
+  geocode_query text,
   check ((lat is null) = (lng is null))
 );
 create index locations_work_id_idx on public.locations (work_id);

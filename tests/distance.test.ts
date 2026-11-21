@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { distanceBand, formatDistance, haversineKm, isWithinCheckIn, sortByDistance } from "@/lib/distance";
+import { canCheckIn, distanceBand, formatDistance, haversineKm, isWithinCheckIn, sortByDistance } from "@/lib/distance";
 
 const alex = { lat: 52.522133, lng: 13.41345 };
 const brandenburgGate = { lat: 52.516275, lng: 13.377704 };
@@ -60,5 +60,19 @@ describe("isWithinCheckIn", () => {
   it("accepts within 200 m and refuses beyond", () => {
     expect(isWithinCheckIn(alex, { lat: alex.lat + 0.0015, lng: alex.lng })).toBe(true); // ~167 m
     expect(isWithinCheckIn(alex, { lat: alex.lat + 0.0025, lng: alex.lng })).toBe(false); // ~278 m
+  });
+});
+
+describe("canCheckIn", () => {
+  const at = { lat: 52.5, lng: 13.4 };
+  it("allows only source or verified coordinates", () => {
+    expect(canCheckIn({ ...at, coord_quality: "source" })).toBe(true);
+    expect(canCheckIn({ ...at, coord_quality: "verified" })).toBe(true);
+    expect(canCheckIn({ ...at, coord_quality: "geocoded" })).toBe(false);
+    expect(canCheckIn({ ...at, coord_quality: "approx" })).toBe(false);
+    expect(canCheckIn({ ...at, coord_quality: null })).toBe(false);
+  });
+  it("refuses without coordinates even if marked verified", () => {
+    expect(canCheckIn({ lat: null, lng: null, coord_quality: "verified" })).toBe(false);
   });
 });

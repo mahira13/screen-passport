@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { parse } from "csv-parse/sync";
 import { config } from "dotenv";
 import { supabaseAdmin } from "../lib/supabase";
-import { toCollection, toLocation, toWork, validateSeed } from "./seed-rows";
+import { keepReviewedFields, toCollection, toLocation, toWork, validateSeed } from "./seed-rows";
 
 config({ path: ".env.local" });
 
@@ -41,19 +41,13 @@ async function main() {
 
   const db = supabaseAdmin();
 
-  // Don't wipe coordinates that `npm run geocode` (or a human) already filled in.
+  // Don't undo review work: keep status and coordinates already in the database.
   const { data: existing, error: readErr } = await db
     .from("locations")
-    .select("id, lat, lng, coord_quality")
-    .not("lat", "is", null);
+    .select("id, lat, lng, coord_quality, status");
   if (readErr) throw readErr;
   const known = new Map(existing.map((e) => [e.id as number, e]));
-  const rows = locations.map((l) => {
-    const prev = known.get(l.id);
-    return l.lat === null && prev
-      ? { ...l, lat: prev.lat, lng: prev.lng, coord_quality: prev.coord_quality }
-      : l;
-  });
+  const rows = locations.map((l) => keepReviewedFields(l, known.get(l.id)));
 
   const step = async (table: string, data: object[]) => {
     const { error } = await db.from(table).upsert(data, { onConflict: "id" });

@@ -1,4 +1,4 @@
-import type { LatLng } from "./types";
+import type { CoordQuality, LatLng } from "./types";
 
 const EARTH_RADIUS_KM = 6371.0088;
 
@@ -48,4 +48,22 @@ export const CHECKIN_RADIUS_KM = 0.2;
 
 export function isWithinCheckIn(user: LatLng, place: LatLng): boolean {
   return haversineKm(user, place) <= CHECKIN_RADIUS_KM;
+}
+
+/**
+ * Check-in is only offered where coordinates are exact enough for 200 m:
+ * taken from the source or checked by a human. Geocoded and approximate
+ * points can be kilometres off.
+ */
+export function canCheckIn(loc: { lat: number | null; lng: number | null; coord_quality: CoordQuality | null }): boolean {
+  return loc.lat !== null && loc.lng !== null && (loc.coord_quality === "source" || loc.coord_quality === "verified");
+}
+
+/** Parses form input; null unless both are valid numbers in range. */
+export function parseLatLng(lat: unknown, lng: unknown): LatLng | null {
+  const toNum = (v: unknown) => (typeof v === "string" && v.trim() !== "" ? Number(v) : NaN);
+  const a = toNum(lat);
+  const b = toNum(lng);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || Math.abs(a) > 90 || Math.abs(b) > 180) return null;
+  return { lat: a, lng: b };
 }

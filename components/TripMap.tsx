@@ -3,8 +3,8 @@
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect } from "react";
-import { MapContainer, Marker, Polyline, TileLayer, useMap } from "react-leaflet";
 import type { LatLng } from "@/lib/types";
+import { useLeafletMap } from "@/lib/use-leaflet-map";
 
 const ACCENT = "#E50914";
 
@@ -17,30 +17,25 @@ function numberIcon(n: number) {
   });
 }
 
-function Fit({ stops }: { stops: LatLng[] }) {
-  const map = useMap();
-  useEffect(() => {
-    if (stops.length === 1) map.setView([stops[0].lat, stops[0].lng], 15);
-    else map.fitBounds(L.latLngBounds(stops.map((s) => [s.lat, s.lng] as [number, number])), { padding: [32, 32], maxZoom: 16 });
-  }, [map, stops]);
-  return null;
-}
-
 /** Numbered stops joined by a line in visiting order. Stop 1 (the meeting point) is red. */
 export default function TripMap({ stops }: { stops: (LatLng & { name: string })[] }) {
+  const first = stops[0] ?? { lat: 52.52, lng: 13.405 };
+  const [ref, map] = useLeafletMap({ center: [first.lat, first.lng], zoom: 13, scrollWheelZoom: false });
+
+  useEffect(() => {
+    if (!map || stops.length === 0) return;
+    const points = stops.map((s) => [s.lat, s.lng] as [number, number]);
+    const layer = L.layerGroup([
+      L.polyline(points, { color: ACCENT, weight: 4, opacity: 0.9, dashArray: "8 8" }),
+      ...stops.map((s, i) => L.marker([s.lat, s.lng], { icon: numberIcon(i + 1), title: `${i + 1}. ${s.name}`, alt: `${i + 1}. ${s.name}` })),
+    ]).addTo(map);
+    if (points.length === 1) map.setView(points[0], 15);
+    else map.fitBounds(L.latLngBounds(points), { padding: [32, 32], maxZoom: 16 });
+    return () => {
+      layer.remove();
+    };
+  }, [map, stops]);
+
   if (stops.length === 0) return null;
-  return (
-    <MapContainer center={[stops[0].lat, stops[0].lng]} zoom={13} className="h-full w-full" scrollWheelZoom={false}>
-      <TileLayer
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-      <Polyline positions={stops.map((s) => [s.lat, s.lng] as [number, number])}
-        pathOptions={{ color: ACCENT, weight: 4, opacity: 0.9, dashArray: "8 8" }} />
-      {stops.map((s, i) => (
-        <Marker key={i} position={[s.lat, s.lng]} icon={numberIcon(i + 1)} title={`${i + 1}. ${s.name}`} alt={`${i + 1}. ${s.name}`} />
-      ))}
-      <Fit stops={stops} />
-    </MapContainer>
-  );
+  return <div ref={ref} className="h-full w-full" />;
 }

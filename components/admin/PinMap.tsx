@@ -2,8 +2,8 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useEffect } from "react";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { useEffect, useRef } from "react";
+import { useLeafletMap } from "@/lib/use-leaflet-map";
 
 const BERLIN: [number, number] = [52.52, 13.405];
 
@@ -17,35 +17,37 @@ const pin = L.divIcon({
 
 type Props = { lat: number | null; lng: number | null; onPick: (lat: number, lng: number) => void };
 
-function ClickToPlace({ onPick }: Pick<Props, "onPick">) {
-  useMapEvents({ click: (e) => onPick(e.latlng.lat, e.latlng.lng) });
-  return null;
-}
-
-function KeepInView({ lat, lng }: { lat: number; lng: number }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!map.getBounds().contains([lat, lng])) map.setView([lat, lng], Math.max(map.getZoom(), 15));
-  }, [map, lat, lng]);
-  return null;
-}
-
 export default function PinMap({ lat, lng, onPick }: Props) {
   const has = lat !== null && lng !== null;
-  return (
-    <MapContainer center={has ? [lat, lng] : BERLIN} zoom={has ? 16 : 10} className="h-48 w-full rounded">
-      <TileLayer
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-      <ClickToPlace onPick={onPick} />
-      {has && (
-        <>
-          <Marker position={[lat, lng]} icon={pin} draggable
-            eventHandlers={{ dragend: (e) => { const p = e.target.getLatLng(); onPick(p.lat, p.lng); } }} />
-          <KeepInView lat={lat} lng={lng} />
-        </>
-      )}
-    </MapContainer>
-  );
+  const [ref, map] = useLeafletMap({ center: has ? [lat, lng] : BERLIN, zoom: has ? 16 : 10 });
+  const pick = useRef(onPick);
+  useEffect(() => {
+    pick.current = onPick;
+  }, [onPick]);
+
+  // Click to place.
+  useEffect(() => {
+    if (!map) return;
+    const onClick = (e: L.LeafletMouseEvent) => pick.current(e.latlng.lat, e.latlng.lng);
+    map.on("click", onClick);
+    return () => {
+      map.off("click", onClick);
+    };
+  }, [map]);
+
+  // Draggable pin, kept in view.
+  useEffect(() => {
+    if (!map || lat === null || lng === null) return;
+    const marker = L.marker([lat, lng], { icon: pin, draggable: true }).addTo(map);
+    marker.on("dragend", () => {
+      const p = marker.getLatLng();
+      pick.current(p.lat, p.lng);
+    });
+    if (!map.getBounds().contains([lat, lng])) map.setView([lat, lng], Math.max(map.getZoom(), 15));
+    return () => {
+      marker.remove();
+    };
+  }, [map, lat, lng]);
+
+  return <div ref={ref} className="h-48 w-full rounded" />;
 }

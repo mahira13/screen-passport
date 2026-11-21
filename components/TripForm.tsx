@@ -66,7 +66,7 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5">
+    <div className="space-y-5">
       <fieldset>
         <legend className="text-sm font-semibold">How will you get around?</legend>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -94,7 +94,8 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
           <RequestBox near={from.label === "your location" ? undefined : from.label} />
         </div>
       ) : (
-        <>
+        // The request box above is its own form, so the trip form starts here (forms can't nest).
+        <form onSubmit={submit} className="space-y-5">
           <fieldset>
             <legend className="text-sm font-semibold">How long?</legend>
             <div className="mt-2 flex gap-2">
@@ -133,8 +134,8 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
             className="w-full rounded bg-ink px-5 py-3 font-semibold text-paper disabled:opacity-60">
             {sending ? "Planning your trip…" : "Create the trip"}
           </button>
-        </>
+        </form>
       )}
-    </form>
+    </div>
   );
 }

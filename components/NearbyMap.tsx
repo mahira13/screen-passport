@@ -4,14 +4,14 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import L from "@/lib/leaflet-global"; // must load before the plugin
 import "leaflet.markercluster";
-import { useEffect, useRef } from "react";
-import { CircleMarker, MapContainer, TileLayer, useMap } from "react-leaflet";
+import { useEffect } from "react";
 import { track } from "@/lib/analytics";
 import { OTHER_COLOUR } from "@/lib/colours";
 import { formatDistance } from "@/lib/distance";
 import { directionsUrl } from "@/lib/links";
 import type { NearbyPlace } from "@/lib/nearby";
 import type { LatLng } from "@/lib/types";
+import { useLeafletMap } from "@/lib/use-leaflet-map";
 
 type Props = {
   origin: LatLng;
@@ -83,31 +83,24 @@ function popupContent(p: NearbyPlace): HTMLElement {
   return box;
 }
 
-function ClusterLayer({ places, colours }: Pick<Props, "places" | "colours">) {
-  const map = useMap();
-  const group = useRef<L.MarkerClusterGroup | null>(null);
+export default function NearbyMap({ origin, places, focus, colours, onReady }: Props) {
+  const [ref, map] = useLeafletMap({ center: [origin.lat, origin.lng], zoom: 11, scrollWheelZoom: false });
 
   useEffect(() => {
-    const g = L.markerClusterGroup({
+    if (map) onReady?.();
+  }, [map, onReady]);
+
+  // Markers, clustered; a cluster's ring shows the mix of titles inside it.
+  useEffect(() => {
+    if (!map) return;
+    const group = L.markerClusterGroup({
       iconCreateFunction: clusterIcon,
       showCoverageOnHover: false,
       maxClusterRadius: 35,
       spiderfyOnMaxZoom: true,
       disableClusteringAtZoom: 17,
     });
-    map.addLayer(g);
-    group.current = g;
-    return () => {
-      map.removeLayer(g);
-      group.current = null;
-    };
-  }, [map]);
-
-  useEffect(() => {
-    const g = group.current;
-    if (!g) return;
-    g.clearLayers();
-    g.addLayers(
+    group.addLayers(
       places.map((p) => {
         const colour = colours.get(p.workId) ?? OTHER_COLOUR;
         const m = L.marker([p.lat, p.lng], {
@@ -119,14 +112,26 @@ function ClusterLayer({ places, colours }: Pick<Props, "places" | "colours">) {
         return m;
       }),
     );
-  }, [places, colours]);
+    map.addLayer(group);
+    return () => {
+      map.removeLayer(group);
+    };
+  }, [map, places, colours]);
 
-  return null;
-}
-
-function FitTo({ origin, focus }: Pick<Props, "origin" | "focus">) {
-  const map = useMap();
+  // The start point.
   useEffect(() => {
+    if (!map) return;
+    const start = L.circleMarker([origin.lat, origin.lng], {
+      radius: 8, color: ACCENT, weight: 4, fillColor: "#ffffff", fillOpacity: 1,
+    }).addTo(map);
+    return () => {
+      start.remove();
+    };
+  }, [map, origin]);
+
+  // Zoom to what matters: the start plus the places in focus.
+  useEffect(() => {
+    if (!map) return;
     if (focus.length === 0) {
       map.setView([origin.lat, origin.lng], 11);
       return;
@@ -134,20 +139,6 @@ function FitTo({ origin, focus }: Pick<Props, "origin" | "focus">) {
     const bounds = L.latLngBounds([[origin.lat, origin.lng], ...focus.map((p) => [p.lat, p.lng] as [number, number])]);
     map.fitBounds(bounds, { padding: [28, 28], maxZoom: 15 });
   }, [map, origin, focus]);
-  return null;
-}
 
-export default function NearbyMap({ origin, places, focus, colours, onReady }: Props) {
-  return (
-    <MapContainer center={[origin.lat, origin.lng]} zoom={11} className="h-full w-full" whenReady={onReady} scrollWheelZoom={false}>
-      <TileLayer
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-      <ClusterLayer places={places} colours={colours} />
-      <CircleMarker center={[origin.lat, origin.lng]} radius={8}
-        pathOptions={{ color: ACCENT, weight: 4, fillColor: "#ffffff", fillOpacity: 1 }} />
-      <FitTo origin={origin} focus={focus} />
-    </MapContainer>
-  );
+  return <div ref={ref} className="h-full w-full" />;
 }

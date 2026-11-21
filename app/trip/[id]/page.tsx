@@ -9,6 +9,7 @@ import { ReportTrip } from "@/components/ReportTrip";
 import { TripActions, TripMapBox } from "@/components/TripActions";
 import { formatDistance } from "@/lib/distance";
 import { isTripId } from "@/lib/ids";
+import { siteUrl } from "@/lib/site-url";
 import { buildInvite } from "@/lib/invite-card";
 import { directionsUrl } from "@/lib/links";
 import { googleMapsRouteUrl, kmBetweenStops } from "@/lib/route";
@@ -25,7 +26,6 @@ const loadTrip = cache(async (id: string): Promise<TripView | null | "failed"> =
     return "failed";
   }
 });
-const siteUrl = () => (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export async function generateMetadata(props: PageProps<"/trip/[id]">): Promise<Metadata> {
   const { id } = await props.params;

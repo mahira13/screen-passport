@@ -1,41 +1,14 @@
 "use client";
 
-import { toBlob } from "html-to-image";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 import { CARD_HEIGHT, CARD_WIDTH, shareText, type CardData } from "@/lib/share-card";
+import { canShareFiles, renderPng, shareOrDownload } from "@/lib/share-image";
 import { usePassport } from "@/lib/use-passport";
 import { ShareCardArt } from "./ShareCardArt";
 
 const PREVIEW_SCALE = 0.3;
 const FILE_NAME = "screen-passport.png";
-
-async function render(node: HTMLElement): Promise<Blob> {
-  await document.fonts.ready;
-  const options = { width: CARD_WIDTH, height: CARD_HEIGHT, pixelRatio: 1, cacheBust: true };
-  await toBlob(node, options); // Safari often drops fonts on the first pass; the second is right.
-  const blob = await toBlob(node, options);
-  if (!blob) throw new Error("Could not draw the card");
-  return blob;
-}
-
-function download(file: File) {
-  const url = URL.createObjectURL(file);
-  const a = Object.assign(document.createElement("a"), { href: url, download: FILE_NAME });
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
-
-function canShareFiles(): boolean {
-  try {
-    const probe = new File([new Blob()], FILE_NAME, { type: "image/png" });
-    return typeof navigator.share === "function" && !!navigator.canShare?.({ files: [probe] });
-  } catch {
-    return false;
-  }
-}
 
 /** Shown only to the passport's owner: preview + share/download. */
 export function ShareCard({ passportId, data }: { passportId: string; data: CardData }) {
@@ -58,7 +31,7 @@ function ShareCardInner({ data }: { data: CardData }) {
   useEffect(() => {
     let cancelled = false;
     if (node.current) {
-      render(node.current)
+      renderPng(node.current, CARD_WIDTH, CARD_HEIGHT)
         .then((b) => !cancelled && setBlob(b))
         .catch(() => !cancelled && setMessage("Couldn't draw your card. Try reloading the page."));
     }
@@ -74,7 +47,7 @@ function ShareCardInner({ data }: { data: CardData }) {
     if (!b && node.current) {
       setBusy(true);
       try {
-        b = await render(node.current);
+        b = await renderPng(node.current, CARD_WIDTH, CARD_HEIGHT);
         setBlob(b);
       } catch {
         setMessage("Couldn't draw your card. Try reloading the page.");
@@ -84,20 +57,11 @@ function ShareCardInner({ data }: { data: CardData }) {
     }
     if (!b) return;
     const file = new File([b], FILE_NAME, { type: "image/png" });
-    if (canShare) {
-      try {
-        await navigator.share({ files: [file], title: "My Screen Passport", text: shareText(data.placeCount, data.cityName, link) });
-        return;
-      } catch (e) {
-        const name = (e as Error).name;
-        if (name === "AbortError") return; // closed the share sheet
-        if (name === "NotAllowedError") {
-          setMessage("Your card is ready. Tap Share again.");
-          return;
-        }
-      }
-    }
-    download(file);
+    const outcome = await shareOrDownload(file, canShare, {
+      title: "My Screen Passport",
+      text: shareText(data.placeCount, data.cityName, link),
+    });
+    if (outcome === "tap_again") setMessage("Your card is ready. Tap Share again.");
   };
 
   return (

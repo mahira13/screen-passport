@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache, Suspense } from "react";
+import { InviteCard } from "@/components/InviteCard";
 import { JoinTrip } from "@/components/JoinTrip";
 import { OrganiserPanel } from "@/components/OrganiserPanel";
 import { ReportTrip } from "@/components/ReportTrip";
 import { TripActions, TripMapBox } from "@/components/TripActions";
 import { formatDistance } from "@/lib/distance";
 import { isTripId } from "@/lib/ids";
+import { buildInvite } from "@/lib/invite-card";
 import { directionsUrl } from "@/lib/links";
 import { googleMapsRouteUrl, kmBetweenStops } from "@/lib/route";
 import { formatTripDate, LENGTH_LABEL, MODE_LABEL, shareText, tripLaylaPrompt, tzLabel } from "@/lib/trip";
@@ -155,6 +157,11 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
           )}
 
           <JoinTrip tripId={trip.id} organiser={trip.organiser} joined={trip.joined} />
+
+          <InviteCard tripId={trip.id} data={buildInvite({
+            title: trip.title, filmTitles: trip.stops.map((s) => s.title), startsAt: trip.startsAt, timeZone: trip.timeZone,
+            meetingPoint: trip.meetingPoint, stops: trip.stops.length, joined: trip.joined.length, url,
+          })} />
 
           <p className="mt-4 rounded-md border border-ink/10 p-3 text-xs text-ink/70">
             Stay safe: meet in a public place, and don&apos;t share personal details. A first name is all you need here.

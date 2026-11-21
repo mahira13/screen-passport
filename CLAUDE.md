@@ -32,6 +32,7 @@ Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature f
 - Trips: `/trip/new?works=<ids>&from=<lat,lng or city>` (mode walk/transit/car, half or full day, date and time, first name) → `/trip/[id]` with numbered stops on a map and in a list, "Open all in Google Maps" (up to 9 waypoints), Layla handoff, Join (first name, max 30 characters, max 50 joins), Web Share and Open Graph preview. Stops: live locations of the chosen works within 30 km (walk), 60 km (transit) or 150 km (car) of the start, ordered nearest-next-stop, up to 8 (half day 4–5). "Create a trip" on each title card and on the passport
 - Trip safety: /api/trip max 5 trips per IP per day; at most 300 Claude trip plans per day in total, then the code-built plan; joins max 20 per IP per day and 50 per trip; friendly messages when a limit is hit. No links or offensive words in first names, trip titles, meeting points or any Claude text. "Report this trip" hides a trip after 3 reports (one per IP). The organiser gets a secret link (`/trip/[id]#key=…`, key kept in localStorage) to delete the trip.
 - Trip times are shown in the trip's time zone with its city ("10:00 London time"): the picked city's `tz`, or the browser's zone when the user shared their location
+- Trip invite card on `/trip/[id]`: "Now showing" story image (1080×1920, share-card colours and fonts) with trip title, film titles as plain text, date and time with the zone's city, "Venue" (meeting point), stops, "Seats left" (50 minus joins) and the trip link; Web Share with download fallback; copies the link for the story link sticker; "Copy caption" adds the film hashtags
 - `/impressum` and `/privacy`, linked from every page
 - Analytics events
 
@@ -110,7 +111,7 @@ Under 2 km "Near you", 2–30 km "Day trip", 30–250 km "Weekend by train", abo
 
 ## Analytics events
 
-`map_viewed`, `title_watched`, `passport_created`, `share_clicked`, `checkin_success`, `postcard_made`, `layla_clicked`, `directions_clicked`, `request_created`, `screenshot_read`, `trip_created`, `trip_joined`, `trip_shared`.
+`map_viewed`, `title_watched`, `passport_created`, `share_clicked`, `checkin_success`, `postcard_made`, `layla_clicked`, `directions_clicked`, `request_created`, `screenshot_read`, `trip_created`, `trip_joined`, `trip_shared`, `invite_shared`.
 
 ## Commands
 

@@ -6,30 +6,22 @@ import L from "@/lib/leaflet-global"; // must load before the plugin
 import "leaflet.markercluster";
 import { useEffect } from "react";
 import { formatDistance, haversineKm } from "@/lib/distance";
-import { initials, type MapPlace, markerLabel, type MarkerState, thumbAt } from "@/lib/explore-map";
+import { type MapPlace, markerLabel, type MarkerState, thumbAt } from "@/lib/explore-map";
+import { clusterHtml, GOLD, MARKER_SIZE, markerHtml, markerThumb } from "@/lib/map-markers";
 import type { LatLng } from "@/lib/types";
 import { useLeafletMap } from "@/lib/use-leaflet-map";
 
-const GOLD = "#E3B04B";
-const NAVY = "#1D2B4A";
 const CREAM = "#F4EFE4";
-const SIZE = 44;
+const SIZE = MARKER_SIZE;
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-// Only Commons thumbnails are ever used as marker images.
-const safePhoto = (p: MapPlace) => (p.photo && p.photo.url.startsWith("https://upload.wikimedia.org/") ? thumbAt(p.photo.url, 96) : null);
+const photoOfPlace = (p: MapPlace) => markerThumb(p.photo?.url);
 
 function markerIcon(m: MarkerState): L.DivIcon {
   const p = m.place;
   const size = m.highlighted ? SIZE + 6 : SIZE;
-  const ring = `${m.highlighted ? 3 : 2}px ${p.checkIn ? "solid" : "dashed"} ${GOLD}`;
-  const photo = safePhoto(p);
-  const inner = photo
-    ? `<img src="${esc(photo)}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block">`
-    : `<span style="font:600 15px var(--font-grotesk),system-ui,sans-serif;color:${GOLD};letter-spacing:.04em">${esc(initials(p.titles[0]?.title ?? p.name))}</span>`;
   return L.divIcon({
     className: "",
-    html: `<span role="img" aria-label="${esc(markerLabel(p))}" style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;overflow:hidden;background:${NAVY};border:${ring};box-shadow:0 2px 8px rgba(0,0,0,.5);opacity:${m.faded ? 0.35 : 1};transition:transform .2s">${inner}</span>`,
+    html: markerHtml({ thumb: photoOfPlace(p), label: p.titles[0]?.title ?? p.name, aria: markerLabel(p), size, ring: m.highlighted ? 3 : 2, dashed: !p.checkIn, faded: m.faded }),
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2],
@@ -38,20 +30,10 @@ function markerIcon(m: MarkerState): L.DivIcon {
 
 const placeOf = new WeakMap<L.Marker, MapPlace>();
 
-/** A cluster shows the photo of its first place that has one (else a gold circle), with a count. */
+/** A cluster shows the photo of its first place that has one, with the count. */
 function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
-  const n = cluster.getChildCount();
-  const first = cluster.getAllChildMarkers().map((m) => placeOf.get(m)).find((p) => p && safePhoto(p));
-  const photo = first ? safePhoto(first) : null;
-  const face = photo
-    ? `<img src="${esc(photo)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-    : `<span style="display:flex;width:100%;height:100%;border-radius:50%;background:${GOLD}"></span>`;
-  const badge = `<span style="position:absolute;right:-6px;top:-6px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:${photo ? GOLD : NAVY};color:${photo ? NAVY : GOLD};font:600 12px/22px var(--font-grotesk),system-ui,sans-serif;text-align:center">${n}</span>`;
-  return L.divIcon({
-    className: "",
-    html: `<span role="img" aria-label="${n} places" style="position:relative;display:block;width:${SIZE + 4}px;height:${SIZE + 4}px;border-radius:50%;border:2px solid ${GOLD};box-shadow:0 2px 8px rgba(0,0,0,.5)">${face}${badge}</span>`,
-    iconSize: [SIZE + 4, SIZE + 4],
-  });
+  const thumb = cluster.getAllChildMarkers().map((m) => placeOf.get(m)).map((p) => (p ? photoOfPlace(p) : null)).find(Boolean) ?? null;
+  return L.divIcon({ className: "", html: clusterHtml(thumb, cluster.getChildCount()), iconSize: [SIZE + 4, SIZE + 4] });
 }
 
 // Built with textContent, never innerHTML: names and credits come from the database.
@@ -63,9 +45,8 @@ function popup(p: MapPlace, from: LatLng | null): HTMLElement {
     return e;
   };
   const box = el("div", "", `font-family:var(--font-inter),system-ui,sans-serif;color:${CREAM};width:230px`);
-  const photo = safePhoto(p);
-  if (photo && p.photo) {
-    const img = Object.assign(document.createElement("img"), { src: thumbAt(p.photo.url, 320), alt: `Photo of ${p.name}`, loading: "lazy" });
+  if (photoOfPlace(p) && p.photo) {
+    const img = Object.assign(document.createElement("img"), { src: thumbAt(p.photo.url, 460), alt: `Photo of ${p.name}`, loading: "lazy" });
     img.setAttribute("style", "width:100%;aspect-ratio:16/9;object-fit:cover;display:block");
     const credit = Object.assign(el("a", `Photo: ${p.photo.author}, ${p.photo.license}`, `display:block;font-size:10px;color:${CREAM};opacity:.7;margin-top:2px`), { href: p.photo.page, target: "_blank", rel: "noopener noreferrer" });
     box.append(img, credit);

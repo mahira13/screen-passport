@@ -10,6 +10,7 @@ export type CollectionPlace = {
   id: number; name: string; city: string | null; lat: number; lng: number;
   checkIn: boolean; // check-in grade pin
   photo: boolean; // has an approved or auto Commons photo
+  thumb: string | null; // that photo's thumbnail, for the map marker
   titles: string[];
 };
 
@@ -49,6 +50,7 @@ function placesOf(rows: LiveLocation[], titleOf: Map<string, string>, all: LiveL
       id, name: l.name, city: l.city, lat: l.lat!, lng: l.lng!,
       checkIn: canCheckIn({ lat: l.lat, lng: l.lng, coord_quality: l.coord_quality }),
       photo: !!photoOf(l),
+      thumb: photoOf(l)?.url ?? null,
       titles: [...new Set(same.flatMap((x) => titleOf.get(x.work_id) ?? []))],
     };
   });

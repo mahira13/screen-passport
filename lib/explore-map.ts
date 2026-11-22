@@ -36,9 +36,21 @@ export function initials(title: string): string {
   return (main[0] ?? "?").slice(0, 2).toUpperCase();
 }
 
-/** A Commons thumbnail at the given width: ".../thumb/a/ab/File.jpg/640px-File.jpg" -> "96px-". */
+// Wikimedia serves only these thumbnail widths; any other width answers HTTP 400.
+export const THUMB_STEPS = [20, 40, 60, 120, 250, 330, 500, 960, 1280, 1920] as const;
+
+/**
+ * A Commons thumbnail at least `width` px wide, snapped to a width Wikimedia serves:
+ * ".../thumb/a/ab/File.jpg/960px-File.jpg?utm_source=…" -> ".../120px-File.jpg". Other URLs unchanged.
+ */
 export function thumbAt(url: string, width: number): string {
-  return /\/thumb\/.+\/\d+px-[^/]+$/.test(url) ? url.replace(/\/(\d+)px-([^/]+)$/, `/${width}px-$2`) : url;
+  const base = url.split("?")[0];
+  const step = THUMB_STEPS.find((s) => s >= width) ?? THUMB_STEPS[THUMB_STEPS.length - 1];
+  if (/\/thumb\/.+\/\d+px-[^/]+$/.test(base)) return base.replace(/\/(\d+)px-([^/]+)$/, `/${step}px-$2`);
+  // A small original (Commons gave no thumbnail): build one, only for small sizes so it never upscales.
+  const orig = base.match(/^(https:\/\/upload\.wikimedia\.org\/wikipedia\/commons)\/([0-9a-f])\/([0-9a-f]{2})\/([^/]+\.(?:jpe?g|png|webp))$/i);
+  if (orig && step <= 250) return `${orig[1]}/thumb/${orig[2]}/${orig[3]}/${orig[4]}/${step}px-${orig[4]}`;
+  return url;
 }
 
 export type MapFilters = {

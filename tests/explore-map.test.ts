@@ -31,9 +31,14 @@ describe("marker details", () => {
     expect(initials("The Reader")).toBe("RE");
   });
   it("asks Commons for a small thumbnail, never the full image", () => {
-    expect(thumbAt("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/640px-F.jpg", 96))
-      .toBe("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/96px-F.jpg");
-    expect(thumbAt("https://upload.wikimedia.org/wikipedia/commons/a/ab/F.jpg", 96)).toBe("https://upload.wikimedia.org/wikipedia/commons/a/ab/F.jpg");
+    expect(thumbAt("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/640px-F.jpg", 88))
+      .toBe("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/120px-F.jpg");
+    expect(thumbAt("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/960px-F.jpg?utm_source=x", 460))
+      .toBe("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/500px-F.jpg"); // query dropped, width Wikimedia serves
+    // A small original: a thumbnail is built for marker sizes, the original is kept for big ones.
+    expect(thumbAt("https://upload.wikimedia.org/wikipedia/commons/a/ab/F.jpg?utm_source=x", 88)).toBe("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/120px-F.jpg");
+    expect(thumbAt("https://upload.wikimedia.org/wikipedia/commons/a/ab/F.jpg", 460)).toBe("https://upload.wikimedia.org/wikipedia/commons/a/ab/F.jpg");
+    expect(thumbAt("https://example.com/F.jpg", 88)).toBe("https://example.com/F.jpg");
   });
 });
 
@@ -51,5 +56,17 @@ describe("applyFilters", () => {
     expect(applyFilters(places, { ...none, city: "Görlitz" }, null).map((m) => m.place.id)).toEqual([3]);
     expect(applyFilters(places, { ...none, radiusKm: 5 }, { lat: 52.52, lng: 13.405 }).map((m) => m.place.id)).toEqual([1]);
     expect(applyFilters(places, { ...none, radiusKm: 5 }, null)).toHaveLength(3); // no origin: radius can't apply
+  });
+});
+
+describe("map markers", () => {
+  it("uses a round Commons thumbnail when there is one, initials otherwise", async () => {
+    const { markerHtml, markerThumb, clusterHtml } = await import("@/lib/map-markers");
+    const thumb = markerThumb("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/960px-F.jpg?utm_source=x");
+    expect(thumb).toBe("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/F.jpg/120px-F.jpg");
+    expect(markerThumb("https://example.com/x.jpg")).toBeNull();
+    expect(markerHtml({ thumb, label: "Babylon Berlin", aria: "P" })).toContain('<img src="https://upload.wikimedia.org/');
+    expect(markerHtml({ thumb: null, label: "Babylon Berlin", aria: "P" })).toContain(">BB</span>");
+    expect(clusterHtml(thumb, 7)).toMatch(/<img src=.*>7<\/span>/);
   });
 });

@@ -85,7 +85,7 @@ async function LocationView({ params }: { params: Promise<{ id: string }> }) {
         </div>
         <div>
           <PlacePhoto photo={p.photo} name={p.name} />
-          <PlacesMapBox pins={[{ id: p.id, name: p.name, lat: p.lat, lng: p.lng }]} className={`h-72 ${p.photo ? "mt-4" : ""}`} />
+          <PlacesMapBox pins={[{ id: p.id, name: p.name, lat: p.lat, lng: p.lng, thumb: p.photo?.url, label: p.title }]} className={`h-72 ${p.photo ? "mt-4" : ""}`} />
         </div>
       </div>
 

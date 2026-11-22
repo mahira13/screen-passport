@@ -7,6 +7,7 @@ import "leaflet.markercluster";
 import { useEffect } from "react";
 import { track } from "@/lib/analytics";
 import { OTHER_COLOUR } from "@/lib/colours";
+import { clusterHtml, MARKER_SIZE, markerHtml, markerThumb } from "@/lib/map-markers";
 import { formatDistance } from "@/lib/distance";
 import { directionsUrl } from "@/lib/links";
 import type { NearbyPlace } from "@/lib/nearby";
@@ -25,42 +26,23 @@ const INK = "#16213A"; // marker ring, matches the page background
 const CREAM = "#F4EFE4";
 const GOLD = "#E3B04B";
 
-function dotIcon(colour: string) {
+function placeIcon(p: NearbyPlace, colour: string) {
   return L.divIcon({
     className: "",
-    html: `<span style="display:block;width:18px;height:18px;border-radius:50%;background:${colour};border:3px solid ${INK};box-shadow:0 0 0 2px ${GOLD},0 2px 8px rgba(0,0,0,.5)"></span>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
-    popupAnchor: [0, -10],
+    html: markerHtml({ thumb: markerThumb(p.photo?.url), label: p.title, aria: `${p.name} (${p.title})`, dot: colour }),
+    iconSize: [MARKER_SIZE, MARKER_SIZE],
+    iconAnchor: [MARKER_SIZE / 2, MARKER_SIZE / 2],
+    popupAnchor: [0, -MARKER_SIZE / 2],
   });
 }
 
-// Which colour each marker has, so a cluster can show the mix of titles inside it.
-const markerColour = new WeakMap<L.Marker, string>();
+// Each marker's photo, so a cluster can show one of them.
+const markerPhoto = new WeakMap<L.Marker, string | null>();
 
-/** "conic-gradient(#a 0deg 120deg, #b 120deg 360deg)": one slice per colour, sized by count. */
-function colourRing(colours: string[]): string {
-  const counts = new Map<string, number>();
-  for (const c of colours) counts.set(c, (counts.get(c) ?? 0) + 1);
-  let start = 0;
-  const slices = [...counts].sort((a, b) => b[1] - a[1]).map(([c, n]) => {
-    const end = start + (n / colours.length) * 360;
-    const slice = `${c} ${start}deg ${end}deg`;
-    start = end;
-    return slice;
-  });
-  return `conic-gradient(${slices.join(",")})`;
-}
-
+/** One photo from inside the cluster (the first that has one) and the count. */
 function clusterIcon(cluster: L.MarkerCluster) {
-  const n = cluster.getChildCount();
-  const size = n < 10 ? 38 : n < 30 ? 44 : 50;
-  const ring = colourRing(cluster.getAllChildMarkers().map((m) => markerColour.get(m) ?? OTHER_COLOUR));
-  return L.divIcon({
-    className: "",
-    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:${ring};box-shadow:0 0 0 2px ${GOLD},0 2px 8px rgba(0,0,0,.5)"><span style="display:flex;align-items:center;justify-content:center;width:${size - 14}px;height:${size - 14}px;border-radius:50%;background:${INK};color:${CREAM};font:600 15px var(--font-grotesk),system-ui,sans-serif;letter-spacing:.04em">${n}</span></span>`,
-    iconSize: [size, size],
-  });
+  const thumb = cluster.getAllChildMarkers().map((m) => markerPhoto.get(m) ?? null).find(Boolean) ?? null;
+  return L.divIcon({ className: "", html: clusterHtml(thumb, cluster.getChildCount()), iconSize: [MARKER_SIZE + 4, MARKER_SIZE + 4] });
 }
 
 // Built with textContent, never innerHTML: notes come from the database.
@@ -93,7 +75,7 @@ export default function NearbyMap({ origin, places, focus, colours, onReady }: P
     if (map) onReady?.();
   }, [map, onReady]);
 
-  // Markers, clustered; a cluster's ring shows the mix of titles inside it.
+  // Photo markers (title colour as a small dot), clustered.
   useEffect(() => {
     if (!map) return;
     const group = L.markerClusterGroup({
@@ -107,11 +89,11 @@ export default function NearbyMap({ origin, places, focus, colours, onReady }: P
       places.map((p) => {
         const colour = colours.get(p.workId) ?? OTHER_COLOUR;
         const m = L.marker([p.lat, p.lng], {
-          icon: dotIcon(colour),
+          icon: placeIcon(p, colour),
           title: `${p.name} (${p.title})`,
           alt: `${p.name} (${p.title})`,
         }).bindPopup(() => popupContent(p));
-        markerColour.set(m, colour);
+        markerPhoto.set(m, markerThumb(p.photo?.url));
         return m;
       }),
     );

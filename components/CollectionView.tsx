@@ -57,7 +57,7 @@ export async function CollectionView({ c }: { c: CollectionModel }) {
               <ShareLink path={c.href} title={c.name} text={`${c.name}: ${c.places.length} real filming places to visit.`} what="collection" />
             </div>
           </div>
-          <PlacesMapBox pins={c.places} className="-mx-4 h-[45vh] max-h-[480px] min-h-[260px] sm:mx-0" />
+          <PlacesMapBox pins={c.places.map((p) => ({ ...p, label: p.titles[0] ?? p.name }))} className="-mx-4 h-[45vh] max-h-[480px] min-h-[260px] sm:mx-0" />
         </div>
       </section>
 

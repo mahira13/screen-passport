@@ -74,7 +74,7 @@ async function TitleView({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       <div className={WRAP}>
-        <PlacesMapBox pins={places} className="-mx-4 h-[50vh] max-h-[560px] min-h-[280px] sm:mx-0" />
+        <PlacesMapBox pins={places.map((p) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng, thumb: p.photo?.url, label: work.title }))} className="-mx-4 h-[50vh] max-h-[560px] min-h-[280px] sm:mx-0" />
       </div>
 
       <section className={`${WRAP} pt-14`}>

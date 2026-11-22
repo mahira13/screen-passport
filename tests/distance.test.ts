@@ -61,13 +61,19 @@ describe("isWithinCheckIn", () => {
     expect(isWithinCheckIn(alex, { lat: alex.lat + 0.0015, lng: alex.lng })).toBe(true); // ~167 m
     expect(isWithinCheckIn(alex, { lat: alex.lat + 0.0025, lng: alex.lng })).toBe(false); // ~278 m
   });
+  it("also accepts anywhere inside a large site's bounding box", () => {
+    const tempelhof = { lat: 52.4731, lng: 13.4039, bbox: [52.465, 13.39, 52.482, 13.42] as [number, number, number, number] };
+    expect(isWithinCheckIn({ lat: 52.479, lng: 13.415 }, tempelhof)).toBe(true); // ~950 m from the point, inside the box
+    expect(isWithinCheckIn({ lat: 52.49, lng: 13.415 }, tempelhof)).toBe(false); // outside the box, far from the point
+  });
 });
 
 describe("canCheckIn", () => {
   const at = { lat: 52.5, lng: 13.4 };
-  it("allows only source or verified coordinates", () => {
+  it("allows source, verified and checked landmark (geocoded_poi) coordinates only", () => {
     expect(canCheckIn({ ...at, coord_quality: "source" })).toBe(true);
     expect(canCheckIn({ ...at, coord_quality: "verified" })).toBe(true);
+    expect(canCheckIn({ ...at, coord_quality: "geocoded_poi" })).toBe(true);
     expect(canCheckIn({ ...at, coord_quality: "geocoded" })).toBe(false);
     expect(canCheckIn({ ...at, coord_quality: "approx" })).toBe(false);
     expect(canCheckIn({ ...at, coord_quality: null })).toBe(false);

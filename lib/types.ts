@@ -1,5 +1,6 @@
 export type WorkType = "series" | "film";
-export type CoordQuality = "source" | "approx" | "geocoded" | "verified";
+// geocoded_poi: a geocoder match on a named landmark (name and city checked); allows check-in.
+export type CoordQuality = "source" | "approx" | "geocoded" | "geocoded_poi" | "verified";
 export type LocationStatus = "live" | "unverified";
 export type VerificationStatus = "draft" | "verified" | "published" | "rejected";
 export type LocationConfidence = "exact" | "building" | "street" | "area";
@@ -39,6 +40,7 @@ export interface FilmLocation {
   is_filming_location?: boolean;
   verified_at?: string | null;
   merged_into?: number | null;
+  verification_method?: "ai" | "team" | null; // migration 008
   depicts?: string | null; // from location_works, per title
 }
 

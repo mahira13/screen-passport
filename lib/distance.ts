@@ -46,17 +46,23 @@ export function sortByDistance<T extends { lat: number | null; lng: number | nul
 
 export const CHECKIN_RADIUS_KM = 0.2;
 
-export function isWithinCheckIn(user: LatLng, place: LatLng): boolean {
-  return haversineKm(user, place) <= CHECKIN_RADIUS_KM;
+/** [south, west, north, east] of a large site (park, stadium) from the geocoder. */
+export type BBox = [number, number, number, number];
+
+/** Within 200 m of the point, or anywhere inside the site's bounding box when there is one. */
+export function isWithinCheckIn(user: LatLng, place: LatLng & { bbox?: BBox | null }): boolean {
+  if (haversineKm(user, place) <= CHECKIN_RADIUS_KM) return true;
+  const b = place.bbox;
+  return !!b && user.lat >= b[0] && user.lat <= b[2] && user.lng >= b[1] && user.lng <= b[3];
 }
 
-/**
- * Check-in is only offered where coordinates are exact enough for 200 m:
- * taken from the source or checked by a human. Geocoded and approximate
- * points can be kilometres off.
- */
+// Exact enough for 200 m: from the source, checked by a person, or a geocoder match on a named
+// landmark whose name and city were checked (geocoded_poi). Plain geocoded and approximate points
+// can be kilometres off (a district search returns the district centre).
+const CHECK_IN_QUALITY: (CoordQuality | null)[] = ["source", "verified", "geocoded_poi"];
+
 export function canCheckIn(loc: { lat: number | null; lng: number | null; coord_quality: CoordQuality | null }): boolean {
-  return loc.lat !== null && loc.lng !== null && (loc.coord_quality === "source" || loc.coord_quality === "verified");
+  return loc.lat !== null && loc.lng !== null && CHECK_IN_QUALITY.includes(loc.coord_quality);
 }
 
 /** Parses form input; null unless both are valid numbers in range. */

@@ -2,6 +2,8 @@
 --  * verification_status gains 'needs_review' (the pipeline couldn't confirm; a person decides).
 --  * verification_method: who confirmed a published place ('ai' or 'team'), shown as a badge.
 --  * recheck: an admin marks a place to be verified again.
+--  * coord_quality gains 'geocoded_poi' (a geocoder match on a named landmark, name and city checked;
+--    allows check-in) and a bounding box for large sites (check-in anywhere inside).
 --  * location_reviews: every verification run with its reasons and evidence quote. Internal only:
 --    RLS on, no policies, so only server routes with the service role key can read it.
 
@@ -12,9 +14,21 @@ alter table public.locations drop constraint if exists locations_verification_st
 alter table public.locations add constraint locations_verification_status_check
   check (verification_status in ('draft', 'needs_review', 'verified', 'published', 'rejected'));
 
+alter table public.locations drop constraint if exists locations_coord_quality_check;
+alter table public.locations add constraint locations_coord_quality_check
+  check (coord_quality in ('source', 'approx', 'geocoded', 'geocoded_poi', 'verified'));
+
 alter table public.locations
   add column if not exists verification_method text check (verification_method in ('ai', 'team')),
-  add column if not exists recheck boolean not null default false;
+  add column if not exists recheck boolean not null default false,
+  add column if not exists bbox_south double precision check (bbox_south between -90 and 90),
+  add column if not exists bbox_west  double precision check (bbox_west between -180 and 180),
+  add column if not exists bbox_north double precision check (bbox_north between -90 and 90),
+  add column if not exists bbox_east  double precision check (bbox_east between -180 and 180);
+
+-- Drafts still resting on a rental marketplace or a blog wait for re-sourcing (e.g. visit-goerlitz.com).
+update public.locations set verification_status = 'needs_review'
+where verification_status = 'draft' and source_url ~* '://([a-z0-9-]+\.)*(giggster\.com|foodieexplorers\.co\.uk)/';
 
 -- Everything published so far was set live by a person in /admin/locations.
 update public.locations set verification_method = 'team'
@@ -51,7 +65,7 @@ select l.id, lw.work_id, l.name,
        l.coord_quality, l.location_confidence, l.public_access, l.visit_note,
        coalesce(lw.evidence_name, l.source_name) as source_name,
        coalesce(lw.evidence_url, l.source_url) as source_url,
-       l.verification_method
+       l.verification_method, l.bbox_south, l.bbox_west, l.bbox_north, l.bbox_east
 from public.locations l
 join public.location_works lw on lw.location_id = l.id
 where l.verification_status = 'published' and l.is_filming_location
@@ -65,13 +79,14 @@ create function public.nearby_locations(
   id int, name text, address text, city text, region text, country text, country_code text,
   lat double precision, lng double precision, coord_quality text, location_confidence text,
   public_access text, visit_note text, source_name text, source_url text, verification_method text,
+  bbox_south double precision, bbox_west double precision, bbox_north double precision, bbox_east double precision,
   distance_km double precision, works jsonb
 )
 language sql stable security invoker set search_path = public, extensions as $$
   with here as (select st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography as g)
   select l.id, l.name, l.address, l.city, l.region, l.country, l.country_code, l.lat, l.lng,
          l.coord_quality, l.location_confidence, l.public_access, l.visit_note, l.source_name, l.source_url,
-         l.verification_method,
+         l.verification_method, l.bbox_south, l.bbox_west, l.bbox_north, l.bbox_east,
          st_distance(l.geog, here.g, false) / 1000 as distance_km,
          (select jsonb_agg(jsonb_build_object(
                    'id', w.id, 'title', w.title, 'type', w.type,

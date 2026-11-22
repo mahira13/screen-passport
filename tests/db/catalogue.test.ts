@@ -201,6 +201,11 @@ describe.skipIf(!url)("migration 008: verification", () => {
       await expect(db.query("select * from location_reviews")).rejects.toThrow(/permission denied/);
       await db.query("rollback to savepoint denied");
       const badge = await db.query("select verification_method from nearby_locations(52.52, 13.405, 1) limit 1");
+      await db.query("reset role");
+      const weak = await db.query(`select verification_status, count(*)::int as n from locations
+        where source_url ~* '(giggster|foodieexplorers)' and verification_status in ('draft', 'needs_review') group by 1`);
+      expect(weak.rows.every((r) => r.verification_status === "needs_review")).toBe(true);
+      expect(weak.rows.reduce((n, r) => n + r.n, 0)).toBeGreaterThan(0);
       expect(badge.rows[0].verification_method).toBe("team");
     } finally {
       await db.query("rollback");

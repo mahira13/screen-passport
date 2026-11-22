@@ -7,6 +7,9 @@ export interface NominatimHit {
   category?: string; // jsonv2, e.g. "amenity", "boundary", "highway"
   type?: string; // e.g. "school", "administrative", "residential"
   addresstype?: string; // e.g. "amenity", "suburb", "road", "city"
+  name?: string;
+  boundingbox?: string[]; // [south, north, west, east] as strings
+  address?: Record<string, string>; // with addressdetails=1
 }
 
 // Areas and streets, not a single place: too vague to stand for a location.

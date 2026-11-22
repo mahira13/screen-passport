@@ -12,7 +12,8 @@
     "geocode": "tsx scripts/geocode.ts",
     "duplicates": "tsx scripts/find-duplicates.ts",
     "test:db": "sh scripts/test-db.sh",
-    "backup": "tsx scripts/backup-tables.ts"
+    "backup": "tsx scripts/backup-tables.ts",
+    "verify": "tsx scripts/verify-locations.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",

@@ -14,14 +14,18 @@ const PinMap = dynamic(() => import("./PinMap"), {
 
 export type ReviewLocation = Pick<
   FilmLocation,
-  "id" | "name" | "scene_note" | "address" | "city" | "lat" | "lng" | "coord_quality" | "visit_note" | "source_name" | "source_url" | "geocode_query"
-> & { works: { title: string } | null };
+  "id" | "name" | "scene_note" | "address" | "city" | "lat" | "lng" | "coord_quality" | "visit_note" | "source_name" | "source_url" | "geocode_query" | "verification_status"
+> & {
+  works: { title: string } | null;
+  review: { decision: string; reasons: string[]; evidence_quote: string | null; created_at: string } | null;
+};
 
 const QUALITY_NOTE: Record<string, string> = {
   source: "from the source",
   verified: "verified",
   approx: "approximate, check it",
   geocoded: "geocoded, check it",
+  geocoded_poi: "geocoded on a named landmark",
 };
 
 // Mount the map only once the card scrolls into view: one map per card is heavy.
@@ -54,7 +58,9 @@ export function LocationReviewCard({ location: l }: { location: ReviewLocation }
 
   return (
     <article className="rounded-lg border border-neutral-200 p-4">
-      <p className="text-xs text-neutral-500">#{l.id} · {l.works?.title ?? "Unknown title"}</p>
+      <p className="text-xs text-neutral-500">
+        #{l.id} · {l.works?.title ?? "Unknown title"} · {l.verification_status?.replace("_", " ") ?? "draft"}
+      </p>
       <h2 className="text-lg font-medium">{l.name}</h2>
       {l.scene_note && <p className="text-sm">{l.scene_note}</p>}
       <p className="mt-1 text-sm text-neutral-600">
@@ -68,6 +74,14 @@ export function LocationReviewCard({ location: l }: { location: ReviewLocation }
         </a>
         {untrusted && <span className="ml-2 rounded bg-red-500/15 px-1.5 text-red-400">not a trusted source</span>}
       </p>
+
+      {l.review && (
+        <div className="mt-2 rounded bg-neutral-100 p-2 text-sm text-neutral-800">
+          <p className="text-xs text-neutral-500">AI review {new Date(l.review.created_at).toLocaleString("en-GB")}: {l.review.decision.replace("_", " ")}</p>
+          {l.review.reasons.length > 0 && <ul className="mt-1 list-disc pl-5">{l.review.reasons.map((r) => <li key={r}>{r}</li>)}</ul>}
+          {l.review.evidence_quote && <p className="mt-1 italic">“{l.review.evidence_quote}”</p>}
+        </div>
+      )}
 
       <div ref={ref} className="mt-3">
         {seen ? (

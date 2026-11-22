@@ -5,8 +5,8 @@ import type { Collection, Work } from "./types";
 
 export const LIVE_TAG = "live-locations";
 
-// "relation does not exist" from Postgres and from PostgREST's schema cache.
-const MISSING = new Set(["42P01", "PGRST205"]);
+// "relation/column does not exist" from Postgres and from PostgREST's schema cache.
+const MISSING = new Set(["42P01", "PGRST205", "42703", "PGRST204"]);
 
 export interface LiveData {
   configured: boolean;
@@ -32,12 +32,18 @@ export async function getLiveData(): Promise<LiveData> {
     return { configured: false, works: [], locations: [], collections: [] };
   }
   const db = supabasePublic();
-  const catalogue = () =>
-    db.from("catalogue_entries").select(`${COLUMNS}, country, country_code, location_confidence, public_access, depicts`);
+  // Newest schema first; each step back is for a database where 008 or 007 isn't applied yet.
+  const V007 = `${COLUMNS}, country, country_code, location_confidence, public_access, depicts`;
+  const V008 = `${V007}, verification_method, bbox_south, bbox_west, bbox_north, bbox_east`;
+  const readLocations = async () => {
+    const r8 = await db.from("catalogue_entries").select(V008);
+    if (!r8.error || !MISSING.has(r8.error.code)) return r8;
+    const r7 = await db.from("catalogue_entries").select(V007);
+    if (!r7.error || !MISSING.has(r7.error.code)) return r7;
+    return db.from("mappable_locations").select(COLUMNS);
+  };
   const [locs, works, cols] = await Promise.all([
-    catalogue().then((r) =>
-      r.error && MISSING.has(r.error.code) ? db.from("mappable_locations").select(COLUMNS) : r,
-    ),
+    readLocations(),
     db.from("works").select("id, title, type, aliases, year"),
     db.from("collections").select("id, name, city, work_ids, description"),
   ]);

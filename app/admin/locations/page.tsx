@@ -3,11 +3,15 @@ import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { LocationReviewCard, type ReviewLocation } from "@/components/admin/LocationReviewCard";
 import { LoginForm } from "@/components/admin/LoginForm";
+import { VerificationPanel } from "@/components/admin/VerificationPanel";
 import { ADMIN_COOKIE, isValidToken } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase";
 import { logout } from "./actions";
 
 export const metadata: Metadata = { title: "Review locations", robots: { index: false, follow: false } };
+
+// "Run AI verification" fetches pages, calls Claude and the geocoder: give its server action time.
+export const maxDuration = 60;
 
 export default function AdminLocationsPage() {
   return (
@@ -33,14 +37,23 @@ async function AdminLocations() {
 
   const { data, error } = await supabaseAdmin()
     .from("locations")
-    .select("id, name, scene_note, address, city, lat, lng, coord_quality, visit_note, source_name, source_url, geocode_query, works(title)")
+    .select("id, name, scene_note, address, city, lat, lng, coord_quality, visit_note, source_name, source_url, geocode_query, verification_status, works(title)")
     .eq("status", "unverified")
     .order("id");
   if (error) return <p className="mt-6 text-red-400">Could not load locations: {error.message}</p>;
 
-  const rows = data as unknown as ReviewLocation[];
+  // The latest AI review per place (internal: reasons and evidence quote). Table from migration 008.
+  const reviews = await supabaseAdmin()
+    .from("location_reviews")
+    .select("location_id, decision, reasons, evidence_quote, created_at")
+    .in("location_id", data.map((d) => d.id))
+    .order("created_at", { ascending: false });
+  const latest = new Map<number, ReviewLocation["review"]>();
+  for (const r of reviews.data ?? []) if (!latest.has(r.location_id)) latest.set(r.location_id, r);
+  const rows = (data as unknown as ReviewLocation[]).map((l) => ({ ...l, review: latest.get(l.id) ?? null }));
   return (
     <>
+      <VerificationPanel />
       <div className="mt-4 flex items-center justify-between text-sm">
         <span>{rows.length === 0 ? "Nothing to review." : `${rows.length} unverified`}</span>
         <form action={logout}>

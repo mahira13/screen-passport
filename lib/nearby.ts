@@ -1,4 +1,4 @@
-import { BANDS, distanceBand, sortByDistance, type BandKey } from "./distance";
+import { BANDS, distanceBand, sortByDistance, type BandKey, type BBox } from "./distance";
 import type { CoordQuality, FilmLocation, LatLng, Work } from "./types";
 
 export type LiveLocation = Pick<
@@ -6,8 +6,9 @@ export type LiveLocation = Pick<
   "id" | "work_id" | "name" | "city" | "lat" | "lng" | "coord_quality"
 > &
   Partial<Pick<FilmLocation, "scene_note" | "visit_note" | "source_name" | "source_url">> &
-  // From catalogue_entries (migration 007); missing before it is applied.
-  Partial<Pick<FilmLocation, "country" | "country_code" | "location_confidence" | "public_access" | "depicts">>;
+  // From catalogue_entries (migrations 007–008); missing before they are applied.
+  Partial<Pick<FilmLocation, "country" | "country_code" | "location_confidence" | "public_access" | "depicts" | "verification_method">> &
+  { bbox_south?: number | null; bbox_west?: number | null; bbox_north?: number | null; bbox_east?: number | null };
 
 export interface NearbyPlace {
   id: number;
@@ -24,6 +25,8 @@ export interface NearbyPlace {
   visitNote: string | null;
   sourceName: string | null;
   sourceUrl: string | null;
+  bbox: BBox | null; // large sites: check-in anywhere inside
+  verifiedBy: "ai" | "team" | null;
 }
 
 export interface NearbyTitle {
@@ -59,6 +62,9 @@ export function buildNearby(locations: LiveLocation[], works: Work[], from: LatL
       visitNote: l.visit_note ?? null,
       sourceName: l.source_name ?? null,
       sourceUrl: l.source_url ?? null,
+      bbox: l.bbox_south != null && l.bbox_west != null && l.bbox_north != null && l.bbox_east != null
+        ? [l.bbox_south, l.bbox_west, l.bbox_north, l.bbox_east] : null,
+      verifiedBy: l.verification_method ?? null,
     }));
 
   const titles = new Map<string, NearbyTitle>();

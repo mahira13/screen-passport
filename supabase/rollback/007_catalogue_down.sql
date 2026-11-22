@@ -48,6 +48,8 @@ drop index if exists public.locations_city_trgm;
 drop index if exists public.locations_country_trgm;
 alter table public.locations
   drop column if exists recheck,             -- from 008, if applied
+  drop column if exists bbox_south, drop column if exists bbox_west,
+  drop column if exists bbox_north, drop column if exists bbox_east,
   drop column if exists verification_method, -- from 008, if applied
   drop column if exists merged_into,
   drop column if exists geog,

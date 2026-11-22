@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { track } from "@/lib/analytics";
 import { copyText } from "@/lib/clipboard";
-import { formatDistance } from "@/lib/distance";
+import { canCheckIn, formatDistance } from "@/lib/distance";
 import { LAYLA_URL, laylaPrompt } from "@/lib/layla";
 import { directionsUrl } from "@/lib/links";
 import type { NearbyPlace } from "@/lib/nearby";
@@ -15,7 +15,7 @@ type Props = { place: NearbyPlace; titlePlaces: NearbyPlace[] };
 
 export function LocationCard({ place: p, titlePlaces }: Props) {
   const [copied, setCopied] = useState<string | null>(null);
-  const approximate = p.coordQuality !== "source" && p.coordQuality !== "verified";
+  const approximate = !canCheckIn({ lat: p.lat, lng: p.lng, coord_quality: p.coordQuality });
   const prompt = laylaPrompt(p.title, p, titlePlaces);
 
   // The link opens Layla itself (target=_blank); copying happens in the same tap.
@@ -40,7 +40,7 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
         <p className="mt-2 text-xs text-ink/70">
           {p.visitNote}
           {p.visitNote && approximate && " · "}
-          {approximate && "Pin is approximate, so check-in isn't offered yet"}
+          {approximate && "Approximate location, so check-in isn't offered"}
         </p>
       )}
 
@@ -56,6 +56,12 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
             title={p.sourceName ?? undefined}>
             Source{p.sourceName && <span className="ml-1 max-w-[10rem] truncate normal-case tracking-normal text-ink/60">· {p.sourceName}</span>}
           </a>
+        )}
+        {p.verifiedBy && (
+          <span className="label inline-flex min-h-11 items-center gap-1.5 px-1 text-ink/70"
+            title={p.verifiedBy === "ai" ? "Checked by our AI pipeline against the linked source" : "Checked by our team against the linked source"}>
+            <span aria-hidden className="text-accent">✓</span> {p.verifiedBy === "ai" ? "AI-verified" : "Team-verified"}
+          </span>
         )}
         <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${linkBtn} border border-ink/30 hover:border-accent hover:text-accent`}>
           Plan the rest with Layla

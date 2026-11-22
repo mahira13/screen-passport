@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CHECKIN_RADIUS_KM, canCheckIn, formatDistance, haversineKm } from "@/lib/distance";
+import { canCheckIn, formatDistance, haversineKm, isWithinCheckIn } from "@/lib/distance";
 import type { NearbyPlace } from "@/lib/nearby";
 import { checkIn } from "@/lib/passport-store";
 import { usePassport } from "@/lib/use-passport";
@@ -14,8 +14,8 @@ type State =
 const btn = "label inline-flex min-h-11 items-center justify-center gap-2 px-3.5 transition-colors";
 
 /**
- * "I'm here": the phone's location must be within 200 m of the place. Only offered where the
- * pin came from the source or was verified; approximate pins can be kilometres off.
+ * "I'm here": the phone must be within 200 m of the place, or inside a large site's bounding box.
+ * Only offered for source, verified or checked landmark pins; approximate pins can be kilometres off.
  * The position is compared in the browser and never sent anywhere.
  */
 export function CheckInButton({ place }: { place: NearbyPlace }) {
@@ -40,8 +40,9 @@ export function CheckInButton({ place }: { place: NearbyPlace }) {
     setState({ kind: "locating" });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const km = haversineKm({ lat: pos.coords.latitude, lng: pos.coords.longitude }, place);
-        if (km <= CHECKIN_RADIUS_KM) {
+        const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const km = haversineKm(here, place);
+        if (isWithinCheckIn(here, place)) {
           checkIn(place.id, place.workId, null);
           setState({ kind: "idle" });
         } else setState({ kind: "far", km });

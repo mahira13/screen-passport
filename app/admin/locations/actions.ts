@@ -7,6 +7,7 @@ import { parseLatLng } from "@/lib/distance";
 import { LIVE_TAG } from "@/lib/live-data";
 import { isUntrustedSource } from "@/lib/sources";
 import { supabaseAdmin } from "@/lib/supabase";
+import { runVerification } from "@/lib/verify/run";
 
 export type ActionResult = { ok: boolean; message: string };
 
@@ -60,9 +61,38 @@ export async function setLive(id: number): Promise<ActionResult> {
   if (isUntrustedSource(data.source_url)) {
     return { ok: false, message: "Find a trusted source first (not Wikipedia or a fan wiki)." };
   }
-  const { error: upErr } = await db.from("locations").update({ status: "live" }).eq("id", id);
+  // Published by a person: the "Team-verified" badge. (verification_method exists from migration 008.)
+  let { error: upErr } = await db.from("locations").update({ status: "live", verification_method: "team" }).eq("id", id);
+  if (upErr && ["42703", "PGRST204"].includes(upErr.code)) ({ error: upErr } = await db.from("locations").update({ status: "live" }).eq("id", id));
   if (upErr) return { ok: false, message: upErr.message };
   updateTag(LIVE_TAG); // the public map shows it on the next load
   refresh();
   return { ok: true, message: "Live." };
+}
+
+// A few places per click: each needs a page fetch, a Claude call and a geocoder request (1/s).
+const BATCH = 3;
+
+export async function runAiVerification(): Promise<ActionResult> {
+  await requireAdmin();
+  try {
+    const s = await runVerification(supabaseAdmin(), { limit: BATCH });
+    if (s.results.length === 0) return { ok: true, message: "Nothing to verify: no drafts or places marked for re-check." };
+    updateTag(LIVE_TAG);
+    refresh();
+    const review = s.results.length - s.published - s.rejected;
+    const why = Object.entries(s.needsReview).map(([r, n]) => `${n} × ${r}`).join("; ");
+    return { ok: true, message: `Checked ${s.results.length}: ${s.published} published, ${review} need review, ${s.rejected} rejected.${why ? ` ${why}.` : ""}` };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Verification failed." };
+  }
+}
+
+export async function markRecheck(id: number): Promise<ActionResult> {
+  await requireAdmin();
+  if (!validId(id)) return { ok: false, message: "Unknown location." };
+  const { error } = await supabaseAdmin().from("locations").update({ recheck: true }).eq("id", id);
+  if (error) return { ok: false, message: error.message };
+  refresh();
+  return { ok: true, message: `#${id} will be checked on the next run.` };
 }

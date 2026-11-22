@@ -63,6 +63,8 @@ export interface Collection {
   work_ids: string[];
   description: string | null;
   featured_rank?: number | null; // migration 010: shown on Discover when set, lowest first
+  published?: boolean; // migration 018: false keeps it off every page
+  location_ids?: number[]; // migration 018: hand-picked places in order; empty = every place of work_ids
 }
 
 export interface LatLng {

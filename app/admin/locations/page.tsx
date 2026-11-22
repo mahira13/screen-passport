@@ -6,6 +6,7 @@ import { ImageReviewCard, type ImageRow } from "@/components/admin/ImageReviewCa
 import { FeaturedPins } from "@/components/admin/FeaturedPins";
 import { buildCollections } from "@/lib/collections-model";
 import { featuredPicks } from "@/lib/featured";
+import { loadCollections } from "@/lib/live-data";
 import { LoginForm } from "@/components/admin/LoginForm";
 import { VerificationPanel } from "@/components/admin/VerificationPanel";
 import { ADMIN_COOKIE, isValidToken } from "@/lib/admin";
@@ -70,7 +71,7 @@ async function AdminLocations() {
   const [works, locs, cols] = await Promise.all([
     supabaseAdmin().from("works").select("id, title, type, aliases, year"),
     supabaseAdmin().from("catalogue_entries").select("id, work_id, name, city, lat, lng, coord_quality, image_thumb_url, image_source_page"),
-    supabaseAdmin().from("collections").select("id, name, city, work_ids, description, featured_rank"),
+    loadCollections(supabaseAdmin()),
   ]);
   const featured = !works.error && !locs.error && !cols.error
     ? buildCollections({ works: works.data, locations: locs.data, collections: cols.data } as unknown as Parameters<typeof buildCollections>[0])

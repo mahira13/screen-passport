@@ -86,7 +86,7 @@ describe("buildCollections", () => {
     loc(1, "dark", "Berlin", "source"), loc(2, "dark", "Berlin"), loc(3, "dark", "Görlitz"),
     loc(1, "bb", "Berlin", "source"), loc(4, "bb", "Berlin"), loc(5, "bb", "Berlin"), loc(6, "bb", "Berlin"),
   ];
-  const all = buildCollections({ works, locations, collections: [{ id: "c", name: "Curated", city: "Berlin", work_ids: ["dark"], description: null, featured_rank: 2 }] });
+  const all = buildCollections({ works, locations, collections: [{ id: "c", name: "Curated", city: "Berlin", work_ids: ["dark", "bb"], description: null, featured_rank: 2 }] });
 
   it("makes title collections for titles with 3+ places and city collections for cities with 5+", () => {
     expect(all.map((c) => c.key).sort()).toEqual(["city:berlin", "curated:c", "title:bb", "title:dark"]);
@@ -100,6 +100,20 @@ describe("buildCollections", () => {
   });
   it("keeps the table pin on curated collections", () => {
     expect(all.find((c) => c.key === "curated:c")!.pinRank).toBe(2);
+  });
+  it("a curated collection of exactly one title replaces that title's automatic one", () => {
+    const one = buildCollections({ works, locations, collections: [{ id: "dark-de", name: "Dark in Germany", city: null, work_ids: ["dark"], description: null }] });
+    expect(one.map((c) => c.key).sort()).toEqual(["city:berlin", "curated:dark-de", "title:bb"]);
+    expect(one.find((c) => c.key === "curated:dark-de")!.places.map((p) => p.id)).toEqual([1, 2, 3]);
+  });
+  it("hand-picked places come in their own order, unpublished ones only", () => {
+    const picked = buildCollections({ works, locations, collections: [
+      { id: "pick", name: "Pick", city: null, work_ids: ["dark", "bb"], description: null, location_ids: [5, 99, 2] },
+      { id: "draft", name: "Draft", city: null, work_ids: ["dark"], description: null, published: false },
+    ] });
+    expect(picked.find((c) => c.key === "curated:pick")!.places.map((p) => p.id)).toEqual([5, 2]); // 99 isn't published
+    expect(picked.some((c) => c.key === "curated:draft")).toBe(false);
+    expect(picked.some((c) => c.key === "title:dark")).toBe(true); // a hand-picked or unpublished one replaces nothing
   });
   it("slugifies German city names", () => {
     expect(slugify("Görlitz")).toBe("goerlitz");

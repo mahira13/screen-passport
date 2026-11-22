@@ -20,7 +20,8 @@
     "posters": "tsx scripts/fetch-posters.ts",
     "upgrade-coords": "tsx scripts/upgrade-coords.ts",
     "fetch-outline": "tsx scripts/fetch-outline.ts",
-    "pipeline": "tsx scripts/pipeline.ts"
+    "pipeline": "tsx scripts/pipeline.ts",
+    "curate": "tsx scripts/curate-collections.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",

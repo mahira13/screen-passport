@@ -1,7 +1,7 @@
 // Upgrades approximate pins of one title's published places to geocoded_poi where the evidence allows
 // (rules in lib/verify/upgrade.ts). Dry run by default; --apply writes the new pin, its outline and a
 // review-log entry with the source URL and quote. Never touches places that don't qualify.
-// Usage: npm run upgrade-coords -- --work dark [--apply]
+// Usage: npm run upgrade-coords -- --work dark [--apply] [--skip 12,34]
 import { REGION } from "../lib/region";
 import { config } from "dotenv";
 import { canCheckIn } from "../lib/distance";
@@ -25,6 +25,7 @@ async function main() {
   const work = arg("--work");
   if (!work) throw new Error("Pass --work <id>, e.g. --work dark");
   const apply = process.argv.includes("--apply");
+  const skip = new Set((arg("--skip") ?? "").split(",").filter(Boolean).map(Number)); // left as they are, e.g. after a manual look
   const contact = contactOrThrow();
   const db = supabaseAdmin();
   const query = (cols: string) => {
@@ -44,6 +45,10 @@ async function main() {
   let upgraded = 0;
   let grade = 0;
   for (const row of rows) {
+    if (skip.has(row.id)) {
+      console.log(`| ${row.name} | ${row.coord_quality} (skipped) | | | |`);
+      continue;
+    }
     if (canCheckIn({ lat: row.lat, lng: row.lng, coord_quality: row.coord_quality as never })) {
       grade++;
       console.log(`| ${row.name} | ${row.coord_quality} (already check-in grade) | | | |`);

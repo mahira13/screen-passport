@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import type { LiveLocation } from "./nearby";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabasePublic } from "./supabase";
 import type { Collection, Work } from "./types";
 import { isPlaceholderTitle } from "./work-title";
@@ -37,7 +38,7 @@ export async function getLiveData(): Promise<LiveData> {
   const [locs, works, cols] = await Promise.all([
     db.from("catalogue_entries").select(COLUMNS),
     loadWorks(db),
-    db.from("collections").select("id, name, city, work_ids, description, featured_rank"),
+    loadCollections(db),
   ]);
   if (locs.error) throw new Error(`locations: ${locs.error.message}`);
   if (works.error) throw new Error(`works: ${works.error.message}`);
@@ -51,6 +52,24 @@ export async function getLiveData(): Promise<LiveData> {
     locations: (locs.data as unknown as LiveLocation[]).filter((l) => ids.has(l.work_id)),
     collections: cols.data as Collection[],
   };
+}
+
+const MISSING = new Set(["42703", "42P01", "PGRST204", "PGRST205"]); // column or table not there yet
+
+/** Collections with their hand-picked places (migration 018); before 018, without them. */
+export async function loadCollections(db: SupabaseClient) {
+  const base = "id, name, city, work_ids, description, featured_rank";
+  const [cols, items] = await Promise.all([
+    db.from("collections").select(`${base}, published`),
+    db.from("collection_items").select("collection_id, location_id, position").order("position"),
+  ]);
+  if (cols.error && MISSING.has(cols.error.code)) return db.from("collections").select(base);
+  if (cols.error || (items.error && !MISSING.has(items.error.code))) return { data: null, error: cols.error ?? items.error };
+  const picked = new Map<string, number[]>();
+  for (const i of (items.data ?? []) as { collection_id: string; location_id: number }[]) {
+    picked.set(i.collection_id, [...(picked.get(i.collection_id) ?? []), i.location_id]);
+  }
+  return { data: (cols.data as Collection[]).map((c) => ({ ...c, location_ids: picked.get(c.id) ?? [] })), error: null };
 }
 
 type WorkRow = Omit<Work, "poster"> & {

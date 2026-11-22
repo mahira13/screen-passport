@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CollectionView } from "@/components/CollectionView";
 import { collectionParams, loadCollection } from "@/lib/collection-loaders";
+import { curatedFor } from "@/lib/collections-model";
+import { getLiveData } from "@/lib/live-data";
 
 export const generateStaticParams = () => collectionParams("title", "slug");
 
@@ -24,7 +26,13 @@ export default function Page(props: PageProps<"/collection/title/[slug]">) {
 }
 
 async function View({ params }: { params: Promise<{ slug: string }> }) {
-  const c = await loadCollection("title", (await params).slug);
-  if (!c) notFound();
+  const slug = decodeURIComponent((await params).slug);
+  const c = await loadCollection("title", slug);
+  if (!c) {
+    // Replaced by a curated collection of the same title: old links still land on it.
+    const curated = curatedFor((await getLiveData()).collections, slug);
+    if (curated) redirect(`/collection/${encodeURIComponent(curated.id)}`);
+    notFound();
+  }
   return <CollectionView c={c} />;
 }

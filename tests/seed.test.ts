@@ -72,9 +72,9 @@ describe("seed format v2", () => {
     is_filming_location: true,
   };
 
-  it("records the five approved merges and the title links they moved", () => {
+  it("records the approved merges and the title links they moved", () => {
     expect(locations.filter((l) => l.merged_into).map((l) => [l.id, l.merged_into])).toEqual(
-      [[33, 25], [55, 32], [56, 22], [58, 45], [63, 32], [68, 60]]);
+      [[33, 25], [55, 32], [56, 22], [58, 45], [63, 32], [68, 60], [162, 179]]);
     expect(links.find((k) => k.location_id === 32 && k.work_id === "bourne-supremacy")?.scene_note).toMatch(/World Clock/);
   });
 

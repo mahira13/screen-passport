@@ -43,8 +43,9 @@ export function slugify(s: string): string {
 
 type Data = { works: Work[]; locations: LiveLocation[]; collections: Collection[] };
 
-function placesOf(rows: LiveLocation[], titleOf: Map<string, string>, all: LiveLocation[]): CollectionPlace[] {
-  const ids = [...new Set(rows.filter((l) => l.lat != null && l.lng != null).map((l) => l.id))].sort((a, b) => a - b);
+function placesOf(rows: LiveLocation[], titleOf: Map<string, string>, all: LiveLocation[], order?: number[]): CollectionPlace[] {
+  const found = new Set(rows.filter((l) => l.lat != null && l.lng != null).map((l) => l.id));
+  const ids = order ? order.filter((id) => found.has(id)) : [...found].sort((a, b) => a - b);
   return ids.map((id) => {
     const same = all.filter((l) => l.id === id);
     const l = same[0];
@@ -73,17 +74,21 @@ export function buildCollections({ works, locations, collections }: Data): Colle
   };
   const out: CollectionModel[] = [];
 
-  for (const c of collections) {
+  const shown = collections.filter((c) => c.published !== false);
+  for (const c of shown) {
     const ws = [...new Set(c.work_ids)].flatMap(entry);
+    const picked = c.location_ids?.length ? c.location_ids : null;
+    const rows = picked ? locations.filter((l) => picked.includes(l.id)) : locations.filter((l) => c.work_ids.includes(l.work_id));
+    const places = placesOf(rows, titleOf, locations, picked ?? undefined);
     out.push({
       key: `curated:${c.id}`, kind: "curated", slug: c.id, name: c.name, description: c.description,
-      href: `/collection/${encodeURIComponent(c.id)}`, city: c.city, works: ws,
-      places: placesOf(locations.filter((l) => c.work_ids.includes(l.work_id)), titleOf, locations),
-      cover: coverPhoto(c.work_ids, locations), pinRank: c.featured_rank ?? null,
+      href: `/collection/${encodeURIComponent(c.id)}`, city: c.city, works: ws, places,
+      cover: picked ? firstPhoto(places, rows) : coverPhoto(c.work_ids, locations), pinRank: c.featured_rank ?? null,
     });
   }
 
   for (const w of works) {
+    if (curatedFor(shown, w.id)) continue; // the curated version replaces the automatic one
     const rows = locations.filter((l) => l.work_id === w.id);
     const places = placesOf(rows, titleOf, locations);
     if (places.length < TITLE_MIN_PLACES) continue;
@@ -108,6 +113,11 @@ export function buildCollections({ works, locations, collections }: Data): Colle
     });
   }
   return out;
+}
+
+/** A published curated collection that is exactly one title's places (all of them, not hand-picked). */
+export function curatedFor(collections: Collection[], workId: string): Collection | null {
+  return collections.find((c) => c.published !== false && !c.location_ids?.length && c.work_ids.length === 1 && c.work_ids[0] === workId) ?? null;
 }
 
 export const findCollection = (all: CollectionModel[], kind: CollectionKind, slug: string) =>

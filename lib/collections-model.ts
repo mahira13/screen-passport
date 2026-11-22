@@ -11,6 +11,7 @@ export type CollectionPlace = {
   checkIn: boolean; // check-in grade pin
   photo: boolean; // has an approved or auto Commons photo
   thumb: string | null; // that photo's thumbnail, for the map marker
+  image: Photo | null; // the photo with its credit, for the place card
   titles: string[];
 };
 
@@ -51,6 +52,7 @@ function placesOf(rows: LiveLocation[], titleOf: Map<string, string>, all: LiveL
       checkIn: canCheckIn({ lat: l.lat, lng: l.lng, coord_quality: l.coord_quality }),
       photo: !!photoOf(l),
       thumb: photoOf(l)?.url ?? null,
+      image: photoOf(l),
       titles: [...new Set(same.flatMap((x) => titleOf.get(x.work_id) ?? []))],
     };
   });

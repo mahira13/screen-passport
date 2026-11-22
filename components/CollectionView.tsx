@@ -6,9 +6,10 @@ import { centreOf } from "@/lib/discover";
 import { challengeGoal } from "@/lib/challenges";
 import { ChallengeFriends } from "./ChallengeFriends";
 import { CollectionVisits } from "./CollectionVisits";
-import { PhotoCredit } from "./PlacePhoto";
+import { Cover } from "./Cover";
+import { InfoTip } from "./InfoTip";
+import { PhotoCard } from "./PhotoCard";
 import { PlacesMapBox } from "./PlacesMapBox";
-import { ScenePlate } from "./ScenePlate";
 import { ShareLink } from "./ShareLink";
 import { TrackView } from "./TrackView";
 
@@ -27,29 +28,24 @@ export async function CollectionView({ c }: { c: CollectionModel }) {
   return (
     <>
       <TrackView page="collection" id={c.key} />
-      <section className={`${WRAP} pt-10 sm:pt-16`}>
-        <ScenePlate index={1} className="aspect-[4/3] sm:aspect-[2.39/1]">
-          {c.cover && (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={c.cover.url} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-70" />
-              <span aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0f182b] via-[#0f182b]/40 to-transparent" />
-            </>
-          )}
-          <p className="label text-ink/75">{KIND[c.kind]}{c.city && ` · ${c.city}`} · {c.places.length} places</p>
-          <h1 className="mt-2 font-display text-5xl leading-[0.9] tracking-tight text-ink sm:text-7xl">{c.name}</h1>
-        </ScenePlate>
-        {c.cover && <PhotoCredit photo={c.cover} />}
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1.4fr]">
+      <section className={`${WRAP} pt-4 sm:pt-10`}>
+        <div className="-mx-4 sm:mx-0">
+          <Cover photo={c.cover} label={c.name} className="aspect-[16/10] sm:aspect-[21/9] sm:rounded-sm" priority />
+        </div>
+        <p className="label mt-6 text-accent">{KIND[c.kind]}{c.city && ` · ${c.city}`} · {c.places.length} places</p>
+        <h1 className="mt-2 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">{c.name}</h1>
+        {c.description && <p className="mt-3 max-w-2xl text-lg text-ink/70 line-clamp-2">{c.description}</p>}
+        <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_1.4fr]">
           <div>
-            {c.description && <p className="font-display text-2xl leading-snug text-ink/80">{c.description}</p>}
-            <div className="mt-6"><CollectionVisits placeIds={c.places.map((p) => p.id)} /></div>
-            {notYet > 0 && (
-              <p className="mt-2 text-xs text-ink/60">{notYet} {notYet === 1 ? "place needs" : "places need"} a verified pin before check-in.</p>
-            )}
+            <div className="flex items-start gap-1">
+              <div className="min-w-0 flex-1"><CollectionVisits placeIds={c.places.map((p) => p.id)} /></div>
+              {notYet > 0 && (
+                <InfoTip label="About check-in">{notYet} {notYet === 1 ? "place has" : "places have"} only an approximate pin, so check-in isn&apos;t offered there yet.</InfoTip>
+              )}
+            </div>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               {tripHref && (
-                <Link href={tripHref} className="label inline-flex min-h-11 items-center bg-accent px-5 text-paper transition-colors hover:bg-ink">
+                <Link href={tripHref} className="label inline-flex min-h-11 items-center rounded-full bg-accent px-5 text-paper transition-colors hover:bg-ink">
                   Create a trip
                 </Link>
               )}
@@ -62,14 +58,11 @@ export async function CollectionView({ c }: { c: CollectionModel }) {
       </section>
 
       <section className={`${WRAP} pt-12`}>
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {c.places.map((p) => (
             <li key={p.id}>
-              <Link href={`/location/${p.id}`} className="group block h-full border-l-2 border-accent/60 bg-surface/60 p-4 transition-colors hover:bg-surface">
-                <p className="font-display text-2xl leading-tight transition-colors group-hover:text-accent">{p.name}</p>
-                <p className="label mt-1 text-ink/60">{[p.city, p.titles.join(" · ")].filter(Boolean).join(" · ")}</p>
-                <p className="mt-2 text-xs text-ink/60">{p.checkIn ? "Check-in on site" : "Approximate location, no check-in"}</p>
-              </Link>
+              <PhotoCard href={`/location/${p.id}`} title={p.name} photo={p.image} aspect="aspect-[16/10]"
+                meta={<p className="truncate">{[p.city, p.titles.join(" · ")].filter(Boolean).join(" · ")}</p>} />
             </li>
           ))}
         </ul>

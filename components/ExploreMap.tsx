@@ -74,10 +74,11 @@ export function ExploreMap({ places, collections, cities, start }: Props) {
     <div className="relative h-[calc(100dvh-8.5rem)] min-h-[420px] w-full sm:h-[calc(100dvh-4.5rem)]">
       <Canvas markers={markers} origin={origin} from={mine} fitKey={`${title}|${collection}|${city}|${radius}|${origin.lat},${origin.lng}`} />
 
-      <details className="absolute left-3 right-3 top-3 z-[1000] max-w-md border border-ink/15 bg-paper/95 p-3 shadow-2xl backdrop-blur sm:left-4 sm:right-auto sm:w-96" open>
-        <summary className="label flex min-h-11 cursor-pointer items-center justify-between text-ink/80">
-          <span>{shown} {shown === 1 ? "place" : "places"}{filtered ? " match" : ""} · near {origin.label}</span>
-          <span className="text-accent">Filters</span>
+      {/* Closed by default so the map stays visible on phones. */}
+      <details className="group absolute right-3 top-3 z-[1000] max-w-md rounded-3xl bg-paper/95 px-4 py-1 shadow-2xl ring-1 ring-ink/15 backdrop-blur open:left-3 open:rounded-sm open:pb-3 sm:right-4 sm:open:left-auto sm:open:w-96">
+        <summary className="label flex min-h-11 cursor-pointer list-none items-center gap-3 text-ink/80 [&::-webkit-details-marker]:hidden">
+          <span>{shown} {shown === 1 ? "place" : "places"}{filtered ? " match" : ""}</span>
+          <span className="text-accent">Filters <span aria-hidden className="inline-block transition-transform group-open:rotate-180">▾</span></span>
         </summary>
         <div className="mt-2 grid gap-3">
           <label className="label text-ink/60">Title
@@ -112,7 +113,7 @@ export function ExploreMap({ places, collections, cities, start }: Props) {
               <button type="button" onClick={clear} className="label text-accent underline-offset-4 hover:underline">Clear filters</button>
             </p>
           )}
-          <p className="text-xs text-ink/60">Photo markers use the place&apos;s own Commons photo. A dashed ring means an approximate location: no check-in there.</p>
+          <p className="text-xs text-ink/60">Dashed ring: approximate location, no check-in.</p>
         </div>
       </details>
     </div>

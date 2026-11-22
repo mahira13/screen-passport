@@ -17,7 +17,7 @@ import type { Destination } from "@/lib/destinations";
 import { emptyMessage, radiusLabel, widerRadius, type PopularTitle, type Radius, type SearchHit } from "@/lib/discover";
 import { CityPicker } from "./CityPicker";
 import { Destinations } from "./Destinations";
-import { HomeHero } from "./HomeHero";
+import { InfoTip } from "./InfoTip";
 import { PassportBar } from "./PassportBar";
 import { CatalogueSearch } from "./CatalogueSearch";
 import { FeaturedCollections } from "./FeaturedCollections";
@@ -228,7 +228,6 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
   const startCity = isCity ? origin.id : null;
   const tripFrom = isCity ? origin.id : `${origin.lat},${origin.lng}`;
 
-  const ticker = ["Discover your cinema", "Explore the world", "Collect your stories"];
   // Running number across all bands in the index ("01", "02", …).
   const offsets = groups.map((_, i) => groups.slice(0, i).reduce((sum, g) => sum + g.titles.length, 0));
 
@@ -239,50 +238,23 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
   const empty = !!data && !loading && places.length === 0;
   return (
     <>
-      {!isMap && (<>
-      <HomeHero cityLabel={origin.id === "me" ? "Near you" : origin.label} titles={titles} placeCount={new Set(places.map((p) => p.id)).size}
-        onPick={showOnMap} search={<CatalogueSearch onPick={pickHit} examples={searchExamples} />} />
-
-      {/* Pillars ticker, like the credits line of a film studio site. */}
-      <div aria-hidden className="overflow-hidden bg-accent py-3 text-paper">
-        <div className="ticker flex w-max gap-10 whitespace-nowrap font-display text-2xl tracking-[0.08em] sm:text-3xl">
-          {[0, 1, 2, 3].flatMap((k) => ticker.map((t) => (
-            <span key={`${k}-${t}`} className="flex items-center gap-10">{t}<span className="font-display">—</span></span>
-          )))}
-        </div>
-      </div>
-
-      </>)}
-
-      <section id="discover" className={`scroll-mt-16 ${isMap ? "pt-8 sm:pt-12" : "pt-14 sm:pt-20"}`}>
+      <section id="discover" className={`scroll-mt-16 pt-8 sm:pt-12`}>
         <div className={WRAP}>
-          <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
-            <div>
-              <p className="label text-accent">{isMap ? "The map" : "01 — Near you"}</p>
-              <h2 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-                Filmed near {origin.id === "me" ? "you" : origin.label}.
-              </h2>
-              <p className="mt-4 max-w-lg text-ink/70">
-                Every pin is a real filming place with a source. Pick where you start, then tap a title to see only its places.
-              </p>
-            </div>
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+            <h1 className="font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+              Filmed near <span className="text-accent">{origin.id === "me" ? "you" : origin.label}.</span>
+            </h1>
             <CityPicker cities={cities} value={origin.id} customLabel={origin.label} locating={locating} onCity={pickCity} onMyLocation={locateMe} />
           </div>
-          {!chosen && (
-            <p className="mt-3 text-sm text-ink/70">
-              Showing places near {origin.label} ·{" "}
-              <button type="button" onClick={() => document.getElementById("city")?.focus()}
-                className="label inline-flex min-h-11 items-center text-accent underline-offset-4 hover:underline">change</button>
-            </p>
-          )}
+          {!isMap && <div className="mt-6 max-w-2xl"><CatalogueSearch onPick={pickHit} examples={searchExamples} /></div>}
           <RadiusChips value={radius} auto={autoPicked} onPick={pickRadius} />
           {denied && (
-            <p role="status" className="mt-3 flex flex-wrap items-center gap-x-3 text-sm text-ink/75">
-              <span>Location is off, so you&apos;re seeing everything from {origin.label}, closest first.</span>
+            <p role="status" className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-ink/75">
+              <span>Location is off. Showing {origin.label}.</span>
               <button type="button" onClick={locateMe} className="label inline-flex min-h-11 items-center text-accent underline-offset-4 hover:underline">
-                Use my location
+                Try again
               </button>
-              <span className="text-xs text-ink/60">If nothing happens, allow location for this site in your browser settings.</span>
+              <InfoTip label="Location help">If nothing happens, allow location for this site in your browser settings.</InfoTip>
             </p>
           )}
           {message && (
@@ -306,9 +278,8 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
           </div>
           {destinations.length > 0 && (
             <aside>
-              <p className="label text-ink/60">Cinematic destinations</p>
-              <p className="mt-1 font-display text-2xl text-ink/80">Where the most places are</p>
-              <div className="mt-4">
+              <h2 className="font-display text-2xl">Top cities</h2>
+              <div className="mt-3">
                 <Destinations items={destinations} current={origin.id} onPick={(id) => {
                   pickCity(id);
                   mapBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -321,26 +292,15 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
 
       {!isMap && (<>
       <section id="index" aria-live="polite" aria-busy={loading}
-        className={`scroll-mt-16 border-t border-ink/10 pb-20 pt-14 transition-opacity sm:pt-20 ${loading ? "opacity-60" : ""}`}>
+        className={`scroll-mt-16 pb-20 pt-6 transition-opacity sm:pt-10 ${loading ? "opacity-60" : ""}`}>
         <div className={WRAP}>
-          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink/20 pb-5">
-            <div>
-              <p className="label text-accent">Near you · {radiusLabel(radius)}</p>
-              <h2 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-                The index<span className="text-accent">.</span>
-              </h2>
-            </div>
-            <p className="max-w-sm text-sm text-ink/70">
-              Films and series shot {radius === null ? "around" : `within ${radiusLabel(radius)} of`} {origin.label}, closest first. Mark what you&apos;ve watched to fill your passport.
-            </p>
-          </div>
+          <h2 className="font-display text-4xl tracking-tight sm:text-6xl">Titles <span className="text-ink/40">· {radiusLabel(radius)}</span></h2>
 
           {empty && <div className="mt-8"><EmptyNear radius={radius} onWider={pickRadius} /></div>}
           {groups.map((g, gi) => (
             <div key={g.key} className="mt-12">
               <h3 className="flex items-baseline gap-3">
-                <span className="font-display text-3xl tracking-wide sm:text-4xl">{g.label}</span>
-                <span className="font-display text-xl text-ink/60">from {origin.label}</span>
+                <span className="label text-accent">{g.label}</span>
                 <span className="label ml-auto text-ink/60">{g.titles.length} {g.titles.length === 1 ? "title" : "titles"}</span>
               </h3>
               <ul className="mt-6 grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">

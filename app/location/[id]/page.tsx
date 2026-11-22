@@ -7,7 +7,8 @@ import { CheckInButton } from "@/components/CheckInButton";
 import { PostcardAfterCheckIn } from "@/components/PostcardAfterCheckIn";
 import { DirectionsLink } from "@/components/DirectionsLink";
 import { DistanceFromMe } from "@/components/DistanceFromMe";
-import { PlacePhoto } from "@/components/PlacePhoto";
+import { Cover } from "@/components/Cover";
+import { InfoTip } from "@/components/InfoTip";
 import { PlacesMapBox } from "@/components/PlacesMapBox";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { ACCESS_TEXT, CONFIDENCE_TEXT } from "@/lib/catalogue-pages";
@@ -55,18 +56,25 @@ async function LocationView({ params }: { params: Promise<{ id: string }> }) {
   const where = [p.city, l.region !== p.city ? l.region : null, l.country].filter(Boolean).join(" · ");
 
   return (
-    <article className={`${WRAP} pt-10 sm:pt-16`}>
+    <article className={`${WRAP} pt-4 sm:pt-10`}>
       <TrackView page="location" id={String(p.id)} />
-      <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
-        <div>
+      <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-14">
+        <div className="relative -mx-4 sm:mx-0 lg:order-2">
+          <Cover photo={p.photo} label={p.title} className="aspect-[4/3] sm:rounded-sm" priority />
+          <VerifiedBadge by={p.verifiedBy} className="absolute left-4 top-3 z-10 sm:left-3" />
+        </div>
+        <div className="lg:order-1">
           {where && <p className="label text-accent">{where}</p>}
-          <h1 className="mt-4 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">{p.name}</h1>
-          {l.address && <p className="mt-4 text-lg text-ink/75">{l.address}</p>}
-          <p className="mt-3 flex flex-wrap items-center gap-x-4 text-sm text-ink/70">
-            {l.confidence && <span>{CONFIDENCE_TEXT[l.confidence]}</span>}
-            {!l.checkIn && <span>Approximate location, so check-in isn&apos;t offered</span>}
-            <VerifiedBadge by={p.verifiedBy} />
-          </p>
+          <div className="mt-3 flex items-start gap-1">
+            <h1 className="font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">{p.name}</h1>
+            <InfoTip label="About this place" className="mt-1 shrink-0">
+              {l.address && <span className="block">{l.address}</span>}
+              {l.confidence && <span className="mt-1 block">{CONFIDENCE_TEXT[l.confidence]}.</span>}
+              {!l.checkIn && <span className="mt-1 block">Approximate location, so check-in isn&apos;t offered.</span>}
+              {p.visitNote && <span className="mt-1 block">{p.visitNote}</span>}
+            </InfoTip>
+          </div>
+          <p className="mt-3 text-ink/75">{ACCESS_TEXT[l.access]}</p>
           <div className="mt-6 flex flex-wrap items-center gap-2">
             {l.checkIn && <CheckInButton place={p} />}
             <DirectionsLink place={p} />
@@ -74,32 +82,23 @@ async function LocationView({ params }: { params: Promise<{ id: string }> }) {
             <ShareLink path={`/location/${p.id}`} title={p.name} what="location"
               text={`${p.name}: filming location of ${l.titles.map((t) => t.title).slice(0, 3).join(", ")}.`} />
           </div>
-
           {l.checkIn && l.titles[0] && <PostcardAfterCheckIn placeId={p.id} place={p.name} title={l.titles[0].title} />}
-
-          <div className="mt-8 border-l-2 border-accent bg-surface/60 p-4">
-            <p className="label text-ink/60">Visiting</p>
-            <p className="mt-2 text-ink/85">{ACCESS_TEXT[l.access]}</p>
-            {p.visitNote && <p className="mt-1 text-sm text-ink/70">{p.visitNote}</p>}
-          </div>
-        </div>
-        <div>
-          <PlacePhoto photo={p.photo} name={p.name} />
-          <PlacesMapBox pins={[{ id: p.id, name: p.name, lat: p.lat, lng: p.lng, thumb: p.photo?.url, label: p.title }]} className={`h-72 ${p.photo ? "mt-4" : ""}`} />
+          <PlacesMapBox pins={[{ id: p.id, name: p.name, lat: p.lat, lng: p.lng, thumb: p.photo?.url, label: p.title }]} className="mt-8 h-56 sm:h-72" />
         </div>
       </div>
 
-      <section className="mt-16">
-        <p className="label text-accent">Filmed here</p>
-        <ul className="mt-4 border-t border-ink/20">
+      <section className="mt-14">
+        <h2 className="font-display text-3xl sm:text-4xl">Filmed here</h2>
+        <ul className="mt-2">
           {l.titles.map((t) => (
-            <li key={t.workId} className="border-b border-ink/15 py-6">
+            <li key={t.workId} className="border-b border-ink/10 py-5 last:border-0">
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                 <Link href={`/title/${t.workId}`} className="font-display text-3xl leading-tight transition-colors hover:text-accent sm:text-4xl">{t.title}</Link>
                 <span className="label text-ink/60">{t.type === "film" ? "Film" : "Series"}{t.year && ` · ${t.year}`}</span>
               </div>
-              {t.depicts && <p className="mt-2 font-display text-xl text-accent">Stands in for {t.depicts}</p>}
-              {t.sceneNote && <p className="mt-2 max-w-2xl text-ink/80">{t.sceneNote}</p>}
+              {(t.depicts || t.sceneNote) && (
+                <p className="mt-2 max-w-2xl text-accent">{t.depicts ? `Stands in for ${t.depicts}` : t.sceneNote}</p>
+              )}
               {t.sourceUrl && (
                 <a href={t.sourceUrl} target="_blank" rel="noopener noreferrer"
                   className="label mt-3 inline-flex min-h-11 items-center gap-1 text-ink/70 transition-colors hover:text-accent">

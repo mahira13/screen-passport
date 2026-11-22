@@ -97,7 +97,7 @@ export interface TripView {
   meetingIsFirstStop: boolean;
   organiser: string;
   plan: TripPlan;
-  stops: (TripStop & { plan: TripPlan["stops"][number] })[];
+  stops: (TripStop & { plan: TripPlan["stops"][number]; photo: Photo | null })[];
   joined: string[];
 }
 
@@ -126,7 +126,7 @@ export async function getTrip(id: string): Promise<TripView | null> {
     here = at;
     return [{
       id: l.id, workId: l.work_id, title: w.title, name: l.name, city: l.city, ...at,
-      sceneNote: l.scene_note ?? null, visitNote: l.visit_note ?? null, kmFromPrevious, plan: p,
+      sceneNote: l.scene_note ?? null, visitNote: l.visit_note ?? null, kmFromPrevious, plan: p, photo: photoOf(l),
     }];
   });
   return {

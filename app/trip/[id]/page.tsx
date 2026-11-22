@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Cover } from "@/components/Cover";
+import { InfoTip } from "@/components/InfoTip";
 import { notFound } from "next/navigation";
 import { cache, Suspense } from "react";
 import { InviteCard } from "@/components/InviteCard";
@@ -75,41 +77,30 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
-      <header className="relative overflow-hidden">
       <TrackView page="trip" id={trip.id} />
-        <div aria-hidden className="pointer-events-none absolute -right-40 -top-20 h-[32rem] w-[32rem] rounded-full bg-accent/10 blur-[120px]" />
-        <div className="relative mx-auto w-full max-w-screen-2xl px-4 pb-12 pt-10 sm:px-8 sm:pt-16 lg:px-12">
-        <p className="label flex flex-wrap items-center gap-3 text-ink/60">
-          <span className="text-accent">Fan trip</span><span aria-hidden className="h-px w-8 bg-ink/30" />
-          <span>Organised by {trip.organiser}</span>
+      <header className="mx-auto w-full max-w-screen-2xl px-4 pt-4 sm:px-8 sm:pt-10 lg:px-12">
+        <div className="-mx-4 sm:mx-0">
+          <Cover photo={trip.stops.find((s) => s.photo)?.photo ?? null} label={trip.title} className="aspect-[16/10] sm:aspect-[21/9] sm:rounded-sm" priority />
+        </div>
+        <p className="label mt-6 text-accent">Fan trip · by {trip.organiser}</p>
+        <h1 className="mt-2 max-w-5xl font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">{trip.title}</h1>
+        <p className="mt-3 text-lg text-ink/80">{formatTripDate(trip.startsAt, trip.timeZone)}</p>
+        <p className="text-ink/60">
+          {MODE_LABEL[trip.mode]} · {LENGTH_LABEL[trip.length]} · {trip.stops.length} {trip.stops.length === 1 ? "stop" : "stops"}
+          {trip.stops.length > 1 && ` · ${formatDistance(km)}`}
         </p>
-        <h1 className="mt-5 max-w-5xl font-display text-5xl leading-[0.92] tracking-tight sm:text-7xl xl:text-8xl">{trip.title}</h1>
-        <dl className="mt-8 grid max-w-4xl grid-cols-2 border-t border-ink/15 sm:grid-cols-4">
-          {[
-            ["When", formatTripDate(trip.startsAt, trip.timeZone)],
-            ["Getting around", `${MODE_LABEL[trip.mode]} · ${LENGTH_LABEL[trip.length]}`],
-            ["Stops", `${trip.stops.length} ${trip.stops.length === 1 ? "stop" : "stops"}`],
-            ...(trip.stops.length > 1 ? [["Distance", `${formatDistance(km)} between stops`]] : []),
-          ].map(([k, v]) => (
-            <div key={k} className="border-b border-ink/15 py-4 pr-4">
-              <dt className="label text-ink/60">{k}</dt>
-              <dd className="mt-1 font-display text-xl leading-tight">{v}</dd>
-            </div>
-          ))}
-        </dl>
-        {trip.intro && <p className="mt-6 max-w-3xl font-display text-2xl leading-snug text-ink/85">{trip.intro}</p>}
-        <div className="mt-8">
+        {trip.intro && <p className="mt-5 max-w-3xl text-lg leading-snug text-ink/80">{trip.intro}</p>}
+        <div className="mt-6">
           <TripActions tripId={trip.id} routeUrl={googleMapsRouteUrl(trip.stops, trip.mode)} transit={trip.mode === "transit"}
             laylaPrompt={tripLaylaPrompt(trip.startsAt, trip.timeZone, trip.stops)} shareTitle={trip.title}
             shareText={shareText(trip.title, trip.startsAt, trip.timeZone, url)} shareUrl={url} />
-        </div>
         </div>
       </header>
 
       <div className="mx-auto grid w-full max-w-screen-2xl gap-10 px-4 pt-12 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:px-12">
         <div className="min-w-0">
           <section>
-            <h2 className="label text-accent">Meeting point</h2>
+            <h2 className="label text-accent">Meet at</h2>
             <p className="mt-2 font-display text-3xl leading-tight sm:text-4xl">{trip.meetingPoint}</p>
             {meeting && (
               <p className="text-sm text-ink/70">
@@ -128,33 +119,41 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
           </div>
 
           <section className="mt-12">
-            <h2 className="label text-accent">The route</h2>
-            <ol className="mt-4 border-t border-ink/15">
+            <div className="flex items-center gap-1">
+              <h2 className="font-display text-3xl sm:text-4xl">The route</h2>
+              <InfoTip label="About times and distances">Distances are straight-line and approximate. Times are a rough guide, in {tzLabel(trip.timeZone)} time.</InfoTip>
+            </div>
+            <ol className="mt-4">
               {trip.stops.map((s, i) => (
-                <li key={s.id} className="flex gap-5 border-b border-ink/15 py-6">
-                  <span aria-hidden className={`w-14 shrink-0 font-display text-5xl leading-[0.8] tabular-nums ${i === 0 ? "text-accent" : "text-ink/40"}`}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
+                <li key={s.id} className="flex gap-4 border-b border-ink/10 py-5 last:border-0">
+                  <div className="relative w-24 shrink-0 sm:w-32">
+                    <Cover photo={s.photo} label={s.title} credit={false} className="aspect-square rounded-sm" />
+                    <span className="absolute left-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-accent font-display text-sm text-paper">{i + 1}</span>
+                  </div>
                   <div className="min-w-0">
-                    <p className="label text-ink/60">
-                      {s.plan.time && <span className="text-accent">{s.plan.time} · </span>}
-                      {s.plan.travel_from_previous}
-                    </p>
-                    <h3 className="mt-1.5 font-display text-3xl leading-tight">{s.name}</h3>
-                    <p className="mt-0.5 font-display text-lg text-accent">{s.title}{s.city && <span className="text-ink/60"> · {s.city}</span>}</p>
-                    {(s.plan.why_fans_love_it ?? s.sceneNote) && <p className="mt-3 text-ink/80">{s.plan.why_fans_love_it ?? s.sceneNote}</p>}
-                    {s.visitNote && <p className="mt-1 text-xs text-ink/60">{s.visitNote}</p>}
-                    <a href={directionsUrl(s)} target="_blank" rel="noopener noreferrer"
-                      className="label mt-1 inline-flex min-h-11 items-center text-accent hover:text-ink">
-                      Directions →
-                    </a>
+                    {(s.plan.time || s.plan.travel_from_previous) && (
+                      <p className="label text-ink/60">
+                        {s.plan.time && <span className="text-accent">{s.plan.time}</span>}
+                        {s.plan.time && s.plan.travel_from_previous && " · "}
+                        {s.plan.travel_from_previous}
+                      </p>
+                    )}
+                    <h3 className="mt-1 font-display text-2xl leading-tight sm:text-3xl">{s.name}</h3>
+                    <p className="text-accent">{s.title}{s.city && <span className="text-ink/60"> · {s.city}</span>}</p>
+                    {(s.plan.why_fans_love_it ?? s.sceneNote) && <p className="mt-2 line-clamp-2 text-sm text-ink/75">{s.plan.why_fans_love_it ?? s.sceneNote}</p>}
+                    <div className="flex flex-wrap items-center gap-x-4">
+                      <a href={directionsUrl(s)} target="_blank" rel="noopener noreferrer"
+                        className="label inline-flex min-h-11 items-center text-accent hover:text-ink">Directions →</a>
+                      {s.photo && (
+                        <a href={s.photo.page} target="_blank" rel="noopener noreferrer" className="text-[10px] text-ink/50 hover:text-ink">
+                          Photo: {s.photo.author} · {s.photo.license}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </li>
               ))}
             </ol>
-            <p className="mt-3 text-xs text-ink/60">
-              Distances are straight-line and approximate. Times are a rough guide, in {tzLabel(trip.timeZone)} time.
-            </p>
           </section>
 
           {trip.plan.tips.length > 0 && (
@@ -173,9 +172,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
             meetingPoint: trip.meetingPoint, stops: trip.stops.length, joined: trip.joined.length, url,
           })} />
 
-          <p className="mt-8 border-l-2 border-accent pl-3 text-xs text-ink/75">
-            Stay safe: meet in a public place, and don&apos;t share personal details. A first name is all you need here.
-          </p>
+          <p className="mt-8 text-xs text-ink/70">Stay safe: meet in public and share only your first name.</p>
           <div className="mt-3">
             <ReportTrip tripId={trip.id} />
           </div>

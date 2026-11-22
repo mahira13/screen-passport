@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { TripForm } from "@/components/TripForm";
+import { TripTitlePicker } from "@/components/TripTitlePicker";
 import { startCity } from "@/lib/cities";
 import { getCities } from "@/lib/cities-server";
 import { getLiveData } from "@/lib/live-data";
@@ -14,9 +15,8 @@ export default function NewTripPage(props: PageProps<"/trip/new">) {
     <main className="relative w-full overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute -left-40 top-0 h-[28rem] w-[28rem] rounded-full bg-accent/10 blur-[120px]" />
       <div className="relative mx-auto w-full max-w-screen-2xl px-4 pb-20 pt-8 sm:px-8 sm:pt-12 lg:px-12 [&>*]:max-w-2xl">
-      <Link href="/" className="label inline-flex min-h-11 items-center text-ink/70 hover:text-accent">← Back</Link>
-      <p className="label mt-8 text-accent">02 — Explore</p>
-      <h1 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-8xl">Create a <span className="text-accent">trip.</span></h1>
+      <Link href="/trips" className="label inline-flex min-h-11 items-center text-ink/70 hover:text-accent">← Your trips</Link>
+      <h1 className="mt-6 font-display text-5xl leading-[0.95] tracking-tight sm:text-8xl">Create a <span className="text-accent">trip.</span></h1>
       <Suspense fallback={<p className="label mt-6 text-ink/60">Loading…</p>}>
         <NewTrip searchParams={props.searchParams} />
       </Suspense>
@@ -40,10 +40,10 @@ async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, 
 
   if (works.length === 0) {
     return (
-      <p className="mt-6 text-lg text-ink/80">
-        Pick a title first: tap <strong>Create a trip</strong> on a title card.{" "}
-        <Link href="/discover#index" className="text-accent underline underline-offset-4">Find filming places</Link>
-      </p>
+      <div className="mt-6">
+        <p className="text-lg text-ink/80">Which film or series?</p>
+        <div className="mt-4"><TripTitlePicker examples={live.works.slice(0, 2).map((w) => w.title)} /></div>
+      </div>
     );
   }
 
@@ -56,9 +56,6 @@ async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, 
     <>
       <p className="mt-6 font-display text-2xl leading-snug text-ink/90">
         {works.map((w) => w.title).join(", ")} <span className="text-ink/60">· from {start.label}</span>
-      </p>
-      <p className="mt-2 text-sm text-ink/70">
-        We pick the closest filming places and put them in a sensible order. Friends can join with a link.
       </p>
       <div className="mt-10 border-t border-ink/15 pt-8">
         <TripForm works={works} from={{ param: start.param, label: start.label, tz: start.tz }} placesByMode={placesByMode}

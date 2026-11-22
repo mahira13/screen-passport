@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ShareCard } from "@/components/ShareCard";
+import { InfoTip } from "@/components/InfoTip";
+import { PhotoCard } from "@/components/PhotoCard";
 import { ProgressRing } from "@/components/ProgressRing";
 import { YourPassportNote } from "@/components/YourPassportNote";
 import { buildCollections } from "@/lib/collections-model";
@@ -116,18 +118,14 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
               <p className="mt-6 font-display text-4xl leading-none tracking-[0.14em]">Screen</p>
               <p className="font-display text-4xl leading-none tracking-[0.14em]">Passport</p>
             </div>
-            <p className="relative z-[2] font-display text-lg">Discover · Explore · Collect</p>
+            <p className="label relative z-[2] text-accent/70">No. {passport.id}</p>
           </div>
 
           <div className="flex min-w-0 flex-col">
-            <p className="label text-ink/60">Passport no. <span className="text-ink">{passport.id}</span></p>
-            <p className="label mt-6 text-ink/60">Holder</p>
+            <p className="label text-ink/60">Holder</p>
             <h1 className="mt-1 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
               {passport.display_name ?? "A film lover"}
             </h1>
-            <p className="mt-3 text-lg text-ink/70">
-              {allPlaces.length} filming {allPlaces.length === 1 ? "place" : "places"} from {stamps.length} {stamps.length === 1 ? "title" : "titles"} near {city.name}
-            </p>
 
             <dl className="mt-8 grid grid-cols-2 border-t border-ink/15 sm:grid-cols-4">
               {stats.map(([n, label]) => (
@@ -163,11 +161,11 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       {/* Stamp pages */}
-      <section className="border-t border-ink/10 py-14 sm:py-20">
+      <section className="py-12 sm:py-16">
         <div className={WRAP}>
-          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink/20 pb-5">
-            <h2 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Stamps<span className="text-accent">.</span></h2>
-            <p className="label text-ink/60">Gold means checked in on site</p>
+          <div className="flex items-center gap-1">
+            <h2 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Stamps</h2>
+            <InfoTip label="What gold means">A gold stamp means you checked in on site.</InfoTip>
           </div>
           {stamps.length === 0 ? (
             <p className="mt-8 font-display text-2xl text-ink/70">No titles in this passport yet.</p>
@@ -190,7 +188,7 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
 
           {collections.length > 0 && (
             <div className="mt-16">
-              <p className="label text-accent">Collections</p>
+              <h2 className="font-display text-3xl sm:text-4xl">Collections</h2>
               <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {collections.map((c) => (
                   <li key={c.id} className={`relative bg-surface p-5 ${c.complete ? "ring-1 ring-accent" : ""}`}>
@@ -212,17 +210,14 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       {recent.length > 0 && (
-        <section className="border-t border-ink/10 py-14 sm:py-20">
+        <section className="py-12 sm:py-16">
           <div className={WRAP}>
-            <p className="label text-accent">Recent check-ins</p>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <h2 className="font-display text-3xl sm:text-4xl">Recent check-ins</h2>
+            <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
               {recent.map((p) => (
                 <li key={p.id}>
-                  <Link href={`/location/${p.id}`} className="block h-full border-l-2 border-accent bg-surface/60 p-4 hover:bg-surface">
-                    <span aria-hidden className="text-accent">★</span>
-                    <p className="font-display text-xl leading-tight">{p.name}</p>
-                    <p className="label mt-1 text-ink/60">{p.title}</p>
-                  </Link>
+                  <PhotoCard href={`/location/${p.id}`} title={p.name} photo={p.photo} aspect="aspect-square" meta={p.title}
+                    badge={<span aria-label="Checked in" className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-paper">★</span>} />
                 </li>
               ))}
             </ul>
@@ -232,13 +227,12 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Travel journal */}
       {stamps.some((s) => s.places.length > 0) && (
-        <section className="border-t border-ink/10 py-14 sm:py-20">
+        <section className="py-12 sm:py-16">
           <div className={WRAP}>
-            <p className="label text-accent">Travel journal</p>
-            <h2 className="mt-3 font-display text-5xl leading-none tracking-tight sm:text-6xl">Places to visit</h2>
-            <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 className="font-display text-3xl sm:text-4xl">Places to visit</h2>
+            <div className="mt-6 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {stamps.filter((s) => s.places.length > 0).map((s) => (
-                <div key={s.work.id} className="border-t border-ink/15 pt-4">
+                <div key={s.work.id}>
                   <h3 className="font-display text-2xl text-accent">{s.work.title}</h3>
                   <ul className="mt-3 space-y-2 text-sm">
                     {s.places.map((p) => (

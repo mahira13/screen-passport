@@ -6,7 +6,7 @@ import type { Work } from "@/lib/types";
 
 const BERLIN = { lat: 52.52, lng: 13.405 };
 const at = (id: number, lat: number, lng: number, checkIn = false, photo = false): CollectionPlace =>
-  ({ id, name: `P${id}`, city: null, lat, lng, checkIn, photo, thumb: null, titles: [] });
+  ({ id, name: `P${id}`, city: null, lat, lng, checkIn, photo, thumb: null, image: null, titles: [] });
 const col = (key: string, places: CollectionPlace[], pinRank: number | null = null): CollectionModel => ({
   key, kind: key.split(":")[0] as CollectionModel["kind"], slug: key.split(":")[1], name: key, description: null, href: "/",
   city: null, works: [], places, cover: null, pinRank,

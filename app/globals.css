@@ -147,20 +147,3 @@ input:not([type="checkbox"]):not([type="radio"]) {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-
-@keyframes ticker {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.ticker {
-  animation: ticker 40s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ticker {
-    animation: none;
-  }
-}

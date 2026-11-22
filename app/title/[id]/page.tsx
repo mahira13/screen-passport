@@ -3,6 +3,8 @@ import { ShareLink } from "@/components/ShareLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Cover } from "@/components/Cover";
+import { PhotoCard } from "@/components/PhotoCard";
 import { PlacesMapBox } from "@/components/PlacesMapBox";
 import { StartCollection } from "@/components/StartCollection";
 import { findCityByName } from "@/lib/cities";
@@ -55,46 +57,40 @@ async function TitleView({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
-      <section className="relative overflow-hidden">
       <TrackView page="title" id={work.id} />
-        <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-accent/10 blur-[120px]" />
-        <div className={`${WRAP} relative pb-10 pt-12 sm:pt-20`}>
-          <p className="label text-accent">{work.type === "film" ? "Film" : "Series"}{work.year && ` · ${work.year}`}</p>
-          <h1 className="mt-4 max-w-5xl font-display text-5xl leading-[0.95] tracking-tight sm:text-8xl">{work.title}</h1>
-          <p className="mt-5 font-display text-2xl text-ink/75 sm:text-3xl">{summary(places.length, cities, countries.length)}.</p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <StartCollection workId={work.id} placeIds={places.map((p) => p.id)} />
-            <Link href={tripHref} className="label inline-flex min-h-11 items-center border border-ink/30 px-5 transition-colors hover:border-accent hover:text-accent">
-              Create a trip
-            </Link>
-            <ShareLink path={`/title/${encodeURIComponent(work.id)}`} title={work.title} what="title"
-              text={`Where ${work.title} was filmed: ${places.length} real places to visit.`} />
-          </div>
+      <section className={`${WRAP} pt-4 sm:pt-10`}>
+        <div className="-mx-4 sm:mx-0">
+          <Cover photo={places.find((p) => p.photo)?.photo ?? null} label={work.title} className="aspect-[16/10] sm:aspect-[21/9] sm:rounded-sm" priority />
+        </div>
+        <p className="label mt-6 text-accent">{work.type === "film" ? "Film" : "Series"}{work.year && ` · ${work.year}`}</p>
+        <h1 className="mt-2 max-w-5xl font-display text-5xl leading-[0.95] tracking-tight sm:text-8xl">{work.title}</h1>
+        <p className="mt-3 text-lg text-ink/70">{summary(places.length, cities, countries.length)}</p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <StartCollection workId={work.id} placeIds={places.map((p) => p.id)} />
+          <Link href={tripHref} className="label inline-flex min-h-11 items-center rounded-full border border-ink/30 px-5 transition-colors hover:border-accent hover:text-accent">
+            Create a trip
+          </Link>
+          <ShareLink path={`/title/${encodeURIComponent(work.id)}`} title={work.title} what="title"
+            text={`Where ${work.title} was filmed: ${places.length} real places to visit.`} />
         </div>
       </section>
 
-      <div className={WRAP}>
+      <div className={`${WRAP} mt-10`}>
         <PlacesMapBox pins={places.map((p) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng, thumb: p.photo?.url, label: work.title }))} className="-mx-4 h-[50vh] max-h-[560px] min-h-[280px] sm:mx-0" />
       </div>
 
       <section className={`${WRAP} pt-14`}>
         {countries.map((c) => (
-          <div key={c.country} className="mt-10 first:mt-0">
-            <h2 className="flex items-baseline gap-3 border-b border-ink/20 pb-3">
-              <span className="font-display text-4xl tracking-wide sm:text-5xl">{c.country}</span>
-              <span className="label ml-auto text-ink/60">{c.count} {c.count === 1 ? "place" : "places"}</span>
-            </h2>
+          <div key={c.country} className="mt-12 first:mt-0">
+            {countries.length > 1 && <h2 className="font-display text-4xl tracking-tight sm:text-5xl">{c.country}</h2>}
             {c.cities.map((city) => (
-              <div key={city.city} className="mt-6">
-                <h3 className="font-display text-2xl text-accent">{city.city}</h3>
-                <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div key={city.city} className="mt-6 first:mt-0">
+                <h3 className="label text-accent">{city.city} · {city.places.length}</h3>
+                <ul className="mt-4 grid gap-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
                   {city.places.map((p) => (
                     <li key={p.id}>
-                      <Link href={`/location/${p.id}`} className="group block h-full border-l-2 border-accent/60 bg-surface/60 p-4 transition-colors hover:bg-surface">
-                        <p className="font-display text-2xl leading-tight transition-colors group-hover:text-accent">{p.name}</p>
-                        {(p.depicts || p.sceneNote) && <p className="mt-2 text-sm text-ink/75">{p.depicts ? `As ${p.depicts}. ` : ""}{p.sceneNote}</p>}
-                        <p className="label mt-3 text-ink/60">View place →</p>
-                      </Link>
+                      <PhotoCard href={`/location/${p.id}`} title={p.name} photo={p.photo} aspect="aspect-[16/10]"
+                        meta={(p.depicts || p.sceneNote) && <p className="line-clamp-2">{p.depicts ? `As ${p.depicts}` : p.sceneNote}</p>} />
                     </li>
                   ))}
                 </ul>
@@ -102,7 +98,6 @@ async function TitleView({ params }: { params: Promise<{ id: string }> }) {
             ))}
           </div>
         ))}
-        <p className="mt-12 max-w-xl text-sm text-ink/60">Every place has a source. Open a place to see it, how it was checked and how to visit.</p>
       </section>
     </>
   );

@@ -7,7 +7,7 @@ import type { MapCollection } from "@/components/ExploreMap";
 import { buildCollections, type CollectionModel } from "./collections-model";
 import { destinations, type Destination } from "./destinations";
 import { getLiveData } from "./live-data";
-import { buildNearby, type NearbyResult } from "./nearby";
+import { buildNearby, photoOf, type NearbyResult, type Photo } from "./nearby";
 
 type NearbyData = { nearby: NearbyResult | null; destinations: Destination[]; cities: City[]; start: City };
 
@@ -65,6 +65,31 @@ export async function allCollections(): Promise<CollectionModel[]> {
   } catch (e) {
     console.error("collections failed:", e instanceof Error ? e.message : e);
     return [];
+  }
+}
+
+/**
+ * Home: three different Commons photos for the cards (near me, collections, trips), the most
+ * featured collection's cover in the middle, and two real search examples (the title and the
+ * city with the most published places).
+ */
+export async function homeData(): Promise<{ covers: [Photo | null, Photo | null, Photo | null]; examples: string[] }> {
+  try {
+    const data = await getLiveData();
+    const featured = buildCollections(data).filter((c) => c.cover).sort((a, b) => (a.pinRank ?? 99) - (b.pinRank ?? 99))[0]?.cover ?? null;
+    const others = [...data.locations].sort((a, b) => a.id - b.id).map(photoOf)
+      .filter((p): p is Photo => !!p && p.url !== featured?.url)
+      .filter((p, i, all) => all.findIndex((q) => q.url === p.url) === i);
+    const top = (xs: (string | null)[]) => {
+      const n = new Map<string, number>();
+      for (const x of xs) if (x) n.set(x, (n.get(x) ?? 0) + 1);
+      return [...n].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    };
+    const titleId = top(data.locations.map((l) => l.work_id));
+    const examples = [data.works.find((w) => w.id === titleId)?.title ?? null, top(data.locations.map((l) => l.city))].filter((x): x is string => !!x);
+    return { covers: [others[0] ?? null, featured, others[Math.floor(others.length / 2)] ?? null], examples };
+  } catch {
+    return { covers: [null, null, null], examples: [] };
   }
 }
 

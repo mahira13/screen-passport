@@ -66,8 +66,9 @@ describe("coverPhoto", () => {
     id, work_id, name: `P${id}`, city: "Berlin", lat: 52.5, lng: 13.4, coord_quality: "source",
     ...(photo ? { image_thumb_url: `https://upload.wikimedia.org/${id}.jpg`, image_author: "A", image_license: "CC0", image_source_page: `https://commons.wikimedia.org/wiki/File:${id}.jpg` } : {}),
   });
-  it("uses the first place of the first title that has places", () => {
-    expect(coverPhoto(["none", "b", "a"], [loc(3, "a", true), loc(7, "b", true), loc(5, "b", false)])).toBeNull(); // #5 is first for b
+  it("uses the first place with a photo, titles in order", () => {
+    expect(coverPhoto(["none", "b", "a"], [loc(3, "a", true), loc(7, "b", true), loc(5, "b", false)])?.url).toBe("https://upload.wikimedia.org/7.jpg"); // #5 has none
+    expect(coverPhoto(["b"], [loc(5, "b", false)])).toBeNull();
     expect(coverPhoto(["b", "a"], [loc(7, "b", true), loc(9, "b", false)])?.url).toBe("https://upload.wikimedia.org/7.jpg");
   });
 });

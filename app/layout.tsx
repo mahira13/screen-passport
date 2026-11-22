@@ -19,12 +19,6 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#16213A", width: "device-width", initialScale: 1 };
 
-const PILLARS = [
-  ["Discover", "your cinema", "Real filming places from the films and series you love, each with a source."],
-  ["Explore", "the world", "Turn them into a dated trip, walk it with friends, let Layla plan the rest."],
-  ["Collect", "your stories", "Stamps, gold check-ins and collections in a passport worth sharing."],
-] as const;
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${grotesk.variable} h-full antialiased`}>
@@ -33,19 +27,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={<SiteHeader />}><SiteHeaderLive /></Suspense>
         {children}
         <footer className="mt-auto bg-paper">
-          <div className="mx-auto w-full max-w-screen-2xl px-4 pb-28 pt-16 sm:px-8 lg:px-12">
-            <ol className="grid gap-10 border-t border-ink/15 pt-10 md:grid-cols-3">
-              {PILLARS.map(([verb, rest, text], i) => (
-                <li key={verb}>
-                  <p className="label text-ink/60">0{i + 1}</p>
-                  <p className="mt-3 font-display text-4xl leading-none sm:text-5xl">
-                    {verb} <span className="text-accent">{rest}.</span>
-                  </p>
-                  <p className="mt-3 max-w-xs text-sm text-ink/60">{text}</p>
-                </li>
-              ))}
-            </ol>
-            <div className="mt-16 flex flex-wrap items-end justify-between gap-6 border-t border-ink/15 pt-6">
+          <div className="mx-auto w-full max-w-screen-2xl px-4 pb-10 pt-12 sm:px-8 lg:px-12">
+            <div className="flex flex-wrap items-end justify-between gap-6 border-t border-ink/10 pt-6">
               <Wordmark />
               <nav aria-label="Legal" className="label flex gap-6 text-ink/65">
                 <Link href="/impressum" className="inline-flex min-h-11 items-center hover:text-accent">Impressum</Link>

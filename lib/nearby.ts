@@ -23,10 +23,10 @@ export function photoOf(l: LiveLocation): Photo | null {
   return { url: l.image_thumb_url, author: l.image_author ?? "Unknown author", license: l.image_license ?? "", licenseUrl: l.image_license_url ?? null, page: l.image_source_page };
 }
 
-/** A collection's cover: the photo of its first featured place (first title, lowest id), or none. */
+/** A collection's cover: the first place with a photo (titles in order, lowest id first), or none. */
 export function coverPhoto(workIds: string[], locations: LiveLocation[]): Photo | null {
   for (const w of workIds) {
-    const first = locations.filter((l) => l.work_id === w).sort((a, b) => a.id - b.id)[0];
+    const first = locations.filter((l) => l.work_id === w && photoOf(l)).sort((a, b) => a.id - b.id)[0];
     if (first) return photoOf(first);
   }
   return null;

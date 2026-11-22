@@ -48,13 +48,13 @@ export function CatalogueSearch({ onPick, examples }: { onPick: (hit: SearchHit)
 
   return (
     <div>
-      <label htmlFor={`${listId}-q`} className="label text-ink/60">Search a film, series, city or country</label>
-      <div className="mt-2 flex items-stretch border-b-2 border-ink/40 transition-colors focus-within:border-accent">
+      <label htmlFor={`${listId}-q`} className="sr-only">Search a film, series, city or country</label>
+      <div className="flex items-center gap-3 rounded-full bg-surface px-5 ring-1 ring-ink/10 transition-shadow focus-within:ring-2 focus-within:ring-accent">
+        <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-ink/60" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         <input id={`${listId}-q`} type="search" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off"
-          placeholder={examples.length ? `${examples.join(", ")}…` : "A film, series or city…"} aria-controls={listId}
+          placeholder={examples.length ? `Try ${examples.join(" or ")}` : "A film, series or city"} aria-controls={listId}
           onKeyDown={(e) => e.key === "Enter" && hits[0] && (e.preventDefault(), pick(hits[0]))}
-          className="min-w-0 flex-1 bg-transparent py-3 font-display text-2xl text-ink placeholder:text-ink/55 focus:outline-none sm:text-3xl" />
-        <span aria-hidden className="self-center font-display text-xl tracking-wider text-accent">Find ↘</span>
+          className="min-w-0 flex-1 bg-transparent py-4 text-lg text-ink placeholder:text-ink/50 focus:outline-none focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden" />
       </div>
       <ul id={listId} aria-live="polite" className="mt-1">
         {hits.map((h) => (

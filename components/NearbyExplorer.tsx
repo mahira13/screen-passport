@@ -199,12 +199,21 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
     );
   };
 
-  // From home's "Find filming locations near me" (/discover?near=1): ask for the location once.
+  // From home: "Near me" (/discover?near=1) asks for the location once; the search
+  // (/discover?at=lat,lng&label=…&kind=city|country) starts there.
   const asked = useRef(false);
   useEffect(() => {
     if (asked.current || new URLSearchParams(window.location.search).get("near") !== "1") return;
     asked.current = true;
     locateMe();
+  });
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const [lat, lng] = (q.get("at") ?? "").split(",").map(Number);
+    const kind = q.get("kind");
+    if (asked.current || !q.get("at") || !Number.isFinite(lat) || !Number.isFinite(lng) || (kind !== "city" && kind !== "country")) return;
+    asked.current = true;
+    pickHit({ kind, id: q.get("label") ?? "", label: q.get("label") ?? "", places: 0, centre: { lat, lng } });
   });
 
   const onMapReady = () => {

@@ -33,6 +33,8 @@ export TEST_DATABASE_URL="postgres://postgres:test@127.0.0.1:$PORT/postgres"
 npx tsx tests/db/load-legacy.ts
 psql_run < supabase/migrations/007_catalogue.sql
 psql_run < supabase/migrations/007_catalogue.sql # safe to run twice
+psql_run < supabase/migrations/008_verification.sql
+psql_run < supabase/migrations/008_verification.sql # safe to run twice
 npx vitest run tests/db
 
 # Rollback: back to the 001–006 schema, the old view still serves the app, and 007 applies again.
@@ -46,4 +48,5 @@ select case when to_regclass('public.location_works') is null
             then 'ok' else 'rollback incomplete' end;
 SQL
 psql_run < supabase/migrations/007_catalogue.sql
+psql_run < supabase/migrations/008_verification.sql
 echo "rollback and re-apply: ok"

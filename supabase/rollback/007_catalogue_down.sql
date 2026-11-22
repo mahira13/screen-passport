@@ -27,6 +27,7 @@ delete from public.locations where work_id is null; -- only rows that never had 
 alter table public.locations alter column work_id set not null;
 
 -- 4. Functions, view, triggers.
+drop table if exists public.location_reviews; -- from 008, if applied
 drop function if exists public.merge_locations(int, int[]);
 drop function if exists public.search_catalogue(text);
 drop function if exists public.nearby_locations(double precision, double precision, double precision, text, int);
@@ -46,6 +47,8 @@ drop index if exists public.works_title_trgm;
 drop index if exists public.locations_city_trgm;
 drop index if exists public.locations_country_trgm;
 alter table public.locations
+  drop column if exists recheck,             -- from 008, if applied
+  drop column if exists verification_method, -- from 008, if applied
   drop column if exists merged_into,
   drop column if exists geog,
   drop column if exists verified_at,

@@ -182,3 +182,28 @@ describe.skipIf(!url)("migration 007: catalogue", () => {
     await expect(db.query("select merge_locations(32, '{32}')")).rejects.toThrow(/itself/);
   });
 });
+
+describe.skipIf(!url)("migration 008: verification", () => {
+  const db = new Client({ connectionString: url });
+  beforeAll(() => db.connect());
+  afterAll(() => db.end());
+
+  it("accepts needs_review, marks published rows as team-verified and hides review logs from the public", async () => {
+    await db.query("begin");
+    try {
+      await db.query("update locations set verification_status = 'needs_review' where id = 1");
+      expect((await db.query("select status from locations where id = 1")).rows[0].status).toBe("unverified");
+      const { rows } = await db.query("select count(*) filter (where verification_method = 'team')::int as team, count(*)::int as all from locations where verification_status = 'published'");
+      expect(rows[0].team).toBe(rows[0].all);
+      await db.query("insert into location_reviews (location_id, method, decision, reasons, evidence_quote) values (32, 'ai', 'published', '{}', 'quote')");
+      await db.query("set local role anon");
+      await db.query("savepoint denied");
+      await expect(db.query("select * from location_reviews")).rejects.toThrow(/permission denied/);
+      await db.query("rollback to savepoint denied");
+      const badge = await db.query("select verification_method from nearby_locations(52.52, 13.405, 1) limit 1");
+      expect(badge.rows[0].verification_method).toBe("team");
+    } finally {
+      await db.query("rollback");
+    }
+  });
+});

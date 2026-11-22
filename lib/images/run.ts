@@ -4,7 +4,7 @@ import { BudgetExhausted } from "../pipeline/ai";
 import { geocoderContact } from "../geocode";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { byGeo, bySearch, byTitles, type Candidate, COMMONS_API, type CommonsPage, p18File, toCandidate } from "./commons";
-import { askImageMatch } from "./relevance";
+import { askImageMatch, ImageFetchError } from "./relevance";
 
 const GAP_MS = 1000; // one Commons/Wikidata request per second
 const MAX_AI_CHECKS = 3; // candidates shown to Claude per place
@@ -101,6 +101,7 @@ export async function runImages(db: SupabaseClient, o: ImageOptions = {}): Promi
         if (m?.matches) chosen = c;
       } catch (e) {
         if (e instanceof BudgetExhausted) throw e; // stop; nothing is saved for this place
+        if (e instanceof ImageFetchError) { log(`  #${row.id} ${c.file}: ${e.message}`); if (c === list[0]) pickReason = e.message; continue; }
         const status = (e as { status?: number }).status;
         aiDown = status ? `AI unavailable (HTTP ${status})` : "AI unavailable";
         reason = aiDown;

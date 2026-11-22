@@ -18,11 +18,17 @@ export function aiModel(): string {
   return model;
 }
 
+// An image costs at most a few thousand tokens however many bytes it has; counting its base64 text would reserve dollars.
+const IMAGE_CHARS = 4 * 5_000;
+const promptLength = (messages: Anthropic.MessageParam[]) =>
+  JSON.stringify(messages, (k, v) => (k === "data" && typeof v === "string" ? "" : v)).length +
+  JSON.stringify(messages).split('"type":"image"').length * IMAGE_CHARS - IMAGE_CHARS;
+
 export async function guardedCreate(params: Anthropic.MessageCreateParamsNonStreaming, maxSearches = 0): Promise<Anthropic.Message> {
   const budget = dailyBudget();
   if (budget === null) throw new BudgetExhausted("DAILY_AI_BUDGET is not set, so no AI calls are made.");
   const price = priceFor(params.model);
-  const promptChars = JSON.stringify(params.messages).length + JSON.stringify(params.system ?? "").length;
+  const promptChars = promptLength(params.messages) + JSON.stringify(params.system ?? "").length;
   const estimate = estimateCost(promptChars, params.max_tokens, price, maxSearches, webSearchPrice());
   const db = supabaseAdmin();
   const { data: ok, error } = await db.rpc("ai_reserve", { p_estimate: estimate, p_budget: budget });

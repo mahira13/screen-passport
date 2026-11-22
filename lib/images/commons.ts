@@ -3,6 +3,9 @@
 
 export const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 export const THUMB_WIDTH = 800;
+const UPLOAD = /^https:\/\/upload\.wikimedia\.org\//;
+/** The API now returns thumbnails on thumb.wikimedia.org; the same path works on upload.wikimedia.org, the host the database and map accept. */
+const uploadHost = (url: string) => url.replace(/^https:\/\/thumb\.wikimedia\.org\//, "https://upload.wikimedia.org/");
 
 export type ImageInfo = {
   url: string;
@@ -52,11 +55,11 @@ export function toCandidate(page: CommonsPage): Candidate | { skip: string } {
   if (EXCLUDED.test(`${page.title} ${description} ${categories}`)) return { skip: "still, poster, logo or portrait" };
   const author = stripHtml(m.Artist?.value ?? m.Credit?.value ?? "").slice(0, 200) || "Unknown author";
   const licenseUrl = m.LicenseUrl?.value && /^https?:\/\//.test(m.LicenseUrl.value) ? m.LicenseUrl.value : null;
-  if (!/^https:\/\/upload\.wikimedia\.org\//.test(info.url)) return { skip: "not hosted on Commons" };
+  if (!UPLOAD.test(info.url)) return { skip: "not hosted on Commons" };
   return {
     file: page.title,
     url: info.url,
-    thumbUrl: info.thumburl && /^https:\/\/upload\.wikimedia\.org\//.test(info.thumburl) ? info.thumburl : info.url,
+    thumbUrl: info.thumburl && UPLOAD.test(uploadHost(info.thumburl)) ? uploadHost(info.thumburl) : info.url,
     author,
     license: license.slice(0, 60),
     licenseUrl,

@@ -29,6 +29,11 @@ describe("toCandidate", () => {
       license: "CC BY-SA 4.0", sourcePage: "https://commons.wikimedia.org/wiki/File:Foo.jpg",
     });
   });
+  it("moves a thumb.wikimedia.org thumbnail to the same path on upload.wikimedia.org", () => {
+    const p = page("File:Foo.jpg");
+    p.imageinfo![0].thumburl = "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Foo.jpg/960px-Foo.jpg?utm_source=x";
+    expect(toCandidate(p)).toMatchObject({ thumbUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Foo.jpg/960px-Foo.jpg?utm_source=x" });
+  });
   it("skips non-free licences, non-photos, stills, posters, promo images and portraits", () => {
     expect(toCandidate(page("File:Foo.jpg", { LicenseShortName: "CC BY-NC 2.0" }))).toHaveProperty("skip");
     expect(toCandidate(page("File:Foo.svg", {}, "image/svg+xml"))).toHaveProperty("skip");

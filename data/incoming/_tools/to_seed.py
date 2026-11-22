@@ -43,6 +43,14 @@ VISIT_NOTE = {"public": "Public", "paid_entry": "Ticketed", "unknown": "Check ac
 PUBLIC_ACCESS = {"public": "public", "paid_entry": "public", "unknown": "unknown"}
 # Same place under two names in the incoming files (normalised name -> normalised name it belongs to).
 SAME_PLACE = {"hotel de rome rooftop terrace": "hotel de rome"}
+# Incoming place -> existing database location id, decided by hand from the proximity list this script
+# prints with --db (names differ, same physical place).
+DB_SAME_PLACE = {
+    ("Westin Grand Hotel", "Berlin"): "76",                          # Westin Grand Berlin, 25 m
+    ("S-Bahnhof Friedrichstraße", "Berlin"): "78",                   # Bahnhof Berlin Friedrichstraße, 26 m
+    ("Tiergarten Tunnel (Potsdamer Platz exit)", "Berlin"): "75",    # Tunnel Tiergarten Spreebogen
+    ("Leipzig/Halle Airport", "Schkeuditz"): "79",                   # Flughafen Leipzig/Halle
+}
 
 # lib/geocode.ts COARSE: areas and streets, never a single place.
 COARSE = {
@@ -256,6 +264,34 @@ def main():
         target = r["merged_into"] or r["id"]
         seed_place_index.setdefault((normalise_place(r["name"]), r["city"]), target)
 
+    # --db <backup dir> (from `npm run backup`): the database can be ahead of data/seed (Wikidata drafts,
+    # admin edits). Match against it too, and number new places after its highest id.
+    db_dir = sys.argv[sys.argv.index("--db") + 1] if "--db" in sys.argv else None
+    db_locs, db_works, db_coords = [], {}, []
+    max_db_id = 0
+    if db_dir:
+        db_dir = Path(db_dir)
+        db_locs = json.loads((db_dir / "locations.json").read_text(encoding="utf-8"))
+        db_works = {w["id"]: w for w in json.loads((db_dir / "works.json").read_text(encoding="utf-8"))}
+        lw = db_dir / "location_works.json"
+        db_links = json.loads(lw.read_text(encoding="utf-8")) if lw.exists() else []
+        max_db_id = max((int(l["id"]) for l in db_locs), default=0)
+        for w in db_works.values():
+            for n in [w["title"], *(w.get("aliases") or [])]:
+                title_index.setdefault(normalise_title(n), w["id"])
+        work_ids |= set(db_works)
+        have_pair |= {(str(l["id"]), l["work_id"]) for l in db_locs} | {(str(k["location_id"]), k["work_id"]) for k in db_links}
+        for l in db_locs:
+            if l.get("verification_status") == "rejected" and not l.get("merged_into"):
+                continue
+            target = str(l.get("merged_into") or l["id"])
+            for n in {normalise_place(l["name"]), normalise_place(l["name"].split(",")[0])}:
+                seed_place_index.setdefault((n, l["city"]), target)
+            if l.get("lat") is not None and not l.get("merged_into"):
+                db_coords.append((str(l["id"]), l["name"], l["city"], float(l["lat"]), float(l["lng"])))
+    seed_ids = {r["id"] for r in seed_locs}
+    seed_work_ids = {t["id"] for t in seed_titles}
+
     files = sorted(p for p in INCOMING.glob("*.csv") if p.name != "_needs_source.csv")
     rows, skipped = [], []
     for p in files:
@@ -294,7 +330,7 @@ def main():
 
     # ---- places
     geo = Geocoder(online, refresh)
-    next_id = max(int(r["id"]) for r in seed_locs) + 1
+    next_id = max(max(int(r["id"]) for r in seed_locs), max_db_id) + 1
     new_locs = OrderedDict()  # (normalised name, city) -> locations row
     links, link_pairs = [], set()
     duplicates = []
@@ -317,8 +353,10 @@ def main():
             add_link(target, r)
             continue
         key = (normalise_place(r["name"]), r["city"])
-        if key in seed_place_index:
-            add_link(seed_place_index[key], r)
+        known = DB_SAME_PLACE.get((r["name"], r["city"])) or seed_place_index.get(key) \
+            or seed_place_index.get((normalise_place(r["name"].split(",")[0]), r["city"]))
+        if known:
+            add_link(known, r)
             continue
         if key in new_locs:
             loc = new_locs[key]
@@ -373,12 +411,12 @@ def main():
 
     # ---- validate (port of scripts/seed-rows.ts validateSeed, for the new rows)
     problems = []
-    seen_ids = {r["id"] for r in seed_locs}
+    seen_ids = {r["id"] for r in seed_locs} | {str(l["id"]) for l in db_locs}
     out_locs = list(new_locs.values())
     for l in out_locs:
         w = f"location {l['id']} ({l['name']})"
         if l["id"] in seen_ids:
-            problems.append(f"{w}: id clashes with the seed")
+            problems.append(f"{w}: id clashes with the seed or the database")
         seen_ids.add(l["id"])
         if l["work_id"] not in all_work_ids:
             problems.append(f"{w}: unknown work {l['work_id']}")
@@ -388,7 +426,7 @@ def main():
             problems.append(f"{w}: coordinates and coord_quality must go together")
         if not l["lat"] and not l["geocode_query"]:
             problems.append(f"{w}: no coordinates and no geocode_query")
-    all_loc_ids = {r["id"] for r in seed_locs} | {l["id"] for l in out_locs}
+    all_loc_ids = {r["id"] for r in seed_locs} | {l["id"] for l in out_locs} | {str(l["id"]) for l in db_locs}
     for k in links:
         w = f"location_works {k['location_id']}/{k['work_id']}"
         if k["location_id"] not in all_loc_ids:
@@ -398,11 +436,40 @@ def main():
     if problems:
         sys.exit("Output has problems:\n- " + "\n- ".join(problems))
 
+    # Titles that exist only in the database but are used here must be in titles.csv too, or the
+    # seed validation rejects them; take them from the database as they are (the import keeps its year).
+    used = {l["work_id"] for l in out_locs} | {k["work_id"] for k in links}
+    out_titles = list(new_titles.values())
+    for wid in sorted(used - seed_work_ids - set(new_titles)):
+        w = db_works[wid]
+        out_titles.append({"id": wid, "title": w["title"], "type": w["type"], "aliases": "|".join(w.get("aliases") or []),
+                           "year": "" if w.get("year") is None else str(w["year"])})
+    # Links to places that exist only in the database can't go through data/seed (their rows aren't there);
+    # they go to db_links.csv and are loaded with _tools/load_db_links.ts.
+    in_seed = seed_ids | {l["id"] for l in out_locs}
+    seed_links_out = [k for k in links if k["location_id"] in in_seed]
+    db_links_out = [k for k in links if k["location_id"] not in in_seed]
+
+    # Possible duplicates the name match missed: new places within 150 m of a known place.
+    near = []
+    for l in out_locs:
+        if not l["lat"]:
+            continue
+        for kid, kname, kcity, klat, klng in db_coords:
+            d = km(float(l["lat"]), float(l["lng"]), klat, klng) * 1000
+            if d <= 150:
+                near.append(f"| {l['id']} {l['name']} | {kid} {kname} | {d:.0f} m |")
+
     # ---- write
     OUT.mkdir(exist_ok=True)
     write_csv(OUT / "locations.csv", LOC_COLUMNS, out_locs)
-    write_csv(OUT / "titles.csv", TITLE_COLUMNS, list(new_titles.values()))
-    write_csv(OUT / "location_works.csv", LINK_COLUMNS, links)
+    write_csv(OUT / "titles.csv", TITLE_COLUMNS, out_titles)
+    write_csv(OUT / "location_works.csv", LINK_COLUMNS, seed_links_out)
+    if db_dir:
+        write_csv(OUT / "db_links.csv", LINK_COLUMNS, db_links_out)
+        (OUT / "NEARBY.md").write_text("# New places within 150 m of a known place\n\nReview: same place -> add to "
+                                       "DB_SAME_PLACE in to_seed.py and rerun.\n\n| new | known | distance |\n|---|---|---|\n"
+                                       + "\n".join(near) + "\n", encoding="utf-8")
 
     q = {k: sum(1 for l in out_locs if l["coord_quality"] == k) for k in ("source", "geocoded", "approx")}
     missing = sum(1 for l in out_locs if not l["lat"])
@@ -422,8 +489,9 @@ Do not edit these files by hand; change the city CSVs and run the script again.
 
 - `locations.csv`: {len(out_locs)} new places (ids {out_locs[0]['id'] if out_locs else '-'}–{out_locs[-1]['id'] if out_locs else '-'}), all `unverified`
   - coordinates: {q['source']} from the source, {q['geocoded']} geocoded (building), {q['approx']} approximate (street, square or park), {missing} missing (see GEOCODE_REPORT.md)
-- `titles.csv`: {len(new_titles)} new titles
-- `location_works.csv`: {len(links)} extra title links ({sum(1 for k in links if k['location_id'] in {r['id'] for r in seed_locs})} to existing seed places)
+- `titles.csv`: {len(new_titles)} new titles (+{len(out_titles) - len(new_titles)} that exist only in the database, copied from it)
+- `location_works.csv`: {len(seed_links_out)} extra title links ({sum(1 for k in seed_links_out if k['location_id'] in seed_ids)} to existing seed places)
+- `db_links.csv`: {len(db_links_out)} extra title links to places that exist only in the database ({'--db ' + str(db_dir) if db_dir else 'no --db given'})
 - `SKIPPED.md`: {len(skipped)} rows not converted (unclear, setting only, private, closed set) and {len(duplicates)} duplicates
 
 Coordinates come from OpenStreetMap Nominatim (© OpenStreetMap contributors, ODbL). `geocoded` and `approx`

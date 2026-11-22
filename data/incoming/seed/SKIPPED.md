@@ -39,4 +39,12 @@ Not converted to seed format. They stay in the city files as leads.
 | potsdam.csv:64 | Inglourious Basterds | Studio Babelsberg | access = closed_set (rule 7) |
 | potsdam.csv:65 | The Hunger Games: The Ballad of Songbirds & Snakes | Studio Babelsberg | access = closed_set (rule 7) |
 | potsdam.csv:67 | Resident Evil | Officers' Mess, Kaserne Krampnitz | access = private (rule 7) |
+| berlin.csv:8 | The Bourne Supremacy | Westin Grand Hotel | location 76 already has bourne-supremacy |
+| berlin.csv:16 | The Bourne Supremacy | Tiergarten Tunnel (Potsdamer Platz exit) | location 75 already has bourne-supremacy |
+| berlin.csv:22 | Captain America: Civil War | Sony Center, Potsdamer Platz | location 87 already has captain-america-cw |
+| berlin.csv:23 | Captain America: Civil War | Henriette-Herz-Park | location 88 already has captain-america-cw |
+| berlin.csv:24 | Captain America: Civil War | Leipziger Straße at Jerusalemer Straße | location 86 already has captain-america-cw |
+| berlin.csv:26 | Captain America: Civil War | Kronprinzenbrücke | location 89 already has captain-america-cw |
 | berlin.csv:35 | Equilibrium | Altes Stadthaus (exterior) | location 21 already has equilibrium |
+| berlin.csv:76 | Run Lola Run | Bebelplatz | location 82 already has run-lola-run |
+| leipzig.csv:9 | Unknown | Leipzig/Halle Airport | location 79 already has unknown-2011 |

@@ -35,6 +35,12 @@ psql_run < supabase/migrations/007_catalogue.sql
 psql_run < supabase/migrations/007_catalogue.sql # safe to run twice
 psql_run < supabase/migrations/008_verification.sql
 psql_run < supabase/migrations/008_verification.sql # safe to run twice
+psql_run < supabase/migrations/009_images.sql
+psql_run < supabase/migrations/009_images.sql # safe to run twice
+for f in 010_featured_collections 011_search_normalise 012_featured_ranks 013_location_aliases_outline; do
+  psql_run < "supabase/migrations/$f.sql"
+  psql_run < "supabase/migrations/$f.sql" # safe to run twice
+done
 npx vitest run tests/db
 
 # Rollback: back to the 001–006 schema, the old view still serves the app, and 007 applies again.
@@ -49,4 +55,9 @@ select case when to_regclass('public.location_works') is null
 SQL
 psql_run < supabase/migrations/007_catalogue.sql
 psql_run < supabase/migrations/008_verification.sql
+psql_run < supabase/migrations/009_images.sql
+psql_run < supabase/migrations/010_featured_collections.sql
+psql_run < supabase/migrations/011_search_normalise.sql
+psql_run < supabase/migrations/012_featured_ranks.sql
+psql_run < supabase/migrations/013_location_aliases_outline.sql
 echo "rollback and re-apply: ok"

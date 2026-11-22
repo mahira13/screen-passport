@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { track } from "@/lib/analytics";
 import { copyText } from "@/lib/clipboard";
@@ -8,6 +9,8 @@ import { LAYLA_URL, laylaPrompt } from "@/lib/layla";
 import { directionsUrl } from "@/lib/links";
 import type { NearbyPlace } from "@/lib/nearby";
 import { CheckInButton } from "./CheckInButton";
+import { PlacePhoto } from "./PlacePhoto";
+import { VerifiedBadge } from "./VerifiedBadge";
 
 const linkBtn = "label inline-flex min-h-11 items-center justify-center px-3.5 transition-colors";
 
@@ -27,8 +30,11 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
 
   return (
     <article className="border-l-2 border-accent/60 bg-paper/70 p-4">
+      <PlacePhoto photo={p.photo} name={p.name} className="-mx-4 -mt-4 mb-1" />
       <div className="flex items-baseline justify-between gap-3">
-        <h4 className="font-serif text-2xl leading-tight">{p.name}</h4>
+        <h4 className="font-serif text-2xl leading-tight">
+          <Link href={`/location/${p.id}`} className="underline-offset-4 transition-colors hover:text-accent hover:underline">{p.name}</Link>
+        </h4>
         <span className="label shrink-0 text-ink/70">{formatDistance(p.distanceKm)}</span>
       </div>
       <p className="label mt-1 text-ink/60">
@@ -57,12 +63,7 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
             Source{p.sourceName && <span className="ml-1 max-w-[10rem] truncate normal-case tracking-normal text-ink/60">· {p.sourceName}</span>}
           </a>
         )}
-        {p.verifiedBy && (
-          <span className="label inline-flex min-h-11 items-center gap-1.5 px-1 text-ink/70"
-            title={p.verifiedBy === "ai" ? "Checked by our AI pipeline against the linked source" : "Checked by our team against the linked source"}>
-            <span aria-hidden className="text-accent">✓</span> {p.verifiedBy === "ai" ? "AI-verified" : "Team-verified"}
-          </span>
-        )}
+        <VerifiedBadge by={p.verifiedBy} />
         <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${linkBtn} border border-ink/30 hover:border-accent hover:text-accent`}>
           Plan the rest with Layla
         </a>

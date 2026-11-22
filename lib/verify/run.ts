@@ -28,7 +28,7 @@ export type Summary = { published: number; needsReview: Record<string, number>; 
 export type RunOptions = { ids?: number[]; limit?: number; dryRun?: boolean; log?: (line: string) => void };
 
 let lastNominatim = 0;
-async function geocode(q: string, contact: string): Promise<NominatimHit | null> {
+export async function geocode(q: string, contact: string): Promise<NominatimHit | null> {
   const wait = lastNominatim + NOMINATIM_GAP_MS - Date.now();
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   lastNominatim = Date.now();
@@ -41,7 +41,7 @@ async function geocode(q: string, contact: string): Promise<NominatimHit | null>
   return ((await res.json()) as NominatimHit[])[0] ?? null;
 }
 
-function contactOrThrow(): string {
+export function contactOrThrow(): string {
   const c = process.env.GEOCODER_CONTACT || process.env.GEOCODE_CONTACT;
   if (!c) throw new Error("Set GEOCODER_CONTACT (an email or project URL) for Nominatim and page fetches.");
   return c;

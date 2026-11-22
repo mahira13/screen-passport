@@ -17,8 +17,8 @@ const Stat = ({ n, label }: { n: string | number; label: string }) => (
 export function PassportBar({ summary: s, passportId, sync }: Props) {
   if (s.titles === 0) return null;
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[1000] border-t-2 border-accent bg-paper/95 text-ink backdrop-blur">
-      <div className="mx-auto flex max-w-screen-2xl items-center gap-4 px-4 py-3 sm:px-8 lg:px-12 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-[1000] md:bottom-0 border-t-2 border-accent bg-paper/95 text-ink backdrop-blur">
+      <div className="mx-auto flex max-w-screen-2xl items-center gap-4 px-4 py-3 sm:px-8 lg:px-12 md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <span aria-hidden className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-accent font-serif text-lg italic text-accent sm:flex">
           SP
         </span>

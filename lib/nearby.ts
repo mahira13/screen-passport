@@ -1,4 +1,4 @@
-import { BANDS, distanceBand, sortByDistance, type BandKey, type BBox } from "./distance";
+import { BANDS, distanceBand, parseOutline, sortByDistance, type BandKey, type BBox, type Outline } from "./distance";
 import type { CoordQuality, FilmLocation, LatLng, Work } from "./types";
 
 export type LiveLocation = Pick<
@@ -7,8 +7,30 @@ export type LiveLocation = Pick<
 > &
   Partial<Pick<FilmLocation, "scene_note" | "visit_note" | "source_name" | "source_url">> &
   // From catalogue_entries (migrations 007–008); missing before they are applied.
-  Partial<Pick<FilmLocation, "country" | "country_code" | "location_confidence" | "public_access" | "depicts" | "verification_method">> &
-  { bbox_south?: number | null; bbox_west?: number | null; bbox_north?: number | null; bbox_east?: number | null };
+  Partial<Pick<FilmLocation, "address" | "region" | "country" | "country_code" | "location_confidence" | "public_access" | "depicts" | "verification_method">> &
+  { bbox_south?: number | null; bbox_west?: number | null; bbox_north?: number | null; bbox_east?: number | null } &
+  // Migration 009: only filled when the photo is auto-matched or approved.
+  { image_thumb_url?: string | null; image_author?: string | null; image_license?: string | null;
+    image_license_url?: string | null; image_source_page?: string | null } &
+  // Migration 013: the site outline for check-in at large landmarks.
+  { check_in_area?: unknown };
+
+/** A Wikimedia Commons photo with its credit. */
+export type Photo = { url: string; author: string; license: string; licenseUrl: string | null; page: string };
+
+export function photoOf(l: LiveLocation): Photo | null {
+  if (!l.image_thumb_url || !l.image_source_page) return null;
+  return { url: l.image_thumb_url, author: l.image_author ?? "Unknown author", license: l.image_license ?? "", licenseUrl: l.image_license_url ?? null, page: l.image_source_page };
+}
+
+/** A collection's cover: the photo of its first featured place (first title, lowest id), or none. */
+export function coverPhoto(workIds: string[], locations: LiveLocation[]): Photo | null {
+  for (const w of workIds) {
+    const first = locations.filter((l) => l.work_id === w).sort((a, b) => a.id - b.id)[0];
+    if (first) return photoOf(first);
+  }
+  return null;
+}
 
 export interface NearbyPlace {
   id: number;
@@ -26,7 +48,9 @@ export interface NearbyPlace {
   sourceName: string | null;
   sourceUrl: string | null;
   bbox: BBox | null; // large sites: check-in anywhere inside
+  outline: Outline | null; // OSM site outline; replaces the bbox for check-in when present
   verifiedBy: "ai" | "team" | null;
+  photo: Photo | null;
 }
 
 export interface NearbyTitle {
@@ -64,7 +88,9 @@ export function buildNearby(locations: LiveLocation[], works: Work[], from: LatL
       sourceUrl: l.source_url ?? null,
       bbox: l.bbox_south != null && l.bbox_west != null && l.bbox_north != null && l.bbox_east != null
         ? [l.bbox_south, l.bbox_west, l.bbox_north, l.bbox_east] : null,
+      outline: parseOutline(l.check_in_area),
       verifiedBy: l.verification_method ?? null,
+      photo: photoOf(l),
     }));
 
   const titles = new Map<string, NearbyTitle>();

@@ -59,6 +59,7 @@ export interface Collection {
   city: string | null;
   work_ids: string[];
   description: string | null;
+  featured_rank?: number | null; // migration 010: shown on Discover when set, lowest first
 }
 
 export interface LatLng {

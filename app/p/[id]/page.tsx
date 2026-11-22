@@ -140,7 +140,7 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
                   Create a trip →
                 </Link>
               )}
-              <Link href="/#index" className="label border border-ink/30 px-5 py-3.5 transition-colors hover:border-accent hover:text-accent">
+              <Link href="/discover#index" className="label border border-ink/30 px-5 py-3.5 transition-colors hover:border-accent hover:text-accent">
                 Add more titles
               </Link>
             </div>

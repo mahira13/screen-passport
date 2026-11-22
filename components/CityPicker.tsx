@@ -3,13 +3,14 @@
 import { CITIES } from "@/lib/cities";
 
 type Props = {
-  value: string; // a city id, or "me"
+  value: string; // a city id, "me", or another start (from search) shown with customLabel
+  customLabel?: string;
   locating: boolean;
   onCity: (id: string) => void;
   onMyLocation: () => void;
 };
 
-export function CityPicker({ value, locating, onCity, onMyLocation }: Props) {
+export function CityPicker({ value, customLabel, locating, onCity, onMyLocation }: Props) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
       <div className="min-w-0 flex-1">
@@ -21,7 +22,7 @@ export function CityPicker({ value, locating, onCity, onMyLocation }: Props) {
           className="mt-1 block w-full cursor-pointer appearance-none border-b-2 border-ink/40 bg-transparent py-2 pr-8 font-serif text-3xl text-ink focus:border-accent focus:outline-none"
           style={{ backgroundImage: "linear-gradient(45deg, transparent 50%, #e3b04b 50%), linear-gradient(135deg, #e3b04b 50%, transparent 50%)", backgroundPosition: "calc(100% - 14px) 55%, calc(100% - 8px) 55%", backgroundSize: "6px 6px", backgroundRepeat: "no-repeat" }}
         >
-          {value === "me" && <option value="me">My location</option>}
+          {!CITIES.some((c) => c.id === value) && <option value={value}>{value === "me" ? "My location" : customLabel ?? "Chosen place"}</option>}
           {CITIES.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}

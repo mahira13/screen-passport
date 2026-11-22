@@ -15,7 +15,10 @@
     "backup": "tsx scripts/backup-tables.ts",
     "verify": "tsx scripts/verify-locations.ts",
     "wikidata": "tsx scripts/wikidata-candidates.ts",
-    "tmdb": "tsx scripts/tmdb-metadata.ts"
+    "tmdb": "tsx scripts/tmdb-metadata.ts",
+    "images": "tsx scripts/fetch-images.ts",
+    "upgrade-coords": "tsx scripts/upgrade-coords.ts",
+    "fetch-outline": "tsx scripts/fetch-outline.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",

@@ -5,6 +5,8 @@ import { findCityByName } from "@/lib/cities";
 import { collectionProgress, visitProgress } from "@/lib/collections";
 import { toggleWatched } from "@/lib/passport-store";
 import { usePassport } from "@/lib/use-passport";
+import type { Photo } from "@/lib/nearby";
+import { PhotoCredit } from "./PlacePhoto";
 import { ScenePlate } from "./ScenePlate";
 
 export type ChallengeCollection = {
@@ -14,6 +16,7 @@ export type ChallengeCollection = {
   description: string | null;
   works: { id: string; title: string; live: boolean }[]; // live: has places on the map
   places: { id: number; checkIn: boolean }[]; // published places of these titles; checkIn: precise pin
+  cover: Photo | null; // photo of the first featured place, if it has one
 };
 
 type Props = { c: ChallengeCollection; n: number; watched: string[]; visited: number[]; big: boolean; wide: boolean };
@@ -32,11 +35,19 @@ function Challenge({ c, n, watched, visited, big, wide }: Props) {
   return (
     <article className={`relative h-full bg-surface ${wide ? "md:grid md:grid-cols-2" : "flex flex-col"}`}>
       <ScenePlate index={n + 1} className={big ? "aspect-[4/3] sm:aspect-[16/9]" : wide ? "aspect-[2.39/1] md:aspect-auto md:min-h-full" : "aspect-[2.39/1]"}>
+        {c.cover && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={c.cover.url} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-70" />
+            <span aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0f182b] via-[#0f182b]/40 to-transparent" />
+          </>
+        )}
         <p className="label text-ink/75">Challenge {String(n + 1).padStart(2, "0")}{c.city && ` · ${c.city}`}</p>
         <h3 className={`mt-1 font-serif leading-[0.9] tracking-tight text-ink ${big ? "text-5xl sm:text-7xl" : "text-4xl sm:text-5xl"}`}>
-          {c.name}
+          <Link href={`/collection/${encodeURIComponent(c.id)}`} className="underline-offset-8 hover:text-accent hover:underline">{c.name}</Link>
         </h3>
       </ScenePlate>
+      {c.cover && <PhotoCredit photo={c.cover} className="px-5 sm:px-6" />}
 
       {p.complete && (
         <span aria-label="Collection complete"

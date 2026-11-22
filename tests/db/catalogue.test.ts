@@ -212,3 +212,165 @@ describe.skipIf(!url)("migration 008: verification", () => {
     }
   });
 });
+
+describe.skipIf(!url)("migration 009: images", () => {
+  const db = new Client({ connectionString: url });
+  beforeAll(() => db.connect());
+  afterAll(() => db.end());
+  const pub = "select id from locations where verification_status = 'published' and is_filming_location and merged_into is null and lat is not null order by id limit 1";
+  const photo = `image_thumb_url = 'https://upload.wikimedia.org/a/800px-X.jpg', image_author = 'Jane Doe',
+    image_license = 'CC BY-SA 4.0', image_source_page = 'https://commons.wikimedia.org/wiki/File:X.jpg'`;
+
+  it("requires a full Commons credit before a photo can be auto or approved", async () => {
+    await db.query("begin");
+    try {
+      const id = (await db.query(pub)).rows[0].id;
+      await db.query("savepoint s");
+      await expect(db.query("update locations set image_status = 'approved' where id = $1", [id])).rejects.toThrow(/locations_image_credit_check/);
+      await db.query("rollback to savepoint s");
+      await db.query(`update locations set ${photo} where id = $1`, [id]); // a photo waiting for review
+      await db.query("savepoint p");
+      await expect(db.query("update locations set image_author = null, image_status = 'auto' where id = $1", [id])).rejects.toThrow(/locations_image_credit_check/);
+      await db.query("rollback to savepoint p");
+      await expect(db.query("update locations set image_source_page = 'https://example.com/X.jpg' where id = $1", [id])).rejects.toThrow(/check/);
+      await db.query("rollback to savepoint p");
+      await db.query(`update locations set ${photo}, image_status = 'approved', image_skip = '{"File:Old.jpg"}' where id = $1`, [id]);
+      await db.query("update locations set image_status = 'rejected', image_thumb_url = null, image_author = null, image_license = null, image_source_page = null where id = $1", [id]);
+    } finally {
+      await db.query("rollback");
+    }
+  });
+
+  it("shows the public a photo only when it is auto or approved", async () => {
+    await db.query("begin");
+    try {
+      const id = (await db.query(pub)).rows[0].id;
+      await db.query(`update locations set ${photo}, image_status = null where id = $1`, [id]);
+      const shown = async () => {
+        await db.query("set local role anon");
+        const r = await db.query("select image_thumb_url, image_author from catalogue_entries where id = $1 limit 1", [id]);
+        await db.query("reset role");
+        return r.rows[0];
+      };
+      expect(await shown()).toEqual({ image_thumb_url: null, image_author: null });
+      await db.query("update locations set image_status = 'approved' where id = $1", [id]);
+      expect((await shown()).image_author).toBe("Jane Doe");
+    } finally {
+      await db.query("rollback");
+    }
+  });
+
+  it("backfills wikidata_id only from exact Wikidata item URLs", async () => {
+    await db.query("begin");
+    try {
+      const ids = (await db.query("select id from locations order by id limit 3")).rows.map((r) => r.id);
+      await db.query("update locations set wikidata_id = null, source_url = $2 where id = $1", [ids[0], "https://www.wikidata.org/wiki/Q64"]);
+      await db.query("update locations set wikidata_id = null, source_url = $2 where id = $1", [ids[1], "https://www.wikidata.org/wiki/Q64abc"]);
+      await db.query("update locations set wikidata_id = null, source_url = $2 where id = $1", [ids[2], "https://example.com/?u=wikidata.org/wiki/Q64"]);
+      // Only the backfill: later migrations extend the view, so the whole file can't be replayed here.
+      const sql = readFileSync(join(__dirname, "..", "..", "supabase", "migrations", "009_images.sql"), "utf8");
+      await db.query(sql.match(/update public\.locations\s+set wikidata_id[\s\S]*?;/)![0]);
+      const { rows } = await db.query("select id, wikidata_id from locations where id = any($1) order by id", [ids]);
+      expect(rows.map((r) => r.wikidata_id)).toEqual(["Q64", null, null]);
+    } finally {
+      await db.query("rollback");
+    }
+  });
+});
+
+describe.skipIf(!url)("migration 010: featured collections", () => {
+  const db = new Client({ connectionString: url });
+  beforeAll(() => db.connect());
+  afterAll(() => db.end());
+
+  it("orders featured collections by rank and keeps each rank unique", async () => {
+    await db.query("begin");
+    try {
+      await db.query("insert into collections (id, name, work_ids) values ('test-a', 'Test A', '{}'), ('test-b', 'Test B', '{}')");
+      const ids = ["test-a", "test-b"];
+      await db.query("update collections set featured_rank = 2 where id = $1", [ids[0]]);
+      await db.query("update collections set featured_rank = 1 where id = $1", [ids[1]]);
+      const { rows } = await db.query("select id from collections where featured_rank is not null order by featured_rank");
+      expect(rows.map((r) => r.id)).toEqual([ids[1], ids[0]]);
+      await db.query("savepoint s");
+      await expect(db.query("update collections set featured_rank = 1 where id = $1", [ids[0]])).rejects.toThrow(/collections_featured_rank_key/);
+      await db.query("rollback to savepoint s");
+      await expect(db.query("update collections set featured_rank = 0 where id = $1", [ids[0]])).rejects.toThrow(/check/);
+    } finally {
+      await db.query("rollback");
+    }
+  });
+});
+
+describe.skipIf(!url)("migration 011: search ignores accents and German spellings", () => {
+  const db = new Client({ connectionString: url });
+  beforeAll(() => db.connect());
+  afterAll(() => db.end());
+  const first = async (q: string, kind?: string) => {
+    await db.query("begin; set local role anon");
+    try {
+      const rows = (await db.query<{ kind: string; id: string }>("select kind, id from search_catalogue($1)", [q])).rows;
+      return (kind ? rows.find((r) => r.kind === kind) : rows[0]) ?? null;
+    } finally {
+      await db.query("rollback");
+    }
+  };
+
+  it("normalises umlauts, ß and their spelled-out forms the same way", async () => {
+    const norm = async (t: string) => (await db.query("select public.search_norm($1) as n", [t])).rows[0].n;
+    expect(await norm("Straße Görlitz Müller")).toBe("strasse gorlitz muller");
+    expect(await norm("Goerlitz")).toBe(await norm("Görlitz"));
+    expect(await norm("Mueller")).toBe(await norm("Müller"));
+    expect(await norm("Strasse")).toBe(await norm("Straße"));
+  });
+
+  it.each(["gorl", "goerl", "görl", "GÖRLITZ", "Goerlitz"])("%s finds Görlitz", async (q) => {
+    expect(await first(q, "city")).toMatchObject({ id: "Görlitz" });
+  });
+
+  it("still finds titles, German aliases and country codes, as the public", async () => {
+    expect(await first("babylon", "work")).toMatchObject({ id: "babylon-berlin" });
+    expect(await first("damengambit", "work")).toMatchObject({ id: "queens-gambit" });
+    expect(await first("de", "country")).toMatchObject({ id: "DE" });
+    expect(await first("x")).toBeNull();
+  });
+
+  it("uses an index-safe (immutable) normaliser", async () => {
+    const { rows } = await db.query(`select provolatile from pg_proc where proname in ('search_norm', 'work_search_text')`);
+    expect(rows.map((r) => r.provolatile)).toEqual(["i", "i"]);
+    expect((await db.query("select 1 from pg_indexes where indexname = 'works_search_trgm'")).rowCount).toBe(1);
+  });
+});
+
+describe.skipIf(!url)("migration 013: aliases and site outlines", () => {
+  const db = new Client({ connectionString: url });
+  beforeAll(() => db.connect());
+  afterAll(() => db.end());
+  const square = { type: "Polygon", coordinates: [[[13.18, 52.38], [13.19, 52.38], [13.19, 52.39], [13.18, 52.39], [13.18, 52.38]]] };
+
+  it("stores only Polygon or MultiPolygon outlines and shows them in the public view", async () => {
+    await db.query("begin");
+    try {
+      const id = (await db.query("select id from catalogue_entries order by id limit 1")).rows[0].id;
+      await db.query("savepoint s");
+      await expect(db.query("update locations set check_in_area = $2 where id = $1", [id, { type: "Point", coordinates: [13, 52] }])).rejects.toThrow(/check/);
+      await db.query("rollback to savepoint s");
+      await db.query("update locations set check_in_area = $2, aliases = '{Other name}' where id = $1", [id, square]);
+      await db.query("set local role anon");
+      const { rows } = await db.query("select check_in_area from catalogue_entries where id = $1 limit 1", [id]);
+      expect(rows[0].check_in_area).toEqual(square);
+      await db.query("savepoint a");
+      await expect(db.query("select aliases from catalogue_entries limit 1")).rejects.toThrow(/aliases/); // internal, not in the view
+      await db.query("rollback to savepoint a");
+    } finally {
+      await db.query("rollback");
+    }
+  });
+
+  it("sets the library aliases and the cemetery note by name, once", async () => {
+    const lib = await db.query("select aliases from locations where name = 'Berlin State Library, Unter den Linden'");
+    for (const r of lib.rows) expect(r.aliases).toEqual(["Staatsbibliothek zu Berlin", "Staatsbibliothek Unter den Linden"]);
+    const cem = await db.query("select visit_note from locations where name = 'Südwestkirchhof Stahnsdorf'");
+    for (const r of cem.rows) expect(r.visit_note).toBe("Working cemetery — please visit quietly and respect graves and mourners.");
+  });
+});

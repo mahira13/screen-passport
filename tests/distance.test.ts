@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canCheckIn, distanceBand, formatDistance, haversineKm, isWithinCheckIn, sortByDistance } from "@/lib/distance";
+import { canCheckIn, distanceBand, formatDistance, haversineKm, isWithinCheckIn, sortByDistance, insideOutline, parseOutline } from "@/lib/distance";
 
 const alex = { lat: 52.522133, lng: 13.41345 };
 const brandenburgGate = { lat: 52.516275, lng: 13.377704 };
@@ -80,5 +80,33 @@ describe("canCheckIn", () => {
   });
   it("refuses without coordinates even if marked verified", () => {
     expect(canCheckIn({ lat: null, lng: null, coord_quality: "verified" })).toBe(false);
+  });
+});
+
+describe("site outlines", () => {
+  // A 0.01° square (about 1.1 km × 0.7 km) with a hole in the middle, lng/lat like GeoJSON.
+  const square = [[13.18, 52.38], [13.19, 52.38], [13.19, 52.39], [13.18, 52.39], [13.18, 52.38]];
+  const hole = [[13.184, 52.384], [13.186, 52.384], [13.186, 52.386], [13.184, 52.386], [13.184, 52.384]];
+  const outline = { type: "Polygon" as const, coordinates: [square, hole] };
+  const pin = { lat: 52.385, lng: 13.185 };
+
+  it("finds points inside the outline and outside its holes", () => {
+    expect(insideOutline({ lat: 52.381, lng: 13.181 }, outline)).toBe(true);
+    expect(insideOutline({ lat: 52.385, lng: 13.185 }, outline)).toBe(false); // in the hole
+    expect(insideOutline({ lat: 52.395, lng: 13.185 }, outline)).toBe(false);
+    expect(insideOutline({ lat: 52.381, lng: 13.181 }, { type: "MultiPolygon", coordinates: [[hole], [square]] })).toBe(true);
+  });
+  it("checks in anywhere inside the outline, and the outline replaces the bounding box", () => {
+    const corner = { lat: 52.3805, lng: 13.1805 }; // about 550 m from the pin, inside the outline
+    expect(isWithinCheckIn(corner, { ...pin, outline })).toBe(true);
+    const outsideOutlineInsideBox = { lat: 52.3995, lng: 13.1805 };
+    expect(isWithinCheckIn(outsideOutlineInsideBox, { ...pin, outline, bbox: [52.37, 13.17, 52.40, 13.20] })).toBe(false);
+    expect(isWithinCheckIn(outsideOutlineInsideBox, { ...pin, bbox: [52.37, 13.17, 52.40, 13.20] })).toBe(true);
+  });
+  it("parses only well-formed polygons", () => {
+    expect(parseOutline(outline)).toEqual(outline);
+    expect(parseOutline({ type: "Point", coordinates: [13, 52] })).toBeNull();
+    expect(parseOutline({ type: "Polygon", coordinates: [[[13, 52], [13, 53]]] })).toBeNull();
+    expect(parseOutline(null)).toBeNull();
   });
 });

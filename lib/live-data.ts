@@ -6,7 +6,7 @@ import type { Collection, Work } from "./types";
 export const LIVE_TAG = "live-locations";
 
 // "relation/column does not exist" from Postgres and from PostgREST's schema cache.
-const MISSING = new Set(["42P01", "PGRST205", "42703", "PGRST204"]);
+export const MISSING = new Set(["42P01", "PGRST205", "42703", "PGRST204"]);
 
 export interface LiveData {
   configured: boolean;
@@ -32,20 +32,32 @@ export async function getLiveData(): Promise<LiveData> {
     return { configured: false, works: [], locations: [], collections: [] };
   }
   const db = supabasePublic();
-  // Newest schema first; each step back is for a database where 008 or 007 isn't applied yet.
-  const V007 = `${COLUMNS}, country, country_code, location_confidence, public_access, depicts`;
+  // Newest schema first; each step back is for a database where 013, 009, 008 or 007 isn't applied yet.
+  const V007 = `${COLUMNS}, address, region, country, country_code, location_confidence, public_access, depicts`;
   const V008 = `${V007}, verification_method, bbox_south, bbox_west, bbox_north, bbox_east`;
+  const V009 = `${V008}, image_thumb_url, image_author, image_license, image_license_url, image_source_page`;
+  const V013 = `${V009}, check_in_area`;
   const readLocations = async () => {
+    const r13 = await db.from("catalogue_entries").select(V013);
+    if (!r13.error || !MISSING.has(r13.error.code)) return r13;
+    const r9 = await db.from("catalogue_entries").select(V009);
+    if (!r9.error || !MISSING.has(r9.error.code)) return r9;
     const r8 = await db.from("catalogue_entries").select(V008);
     if (!r8.error || !MISSING.has(r8.error.code)) return r8;
     const r7 = await db.from("catalogue_entries").select(V007);
     if (!r7.error || !MISSING.has(r7.error.code)) return r7;
     return db.from("mappable_locations").select(COLUMNS);
   };
+  // featured_rank comes with migration 010.
+  const readCollections = async () => {
+    const r = await db.from("collections").select("id, name, city, work_ids, description, featured_rank");
+    if (!r.error || !MISSING.has(r.error.code)) return r;
+    return db.from("collections").select("id, name, city, work_ids, description");
+  };
   const [locs, works, cols] = await Promise.all([
     readLocations(),
     db.from("works").select("id, title, type, aliases, year"),
-    db.from("collections").select("id, name, city, work_ids, description"),
+    readCollections(),
   ]);
   if (locs.error) throw new Error(`locations: ${locs.error.message}`);
   if (works.error) throw new Error(`works: ${works.error.message}`);

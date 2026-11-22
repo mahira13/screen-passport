@@ -48,7 +48,7 @@ export function HomeHero({ cityLabel, titles, placeCount, onPick, search }: Prop
             Screen Passport shows where films and series were really shot near you. Mark what you&apos;ve watched,
             go and find the places, stamp them, and turn them into a trip with friends.
           </p>
-          <div className="mt-8 max-w-xl">{search}</div>
+          <div id="search" className="mt-8 max-w-xl scroll-mt-24">{search}</div>
         </div>
 
         {plates.length > 0 && (

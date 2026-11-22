@@ -49,9 +49,43 @@ export const CHECKIN_RADIUS_KM = 0.2;
 /** [south, west, north, east] of a large site (park, stadium) from the geocoder. */
 export type BBox = [number, number, number, number];
 
-/** Within 200 m of the point, or anywhere inside the site's bounding box when there is one. */
-export function isWithinCheckIn(user: LatLng, place: LatLng & { bbox?: BBox | null }): boolean {
+/** A site outline from OSM as GeoJSON (lng, lat order). */
+export type Outline = { type: "Polygon"; coordinates: number[][][] } | { type: "MultiPolygon"; coordinates: number[][][][] };
+
+/** Even-odd ray casting over all rings, so holes (inner rings) count as outside. */
+function inPolygon(p: LatLng, rings: number[][][]): boolean {
+  let inside = false;
+  for (const ring of rings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if (yi > p.lat !== yj > p.lat && p.lng < ((xj - xi) * (p.lat - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+  }
+  return inside;
+}
+
+export function insideOutline(p: LatLng, o: Outline): boolean {
+  return o.type === "Polygon" ? inPolygon(p, o.coordinates) : o.coordinates.some((poly) => inPolygon(p, poly));
+}
+
+/** A well-formed Polygon or MultiPolygon, or null. */
+export function parseOutline(raw: unknown): Outline | null {
+  const o = raw as Outline | null;
+  const ring = (r: unknown) => Array.isArray(r) && r.length >= 4 && r.every((pt) => Array.isArray(pt) && pt.length >= 2 && pt.every(Number.isFinite));
+  const poly = (p: unknown) => Array.isArray(p) && p.length > 0 && p.every(ring);
+  if (o?.type === "Polygon" && poly(o.coordinates)) return o;
+  if (o?.type === "MultiPolygon" && Array.isArray(o.coordinates) && o.coordinates.length > 0 && o.coordinates.every(poly)) return o;
+  return null;
+}
+
+/**
+ * Within 200 m of the point, or anywhere inside the site: its OSM outline when there is one
+ * (cemeteries, parks), else its bounding box.
+ */
+export function isWithinCheckIn(user: LatLng, place: LatLng & { bbox?: BBox | null; outline?: Outline | null }): boolean {
   if (haversineKm(user, place) <= CHECKIN_RADIUS_KM) return true;
+  if (place.outline) return insideOutline(user, place.outline);
   const b = place.bbox;
   return !!b && user.lat >= b[0] && user.lat <= b[2] && user.lng >= b[1] && user.lng <= b[3];
 }

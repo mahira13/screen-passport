@@ -11,11 +11,11 @@ export interface GeoCheck {
   bbox: [number, number, number, number] | null; // south, west, north, east
 }
 
-const fold = (s: string) => s.toLowerCase().replace(/ß/g, "ss").normalize("NFKD").replace(/[̀-ͯ]/g, "");
-const words = (s: string) => fold(s).split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
+export const fold = (s: string) => s.toLowerCase().replace(/ß/g, "ss").normalize("NFKD").replace(/[̀-ͯ]/g, "");
+export const words = (s: string) => fold(s).split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
 
 // Words that name a kind of place, not a particular one: sharing only these proves nothing.
-const GENERIC = new Set([
+export const GENERIC = new Set([
   "the", "and", "der", "die", "das", "und", "von", "bei", "am", "an", "im", "berlin", "berliner",
   "rathaus", "bahnhof", "station", "kirche", "church", "platz", "square", "strasse", "street", "bridge", "brucke",
   "airport", "flughafen", "park", "museum", "hall", "halle", "haus", "house", "school", "schule", "hotel",

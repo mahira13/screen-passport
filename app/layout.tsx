@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Instrument_Serif, Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
-import { SiteHeader, Wordmark } from "@/components/SiteHeader";
+import { Suspense } from "react";
+import { BottomNav, BottomNavLive, SiteHeader, SiteHeaderLive, Wordmark } from "@/components/SiteHeader";
 import "./globals.css";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
@@ -27,8 +28,9 @@ const PILLARS = [
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${grotesk.variable} ${serif.variable} ${condensed.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        <SiteHeader />
+      {/* Mobile: room for the bottom nav. */}
+      <body className="flex min-h-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+        <Suspense fallback={<SiteHeader />}><SiteHeaderLive /></Suspense>
         {children}
         <footer className="mt-auto bg-paper">
           <div className="mx-auto w-full max-w-screen-2xl px-4 pb-28 pt-16 sm:px-8 lg:px-12">
@@ -55,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </p>
           </div>
         </footer>
+        <Suspense fallback={<BottomNav />}><BottomNavLive /></Suspense>
       </body>
     </html>
   );

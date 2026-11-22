@@ -91,6 +91,10 @@ export function TitleCard({ title: t, places, colour, watched, selected, tripFro
           className="label inline-flex min-h-11 items-center border border-ink/30 px-4 text-ink transition-colors hover:border-accent hover:text-accent">
           Create a trip
         </Link>
+        <Link href={`/title/${encodeURIComponent(t.workId)}`}
+          className="label inline-flex min-h-11 items-center px-2 text-ink/70 transition-colors hover:text-accent">
+          Title page →
+        </Link>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}

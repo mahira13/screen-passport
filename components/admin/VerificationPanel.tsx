@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { markRecheck, runAiVerification, type ActionResult } from "@/app/admin/locations/actions";
+import { fetchImages, markRecheck, runAiVerification, type ActionResult } from "@/app/admin/locations/actions";
 
 /** "Run AI verification" for drafts and re-checks, and marking any place for re-check by id. */
 export function VerificationPanel() {
@@ -17,6 +17,10 @@ export function VerificationPanel() {
           {pending ? "Verifying…" : "Run AI verification"}
         </button>
         <span className="text-xs text-neutral-500">Checks up to 3 drafts or re-checks per click.</span>
+        <button disabled={pending} onClick={() => run(fetchImages)}
+          className="min-h-11 rounded border border-neutral-900 px-4 text-sm disabled:opacity-50">
+          Find photos
+        </button>
       </div>
       <form className="mt-3 flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); run(() => markRecheck(Number(id))); }}>
         <label className="text-xs">

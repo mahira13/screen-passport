@@ -2,25 +2,21 @@
 
 Collect the places your favourite films and series were shot. Visit them, stamp them, share them.
 
-Open the link and within seconds you see what was filmed near you. Tap "Watched it" on the titles you've seen and your Screen Passport fills with stamps. Check in on site to turn a stamp gold, frame your own photo as a scene postcard, and share your passport as an Instagram story. "Create a trip" turns your titles into a dated fan trip that friends can join; "Plan travel and stays with Layla" hands the rest over to Layla.
+Open the link and within seconds you see what was filmed near you. Tap "Watched it" on the titles you've seen and your Screen Passport fills with stamps. Create a trip that others can join, check in on site to turn a stamp gold, frame your own photo as a scene postcard, and share it. "Plan travel and stays with Layla" hands the logistics to Layla.
 
-Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026. Feature freeze Sunday 14:00, submission 15:30 (live link, 3 slides, real numbers).
+Built at the Layla Build & Launch Hackathon, Berlin, 21–22 Nov 2026.
 
-## The idea changed (read this first)
+## Product direction
 
-This repo started as a Spotify-based concept: connect Spotify, a listening summary, a "vibe" page and people nearby (see the old `claude.md` on `main` and the `bogdan/initial_version` branch). The team refactored the idea into **Screen Passport**: films and series instead of music, filming locations instead of listening data, fan trips instead of people nearby.
-
-- This file is the source of truth. The old `claude.md` and its Spotify features are superseded; don't build on them.
-- No Spotify, Netflix or other account connections (see product rule 1). Titles come from taps, search over our own database, or a screenshot.
-- Code from the old branch is not reused here; Screen Passport has its own stack and data model below.
+The long-term vision is in `docs/VISION.md` and the build steps in `PROMPTS-v2.md`. Where they differ from this file, the vision wins on product direction; the product rules above (sources, privacy, no copyrighted media, no private homes, honest numbers) always apply.
 
 ## Product rules (read before changing anything)
 
 1. **Instant value, no downloads.** The first screen shows filming locations near the user with zero input. No login, no CSV upload, no Netflix connection (Netflix has no public API; never ask for passwords or scrape accounts).
 2. **Ways in, in order:** near-me map → "Watched it" taps on title cards → search box that only selects titles from our database → optional screenshot upload where Claude reads titles. Free text that matches nothing becomes a request, never an AI answer.
-3. **Every location has a source.** No row in `locations` without `source_url`. Trusted sources: official tourism and city sites, established location guides and major media (see the add-filming-locations skill); not Wikipedia or fan wikis. Claude never invents locations, coordinates or scenes. Only `status = 'live'` locations are shown.
-4. **Code for facts, Claude for words and images.** Distance, sorting, matching, check-in radius, collections and which stops a trip has (and their order) are plain code. Claude is used only to read titles from screenshots, for fuzzy title matching, to research requested titles (saved as `unverified` for human approval), and to write a trip's title, intro, stop times, travel steps, "why fans love it" and tips. For trips Claude gets only the chosen live locations, must use only their IDs and never adds places, prices or opening hours; every returned location ID is checked in code, with one retry and then a plain code-built plan.
-5. **Privacy:** no accounts, no emails, no raw uploads stored. Screenshots are read and discarded. Postcard photos are composed in the browser and never uploaded unless the user shares them. Passports store only title IDs, location IDs, start city and an optional display name. Trips store title IDs, the start label and point, mode, length, date and time with its time zone, meeting point, the plan, and first names only (organiser and people who join). Rate limits and reports store only a salted sha256 of the IP (`RATE_LIMIT_SALT`), never the raw IP. Trips and joins are read and written only through server routes with the service role key; no public RLS policies. Trip pages carry a short safety note (meet in public, no personal details needed).
+3. **Every location has a source.** No row in `locations` without `source_url`. Trusted sources: official tourism and city sites, established location guides and major media (see the add-filming-locations skill); not Wikipedia or fan wikis. Claude never invents locations, coordinates or scenes. Only `verification_status = 'published'` filming locations are shown (migration 007; the old `status = 'live'` is kept in step until it is removed). Wikidata finds candidates but is never the only evidence for a published place.
+4. **Code for facts, Claude for words and images.** Distance, sorting, matching, check-in radius and collections are plain code. Claude is used only to read titles from screenshots, for fuzzy title matching, to research requested titles, and to read evidence pages in the AI verification pipeline. **Publishing:** a location may be published only when it is team-verified, or when it passes the AI verification pipeline's strict criteria (filmed_here true, not a story setting, high confidence, evidence quote found on the fetched page, trusted source domain from `lib/trusted-sources.ts`, geocode not residential, no published place within 30 m). Store `verification_method` (`ai` | `team`) and show it as a badge. Anything else stays `draft` or `needs_review` and is never shown as a confirmed filming location. Locations found by Claude research are always inserted as `draft` and go through the pipeline; Claude never publishes directly.
+5. **Privacy:** no accounts, no emails, no raw uploads stored. Screenshots are read and discarded. Postcard photos are composed in the browser and never uploaded unless the user shares them. Passports store only title IDs, location IDs, start city and an optional display name.
 6. **No copyrighted media:** no film stills, scraped posters, logos or script quotes. Postcards use the user's own photo. Location photos only from Wikimedia Commons with credit.
 7. **No private homes** and no closed studio sets, even if a guide lists them.
 8. **Honest numbers:** stage metrics come from real events only.
@@ -33,20 +29,19 @@ This repo started as a Spotify-based concept: connect Spotify, a listening summa
 - Passport saved under a random unguessable ID, shareable URL `/p/[id]`, last passport remembered in localStorage
 - Share card image (story format 1080×1920) generated in the browser, one-tap share/download
 - Collections with progress (e.g. "Cold War Berlin 2/4", "Görliwood 1/4")
-- "I'm here" check-in: browser geolocation within 200 m of a location → gold stamp. Only offered where `coord_quality` is `source` or `verified`; geocoded or approximate points can be kilometres off (a district search returns the district centre)
+- "I'm here" check-in: browser geolocation within 200 m of a location (or inside its bounding box, for large sites like parks and stadiums) → gold stamp. Offered where `coord_quality` is `source`, `verified` or `geocoded_poi`: a geocoder match on a named landmark (Nominatim class tourism, historic, amenity, building, leisure or similar; not a plain address, road, suburb or city) whose name fuzzy-matches the location name and whose city matches. Other geocoded or approximate points can be kilometres off: they show "Approximate location", allow no check-in and are never part of a curated challenge.
 - Scene postcard: user photo + frame (title, place, "Filmed here") composed client-side
 - Location card actions: Directions (Google Maps), Source link, "Plan the rest with Layla" (opens Layla; copies a ready prompt to clipboard)
 - Requests table for unknown titles; admin page to approve researched locations
-- Trips: `/trip/new?works=<ids>&from=<lat,lng or city>` (mode walk/transit/car, half or full day, date and time, first name) → `/trip/[id]` with numbered stops on a map and in a list, "Open all in Google Maps" (up to 9 waypoints), Layla handoff, Join (first name, max 30 characters, max 50 joins), Web Share and Open Graph preview. Stops: live locations of the chosen works within 30 km (walk), 60 km (transit) or 150 km (car) of the start, ordered nearest-next-stop, up to 8 (half day 4–5). "Create a trip" on each title card and on the passport
-- Trip safety (per-IP limits are skipped in `npm run dev` and with `RATE_LIMITS=off` for testing; never set that in production): /api/trip max 5 trips per IP per day; at most 300 Claude trip plans per day in total, then the code-built plan; joins max 20 per IP per day and 50 per trip; friendly messages when a limit is hit. No links or offensive words in first names, trip titles, meeting points or any Claude text. "Report this trip" hides a trip after 3 reports (one per IP). The organiser gets a secret link (`/trip/[id]#key=…`, key kept in localStorage) to delete the trip.
-- Trip times are shown in the trip's time zone with its city ("10:00 London time"): the picked city's `tz`, or the browser's zone when the user shared their location
-- Trip invite card on `/trip/[id]`: "Now showing" story image (1080×1920, share-card colours and fonts) with trip title, film titles as plain text, date and time with the zone's city, "Venue" (meeting point), stops, "Seats left" (50 minus joins) and the trip link; Web Share with download fallback; copies the link for the story link sticker; "Copy caption" adds the film hashtags
-- `/impressum` and `/privacy`, linked from every page
 - Analytics events
 
-**Nice to have:** screenshot upload (Claude vision reads titles), compare passports with a friend, show pages `/t/[id]`.
+**Trips (built, keep and extend):** "Create a trip" from a title, collection or city. Code selects and orders published locations near the start point; Claude writes the itinerary (times, travel steps, why fans love each stop) using only the given location IDs, validated, with a code-built fallback plan. Trip page `/trip/[id]` with map, Directions, "Open all in Google Maps", "Plan travel and stays with Layla", joining by first name (max 50), share via Web Share API and the "Now showing" invite card, Open Graph previews. Times shown in the trip's timezone with the city name (`tz` per city in `lib/cities.ts`, or the browser timezone).
 
-**Out:** login, Netflix/Spotify connections, travel and stays booking (Layla does that), books, native app, live prices, opening hours.
+**Launch safety (built, keep):** rate limits (trips 5/IP/day, global Claude trip cap 300/day then fallback plan, joins 20/IP/day and 50/trip); URL and offensive-word filter on names, titles and meeting points; "Report this trip" (hidden after 3 reports); secret organiser delete link; `/api/request` for unknown titles (counts new ones, reports existing); `/impressum` and `/privacy`; cookieless analytics.
+
+**Nice to have:** screenshot upload (Claude vision reads titles), compare passports with a friend, title pages.
+
+**Out:** login, Netflix/Spotify connections, books, native app, live prices.
 
 ## Stack
 
@@ -66,16 +61,14 @@ screen-passport/
   app/
     page.tsx                     # near-me map + title cards (first screen)
     p/[id]/page.tsx              # a saved passport (shareable)
-    trip/new/page.tsx            # create a trip
-    trip/[id]/page.tsx           # a trip: stops, map, join, share
     t/[id]/page.tsx              # title page: where it was filmed (nice to have)
     admin/requests/page.tsx      # approve researched requests (ADMIN_PASSWORD)
     api/nearby/route.ts          # live locations sorted by distance
     api/passport/route.ts        # create/update passport -> id
     api/request/route.ts         # unknown title -> requests (+count)
-    api/trip/route.ts            # create a trip (Claude writes the words) -> id
-    api/trip/[id]/join/route.ts  # join a trip with a first name
     api/read-screenshot/route.ts # Claude vision -> {titles: []} (nice to have)
+    api/trip/route.ts            # select + order locations, Claude itinerary, validate, fallback
+    trip/new/page.tsx  trip/[id]/page.tsx
   components/
     CityPicker.tsx  NearbyMap.tsx  TitleCard.tsx  LocationCard.tsx
     PassportBar.tsx  ShareCard.tsx  Collections.tsx  CheckInButton.tsx
@@ -83,13 +76,9 @@ screen-passport/
   lib/
     distance.ts      # haversine, distance bands
     match.ts         # normalise + alias matching
-    cities.ts        # German start cities with coordinates and time zone
+    cities.ts        # German start cities with coordinates
     collections.ts   # progress calculation
     layla.ts         # Layla handoff prompt + link
-    route.ts         # nearest-next-stop order, total km, Google Maps route link
-    trip.ts          # trip stop selection, plan validation, fallback plan, time zones
-    moderation.ts    # no links or offensive words in public text
-    rate-limit.ts    # daily limits via the take_rate database function
     supabase.ts  analytics.ts  ids.ts (random passport ids)
   supabase/migrations/001_init.sql
   data/seed/titles.csv  data/seed/locations.csv  data/seed/collections.csv
@@ -107,9 +96,9 @@ Seed CSVs use exactly these column names, so the import needs no mapping. Seed r
 - `passports(id text pk, display_name null, start_city, lat, lng, watched text[], visited int[], created_at, updated_at)`
 - `requests(id serial pk, raw_title, normalised_title unique, count int, status ['open','researched','approved','rejected'], created_at)`
 - `events(id serial pk, name, props jsonb, created_at)`
-- `trips(id text pk, title, intro, work_ids text[], start_label, start_lat, start_lng, mode ['walk','transit','car'], length ['half','full'], starts_at timestamptz, timezone, meeting_point, organiser_name, plan jsonb, delete_key_hash, hidden_at, created_at)`
-- `trip_joins(id serial pk, trip_id fk, first_name, created_at)`
-- `trip_reports(trip_id fk, ip_hash, created_at, pk(trip_id, ip_hash))`, `rate_events(id, bucket, key_hash, created_at)` (rows older than 2 days are deleted)
+- `trips(id text pk, title, intro, work_ids text[], start_label, start_lat, start_lng, mode, length, starts_at, timezone, meeting_point, organiser_name, plan jsonb, created_at)` and `trip_joins(id, trip_id, first_name, created_at)`; no public RLS, server routes only
+
+The v2 catalogue (location_works, PostGIS, collection_items, challenges, suggestions) is described in PROMPTS-v2.md and added by migrations 002+.
 
 Row-level security: anyone can insert a passport and read one by exact id; nobody can list passports. Locations/works/collections are public read. Requests are insert-only for the public. Admin actions go through server routes with `ADMIN_PASSWORD`.
 

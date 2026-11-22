@@ -38,7 +38,7 @@ async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, 
     return (
       <p className="mt-6 text-lg text-ink/80">
         Pick a title first: tap <strong>Create a trip</strong> on a title card.{" "}
-        <Link href="/#index" className="text-accent underline underline-offset-4">Find filming places</Link>
+        <Link href="/discover#index" className="text-accent underline underline-offset-4">Find filming places</Link>
       </p>
     );
   }

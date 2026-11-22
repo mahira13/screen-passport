@@ -3,6 +3,8 @@ import { findCityByName } from "@/lib/cities";
 import { getCities } from "@/lib/cities-server";
 import type { CollectionModel } from "@/lib/collections-model";
 import { centreOf } from "@/lib/discover";
+import { challengeGoal } from "@/lib/challenges";
+import { ChallengeFriends } from "./ChallengeFriends";
 import { CollectionVisits } from "./CollectionVisits";
 import { PhotoCredit } from "./PlacePhoto";
 import { PlacesMapBox } from "./PlacesMapBox";
@@ -49,6 +51,7 @@ export async function CollectionView({ c }: { c: CollectionModel }) {
                   Create a trip
                 </Link>
               )}
+              {challengeGoal(c.places).length > 0 && <ChallengeFriends collection={c.key} />}
               <ShareLink path={c.href} title={c.name} text={`${c.name}: ${c.places.length} real filming places to visit.`} what="collection" />
             </div>
           </div>

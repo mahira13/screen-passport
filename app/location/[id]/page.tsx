@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CheckInButton } from "@/components/CheckInButton";
+import { PostcardAfterCheckIn } from "@/components/PostcardAfterCheckIn";
 import { DirectionsLink } from "@/components/DirectionsLink";
 import { DistanceFromMe } from "@/components/DistanceFromMe";
 import { PlacePhoto } from "@/components/PlacePhoto";
@@ -71,6 +72,8 @@ async function LocationView({ params }: { params: Promise<{ id: string }> }) {
             <ShareLink path={`/location/${p.id}`} title={p.name} what="location"
               text={`${p.name}: filming location of ${l.titles.map((t) => t.title).slice(0, 3).join(", ")}.`} />
           </div>
+
+          {l.checkIn && l.titles[0] && <PostcardAfterCheckIn placeId={p.id} place={p.name} title={l.titles[0].title} />}
 
           <div className="mt-8 border-l-2 border-accent bg-surface/60 p-4">
             <p className="label text-ink/60">Visiting</p>

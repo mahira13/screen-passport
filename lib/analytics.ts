@@ -1,7 +1,7 @@
 export const EVENT_NAMES = [
   "map_viewed", "title_watched", "passport_created", "share_clicked", "checkin_success",
   "postcard_made", "layla_clicked", "directions_clicked", "request_created", "screenshot_read",
-  "trip_created", "trip_joined", "trip_shared", "invite_shared",
+  "trip_created", "trip_joined", "trip_shared", "invite_shared", "challenge_created", "challenge_joined",
 ] as const;
 
 export type EventName = (typeof EVENT_NAMES)[number];

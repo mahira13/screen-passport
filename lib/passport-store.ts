@@ -78,6 +78,24 @@ export function checkIn(locationId: number, workId: string, startCity: string | 
   scheduleSave(0);
 }
 
+/** The passport's id and edit key, creating it on the server first if needed (for challenges). */
+export async function ensurePassport(): Promise<{ id: string; editKey: string }> {
+  const s = getSnapshot();
+  if (s.id && s.editKey) return { id: s.id, editKey: s.editKey };
+  const res = await fetch("/api/passport", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ watched: s.watched, visited: s.visited, startCity: s.startCity }),
+  });
+  if (!res.ok) throw new Error("Couldn't save your passport. Try again.");
+  const { id, editKey } = (await res.json()) as { id: string; editKey: string };
+  const now = getSnapshot();
+  if (now.id && now.editKey) return { id: now.id, editKey: now.editKey }; // a background save won the race
+  set({ id, editKey, sync: "idle" });
+  track("passport_created", { titles: s.watched.length, places: s.visited.length });
+  return { id, editKey };
+}
+
 // One request at a time; taps during a request are sent right after it.
 let timer: ReturnType<typeof setTimeout> | undefined;
 let inFlight = false;

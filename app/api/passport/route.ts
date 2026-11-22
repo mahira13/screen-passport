@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+import { markFinished } from "@/lib/challenges-server";
 import { isPassportId, randomEditKey, randomId } from "@/lib/ids";
 import { deriveCities } from "@/lib/cities";
 import { getLiveData } from "@/lib/live-data";
@@ -67,5 +68,9 @@ export async function PATCH(req: Request) {
   if (!visited) return bad("Send visited as a list of place ids.");
   const { error: upErr } = await db.from("passports").update({ watched, visited }).eq("id", body.id);
   if (upErr) return bad(upErr.message, 500);
+  if (visited.length > (data.visited ?? []).length) {
+    const id = body.id as string;
+    after(() => markFinished(id).catch((e) => console.error("challenge finish:", e instanceof Error ? e.message : e)));
+  }
   return new NextResponse(null, { status: 204 });
 }

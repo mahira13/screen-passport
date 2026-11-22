@@ -10,6 +10,8 @@ export const LIMITS = {
   // On-demand title searches (each can make several AI calls): per visitor and in total.
   titleSearchPerIp: { bucket: "title_search", limit: 5, window: "1 day" },
   titleSearchGlobal: { bucket: "title_search_all", limit: 200, window: "1 day" },
+  challengesPerIp: { bucket: "challenge", limit: 10, window: "1 day" },
+  challengeJoinsPerIp: { bucket: "challenge_join", limit: 30, window: "1 day" },
 } as const;
 
 type Limit = (typeof LIMITS)[keyof typeof LIMITS];

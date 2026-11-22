@@ -6,7 +6,7 @@ import { homeData } from "@/lib/page-data";
 const ENTRIES = [
   { href: "/discover?near=1", title: "Near me", meta: "Filming places around you" },
   { href: "/collections", title: "Collections", meta: "Visit them all, fill your passport" },
-  { href: "/trip/new", title: "Trips", meta: "Plan a day out and invite friends" },
+  { href: "/trips", title: "Trips", meta: "Plan a day out and invite friends" },
 ] as const;
 
 export default async function Home() {

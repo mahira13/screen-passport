@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { LiveLocation } from "./nearby";
 import { supabasePublic } from "./supabase";
 import type { Collection, Work } from "./types";
+import { isPlaceholderTitle } from "./work-title";
 
 export const LIVE_TAG = "live-locations";
 
@@ -41,10 +42,13 @@ export async function getLiveData(): Promise<LiveData> {
   if (locs.error) throw new Error(`locations: ${locs.error.message}`);
   if (works.error) throw new Error(`works: ${works.error.message}`);
   if (cols.error) throw new Error(`collections: ${cols.error.message}`);
+  // A work without a real name is never shown, and its places don't carry it.
+  const named = (works.data as Work[]).filter((w) => !isPlaceholderTitle(w.title));
+  const ids = new Set(named.map((w) => w.id));
   return {
     configured: true,
-    works: works.data as Work[],
-    locations: locs.data as unknown as LiveLocation[],
+    works: named,
+    locations: (locs.data as unknown as LiveLocation[]).filter((l) => ids.has(l.work_id)),
     collections: cols.data as Collection[],
   };
 }

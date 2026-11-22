@@ -10,6 +10,7 @@ import { matchTitle } from "../match";
 import { REGION } from "../region";
 import { isTrustedSource } from "../trusted-sources";
 import type { Work } from "../types";
+import { storableTitle } from "../work-title";
 import { namesMatch } from "../verify/geo";
 import { geocode, runVerification } from "../verify/run";
 import { classifyAny, namesAny } from "../verify/upgrade";
@@ -86,10 +87,12 @@ async function upsertWork(db: SupabaseClient, item: WorkItem, label: string): Pr
     await db.from("works").update({ wikidata_id: item.qid }).eq("id", byTitle.id);
     return byTitle;
   }
-  const aliases = [...new Set(item.labels.filter((l) => l !== label))].slice(0, 8);
+  const title = storableTitle(label, item.year);
+  if (!title) throw new Error(`${item.qid}: "${label}" is not a usable title`);
+  const aliases = [...new Set(item.labels.filter((l) => l !== title))].slice(0, 8);
   const work: Work & { wikidata_id: string } = {
     id: workIdFor(label, item.year, item.qid, new Set(all.map((w) => w.id))),
-    title: label, type, aliases, year: item.year, wikidata_id: item.qid,
+    title, type, aliases, year: item.year, wikidata_id: item.qid,
   };
   const { error: insErr } = await db.from("works").insert(work);
   if (insErr) throw new Error(`work ${work.id}: ${insErr.message}`);

@@ -12,6 +12,8 @@ import {
 } from "./trip";
 import { writeTripPlan } from "./trip-ai";
 import type { LatLng } from "./types";
+import { mainCity } from "./layla";
+import { photoOf, type Photo } from "./nearby";
 
 export const MESSAGES = {
   tripLimit: `You've created ${LIMITS.tripsPerIp.limit} trips today. That's the daily limit, so please try again tomorrow.`,
@@ -173,4 +175,43 @@ export async function deleteTrip(id: string, key: unknown): Promise<"ok" | "not_
   const { error: delErr } = await db.from("trips").delete().eq("id", id);
   if (delErr) throw new Error(delErr.message);
   return "ok";
+}
+
+export interface TripSummary {
+  id: string;
+  title: string;
+  startsAt: string;
+  timeZone: string;
+  city: string;
+  people: number; // organiser + joins
+  photo: Photo | null;
+}
+
+/** Short cards for /trips: visible trips among the given IDs, soonest first. */
+export async function tripSummaries(ids: string[]): Promise<TripSummary[]> {
+  if (!ids.length) return [];
+  const db = supabaseAdmin();
+  const [{ data: trips, error }, { data: joins, error: joinErr }] = await Promise.all([
+    db.from("trips").select("id,title,starts_at,timezone,start_label,plan").in("id", ids).is("hidden_at", null),
+    db.from("trip_joins").select("trip_id").in("trip_id", ids),
+  ]);
+  if (error) throw new Error(error.message);
+  if (joinErr) throw new Error(joinErr.message);
+  const live = await getLiveData();
+  return (trips ?? []).map((t) => {
+    const stopIds = ((t.plan as TripPlan).stops ?? []).map((s) => s.location_id);
+    const places = stopIds.map((id) => live.locations.find((l) => l.id === id));
+    const withPhoto = places.find((l) => l && photoOf(l));
+    // The first stop's city: "your location" means nothing to the others.
+    const city = mainCity(places.find((l) => l?.city)?.city ?? null) ?? t.start_label;
+    return {
+      id: t.id,
+      title: t.title,
+      startsAt: t.starts_at,
+      timeZone: isValidTimeZone(t.timezone) ? t.timezone : DEFAULT_TIME_ZONE,
+      city,
+      people: 1 + (joins ?? []).filter((j) => j.trip_id === t.id).length,
+      photo: withPhoto ? photoOf(withPhoto) : null,
+    };
+  }).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }

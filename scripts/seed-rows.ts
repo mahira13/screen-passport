@@ -2,6 +2,7 @@
 // CSV column names equal the table columns; only types are converted here.
 // Format v2 (see data/seed/README.md): optional catalogue columns on locations.csv and a
 // location_works.csv for extra titles at a place. v1 files (without them) still import.
+import { isPlaceholderTitle } from "../lib/work-title";
 import { isUntrustedSource } from "../lib/sources";
 import type {
   Collection, CoordQuality, FilmLocation, LocationConfidence, LocationStatus, LocationWork, PublicAccess,
@@ -161,6 +162,7 @@ export function validateSeed(
   if (workIds.size !== works.length) problems.push("Duplicate work ids");
   for (const w of works) {
     if (!TYPES.includes(w.type)) problems.push(`work ${w.id}: bad type "${w.type}"`);
+    if (isPlaceholderTitle(w.title)) problems.push(`work ${w.id}: "${w.title}" is not a title (add the year, e.g. "Unknown (2011)")`);
   }
   for (const l of locations) {
     const where = `location ${l.id} (${l.name})`;

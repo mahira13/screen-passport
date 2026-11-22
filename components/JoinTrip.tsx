@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { track } from "@/lib/analytics";
 import { FIRST_NAME_MAX, MAX_JOINS } from "@/lib/trip";
+import { rememberJoinedTrip } from "@/lib/trip-keys";
 
 export function JoinTrip({ tripId, organiser, joined }: { tripId: string; organiser: string; joined: string[] }) {
   const router = useRouter();
@@ -25,6 +26,7 @@ export function JoinTrip({ tripId, organiser, joined }: { tripId: string; organi
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Couldn't join. Try again.");
       track("trip_joined", { trip: tripId });
+      rememberJoinedTrip(tripId);
       setDone(true);
       setName("");
       router.refresh();

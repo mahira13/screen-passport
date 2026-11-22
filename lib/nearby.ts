@@ -57,6 +57,7 @@ export interface NearbyTitle {
   workId: string;
   title: string;
   type: Work["type"];
+  year: number | null;
   placeCount: number;
   closest: NearbyPlace;
 }
@@ -97,7 +98,7 @@ export function buildNearby(locations: LiveLocation[], works: Work[], from: LatL
   for (const p of places) {
     const t = titles.get(p.workId);
     if (t) t.placeCount++;
-    else titles.set(p.workId, { workId: p.workId, title: p.title, type: byId.get(p.workId)!.type, placeCount: 1, closest: p });
+    else titles.set(p.workId, { workId: p.workId, title: p.title, type: byId.get(p.workId)!.type, year: byId.get(p.workId)!.year ?? null, placeCount: 1, closest: p });
   }
   return { places, titles: [...titles.values()] };
 }

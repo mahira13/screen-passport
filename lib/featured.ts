@@ -41,9 +41,16 @@ export function pinned(all: CollectionModel[]): CollectionModel[] {
   return all.filter((c) => c.pinRank != null && c.places.length > 0).sort((a, b) => a.pinRank! - b.pinRank!);
 }
 
+/**
+ * Pins first, then the best scores. If a title collection qualifies (3+ places) but none made the
+ * row, the best-scoring one takes the last slot, so the row always shows at least one title.
+ */
 export function featuredPicks(all: CollectionModel[], ctx: ScoreContext, count = FEATURED_COUNT): CollectionModel[] {
   const pins = pinned(all).slice(0, count);
   const taken = new Set(pins.map((c) => c.key));
-  const rest = scoreCollections(all, ctx).map((s) => s.c).filter((c) => !taken.has(c.key));
-  return [...pins, ...rest].slice(0, count);
+  const scored = scoreCollections(all, ctx).map((s) => s.c);
+  const row = [...pins, ...scored.filter((c) => !taken.has(c.key))].slice(0, count);
+  const title = scored.find((c) => c.kind === "title");
+  if (!title || row.some((c) => c.kind === "title") || row.length === 0) return row;
+  return row.length < count ? [...row, title] : [...row.slice(0, -1), title];
 }

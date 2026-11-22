@@ -15,6 +15,7 @@ import type { LatLng } from "@/lib/types";
 import type { CollectionModel } from "@/lib/collections-model";
 import type { Destination } from "@/lib/destinations";
 import { emptyMessage, radiusLabel, widerRadius, type PopularTitle, type Radius, type SearchHit } from "@/lib/discover";
+import { distinctCovers } from "@/lib/covers";
 import { CityPicker } from "./CityPicker";
 import { Destinations } from "./Destinations";
 import { InfoTip } from "./InfoTip";
@@ -223,6 +224,10 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
   };
 
   const groups = data ? titlesByBand(data.titles) : [];
+  // Covers in display order, no Commons file twice; featured collections avoid these too.
+  const order = groups.flatMap((g) => g.titles);
+  const titleCovers = distinctCovers(order.map((t) => [t.closest.photo, ...places.filter((p) => p.workId === t.workId).map((p) => p.photo)]));
+  const coverOf = new Map(order.map((t, i) => [t.workId, titleCovers[i]]));
   const watched = new Set(passport.watched);
   const isCity = !!findCity(cities, origin.id);
   const startCity = isCity ? origin.id : null;
@@ -318,6 +323,7 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
                         tripFrom={tripFrom}
                         index={index}
                         featured={featured}
+                        photo={coverOf.get(t.workId) ?? null}
                         onToggle={() => toggleWatched(t.workId, startCity)}
                         onSelect={() => selectFromCard(t.workId)}
                       />
@@ -330,7 +336,7 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
         </div>
       </section>
 
-      <FeaturedCollections collections={featured} ctx={featuredCtx} />
+      <FeaturedCollections collections={featured} ctx={featuredCtx} avoid={titleCovers.filter((p) => !!p)} />
       {popular.length > 0 && <PopularTitles titles={popular} onPick={pickWork} />}
 
       <PassportBar summary={passportSummary(passport.watched, data)} passportId={passport.id} sync={passport.sync} />

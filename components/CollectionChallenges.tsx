@@ -10,7 +10,8 @@ export type ChallengeCollection = {
   href: string;
   kind: "curated" | "city" | "title";
   tripFrom: string | null; // ?from= for a trip: a start city id or "lat,lng"
-  name: string;
+  name: string; // the card name (a title collection shows the title)
+  line: string; // type and year, or up to three title names
   city: string | null;
   from: string | null; // start city id for a trip, when the collection's city is one
   description: string | null;
@@ -27,7 +28,7 @@ function Challenge({ c, watched, visited, big }: Props) {
   const w = collectionProgress({ id: c.id, name: c.name, city: c.city, work_ids: c.works.map((x) => x.id), description: null }, watched);
   const been = new Set(visited);
   return (
-    <PhotoCard href={c.href} title={c.name} photo={c.cover} big={big} aspect={big ? "aspect-[4/3] sm:aspect-[16/10]" : "aspect-[4/3]"}
+    <PhotoCard href={c.href} title={c.name} photo={c.cover} big={big} overlay aspect={big ? "aspect-[4/3] sm:aspect-[16/10]" : "aspect-[4/3]"}
       eyebrow={c.city ?? undefined}
       badge={p.complete && (
         <span aria-label="Collection complete" className="flex h-16 w-16 rotate-[-12deg] flex-col items-center justify-center rounded-full border-[3px] border-double border-accent bg-paper/80 text-center text-accent backdrop-blur-sm">
@@ -35,10 +36,11 @@ function Challenge({ c, watched, visited, big }: Props) {
         </span>
       )}
       meta={<>
-        <span className="mt-1 flex gap-1" role="img" aria-label={`Visited ${p.done} of ${p.total} places`}>
+        <span className="block truncate">{c.line}</span>
+        <span className="mt-2 flex gap-1" role="img" aria-label={`Visited ${p.done} of ${p.total} places`}>
           {c.places.map((x) => <span key={x.id} className={`h-1 flex-1 rounded-full ${been.has(x.id) ? "bg-accent" : "bg-ink/15"}`} />)}
         </span>
-        <span className="mt-2 block">
+        <span className="mt-1.5 block text-xs">
           <span className="text-ink">{p.done}/{p.total}</span> places visited
           {c.works.length > 1 && ` · ${w.done}/${w.total} watched`}
         </span>

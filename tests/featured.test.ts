@@ -51,9 +51,15 @@ describe("pins", () => {
   const goerli = col("curated:goerliwood", [far(7), far(8), far(9)], 3);
   const ctx = { from: null, radiusKm: null };
 
-  it("keeps the table pins in rank order, ahead of a better-scoring collection", () => {
+  it("keeps the table pins in rank order; a qualifying title collection takes the last slot", () => {
     expect(featuredPicks([goerli, coldWar, streaming, big], ctx).map((c) => c.key))
+      .toEqual(["curated:netflix-berlin", "curated:cold-war-berlin", "title:big"]);
+    expect(featuredPicks([goerli, coldWar, streaming], ctx).map((c) => c.key))
       .toEqual(["curated:netflix-berlin", "curated:cold-war-berlin", "curated:goerliwood"]);
+  });
+  it("leaves the row alone when a title collection is already in it", () => {
+    const two = [streaming, big];
+    expect(featuredPicks(two, ctx).map((c) => c.key)).toEqual(["curated:netflix-berlin", "title:big"]);
   });
   it("names no collection in code: without pins, the scores decide", () => {
     const unpinned = [goerli, coldWar, streaming].map((c) => ({ ...c, pinRank: null }));

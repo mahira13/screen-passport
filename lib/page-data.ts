@@ -4,7 +4,8 @@ import { deriveCities, findCityByName, startCity, type City } from "./cities";
 import { centreOf } from "./discover";
 import { buildMapPlaces, type MapPlace } from "./explore-map";
 import type { MapCollection } from "@/components/ExploreMap";
-import { buildCollections, type CollectionModel } from "./collections-model";
+import { buildCollections, cardLine, cardName, coverCandidates, type CollectionModel } from "./collections-model";
+import { distinctCovers } from "./covers";
 import { destinations, type Destination } from "./destinations";
 import { getLiveData } from "./live-data";
 import { buildNearby, photoOf, type NearbyResult, type Photo } from "./nearby";
@@ -38,18 +39,20 @@ export async function collectionsData(): Promise<ChallengeCollection[]> {
     const cities = deriveCities(data.locations);
     const live = new Set(data.locations.map((l) => l.work_id));
     const order = { curated: 0, city: 1, title: 2 } as const;
-    return buildCollections(data)
-      .filter((c) => c.places.length > 0)
-      .sort((a, b) => order[a.kind] - order[b.kind] || b.places.length - a.places.length || a.name.localeCompare(b.name))
-      .map((c) => {
+    const sorted = buildCollections(data)
+      .filter((c) => c.places.length > 0 && c.works.length > 0)
+      .sort((a, b) => order[a.kind] - order[b.kind] || b.places.length - a.places.length || a.name.localeCompare(b.name));
+    // One page shows them all: no Commons file on two cards.
+    const covers = distinctCovers(sorted.map(coverCandidates));
+    return sorted.map((c, i) => {
         const centre = centreOf(c.places);
         return {
-          id: c.key, href: c.href, kind: c.kind, name: c.name, city: c.city, description: c.description,
+          id: c.key, href: c.href, kind: c.kind, name: cardName(c), line: cardLine(c), city: c.city, description: c.description,
           from: findCityByName(cities, c.city)?.id ?? null,
           tripFrom: findCityByName(cities, c.city)?.id ?? (centre ? `${centre.lat},${centre.lng}` : null),
           works: c.works.map((w) => ({ ...w, live: live.has(w.id) })),
           places: c.places.map((p) => ({ id: p.id, checkIn: p.checkIn })),
-          cover: c.cover,
+          cover: covers[i],
         };
       });
   } catch (e) {

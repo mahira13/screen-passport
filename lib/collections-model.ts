@@ -1,5 +1,6 @@
 // Every collection a visitor can play: curated rows from the collections table, plus automatic ones
 // built from published places (a title with 3+ places, a city with 5+). Pure; built from live data.
+import { typeYear } from "./covers";
 import { canCheckIn } from "./distance";
 import { coverPhoto, photoOf, type LiveLocation, type Photo } from "./nearby";
 import type { Collection, Work } from "./types";
@@ -23,7 +24,7 @@ export type CollectionModel = {
   description: string | null;
   href: string;
   city: string | null;
-  works: { id: string; title: string }[];
+  works: { id: string; title: string; type: Work["type"]; year: number | null }[];
   places: CollectionPlace[]; // each physical place once, by id
   cover: Photo | null;
   pinRank: number | null; // featured_rank from the table (curated only)
@@ -65,10 +66,15 @@ const firstPhoto = (places: CollectionPlace[], rows: LiveLocation[]) => {
 
 export function buildCollections({ works, locations, collections }: Data): CollectionModel[] {
   const titleOf = new Map(works.map((w) => [w.id, w.title]));
+  const workOf = new Map(works.map((w) => [w.id, w]));
+  const entry = (id: string) => {
+    const w = workOf.get(id);
+    return w ? [{ id, title: w.title, type: w.type, year: w.year ?? null }] : [];
+  };
   const out: CollectionModel[] = [];
 
   for (const c of collections) {
-    const ws = [...new Set(c.work_ids)].flatMap((id) => (titleOf.has(id) ? [{ id, title: titleOf.get(id)! }] : []));
+    const ws = [...new Set(c.work_ids)].flatMap(entry);
     out.push({
       key: `curated:${c.id}`, kind: "curated", slug: c.id, name: c.name, description: c.description,
       href: `/collection/${encodeURIComponent(c.id)}`, city: c.city, works: ws,
@@ -84,7 +90,7 @@ export function buildCollections({ works, locations, collections }: Data): Colle
     out.push({
       key: `title:${w.id}`, kind: "title", slug: w.id, name: `${w.title} locations`,
       description: `Every published filming place of ${w.title}.`, href: `/collection/title/${encodeURIComponent(w.id)}`,
-      city: null, works: [{ id: w.id, title: w.title }], places, cover: firstPhoto(places, rows), pinRank: null,
+      city: null, works: entry(w.id), places, cover: firstPhoto(places, rows), pinRank: null,
     });
   }
 
@@ -97,7 +103,7 @@ export function buildCollections({ works, locations, collections }: Data): Colle
     out.push({
       key: `city:${slug}`, kind: "city", slug, name: `Filmed in ${city}`,
       description: `Every published filming place in ${city}.`, href: `/collection/city/${slug}`, city,
-      works: [...new Set(rows.map((l) => l.work_id))].flatMap((id) => (titleOf.has(id) ? [{ id, title: titleOf.get(id)! }] : [])),
+      works: [...new Set(rows.map((l) => l.work_id))].flatMap(entry),
       places, cover: firstPhoto(places, rows), pinRank: null,
     });
   }
@@ -106,3 +112,15 @@ export function buildCollections({ works, locations, collections }: Data): Colle
 
 export const findCollection = (all: CollectionModel[], kind: CollectionKind, slug: string) =>
   all.find((c) => c.kind === kind && c.slug === slug) ?? null;
+
+/** Photos a collection card may use, best first: its cover, then each place's photo. */
+export const coverCandidates = (c: Pick<CollectionModel, "cover" | "places">): (Photo | null)[] => [c.cover, ...c.places.map((p) => p.image)];
+
+/** The name on a card: a title collection shows the title itself. */
+export const cardName = (c: Pick<CollectionModel, "kind" | "name" | "works">): string => (c.kind === "title" && c.works[0] ? c.works[0].title : c.name);
+
+/** The small line under a card: type and year for one title, else up to three title names. */
+export function cardLine(c: Pick<CollectionModel, "kind" | "works">): string {
+  if (c.kind === "title" && c.works[0]) return typeYear(c.works[0].type, c.works[0].year);
+  return c.works.slice(0, 3).map((w) => w.title).join(" · ");
+}

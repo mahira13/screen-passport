@@ -16,6 +16,7 @@ type State = { q: string; hits: SearchHit[] } | { q: string; error: true };
 export function CatalogueSearch({ onPick, examples }: { onPick: (hit: SearchHit) => void; examples: string[] }) {
   const [q, setQ] = useState("");
   const [state, setState] = useState<State | null>(null);
+  const [attempt, setAttempt] = useState(0); // "Try again" re-runs the search
   const listId = useId();
   const term = q.trim();
 
@@ -29,7 +30,7 @@ export function CatalogueSearch({ onPick, examples }: { onPick: (hit: SearchHit)
         .catch((e) => e.name !== "AbortError" && setState({ q: term, error: true }));
     }, 200);
     return () => { clearTimeout(t); ctrl.abort(); };
-  }, [term]);
+  }, [term, attempt]);
 
   const current = state && state.q === term && term.length >= 2 ? state : null;
   const hits = current && "hits" in current ? current.hits : [];
@@ -61,7 +62,13 @@ export function CatalogueSearch({ onPick, examples }: { onPick: (hit: SearchHit)
           </li>
         ))}
       </ul>
-      {current && "error" in current && <p role="alert" className="mt-2 text-sm text-red-400">Search is unavailable right now. Try again in a moment.</p>}
+      {current && "error" in current && (
+        <p role="alert" className="mt-2 flex flex-wrap items-center gap-x-3 text-sm text-red-400">
+          <span>Search is unavailable right now.</span>
+          <button type="button" onClick={() => setAttempt((n) => n + 1)}
+            className="label inline-flex min-h-11 items-center text-accent underline-offset-4 hover:underline">Try again</button>
+        </p>
+      )}
       {nothing && (
         <div className="mt-3 border-l-2 border-accent pl-4">
           <p className="text-sm text-ink/80">We don&apos;t have &quot;{term}&quot; yet.</p>

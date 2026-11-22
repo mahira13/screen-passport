@@ -276,7 +276,15 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
               <span className="text-xs text-ink/60">If nothing happens, allow location for this site in your browser settings.</span>
             </p>
           )}
-          {message && <p role="alert" className="mt-3 text-sm text-red-400">{message}</p>}
+          {message && (
+            <p role="alert" className="mt-3 flex flex-wrap items-center gap-x-3 text-sm text-red-400">
+              <span>{message}</span>
+              {message === LOAD_ERROR && (
+                <button type="button" onClick={() => load(target.current, queryFor(cities, target.current, radius))}
+                  className="label inline-flex min-h-11 items-center text-accent underline-offset-4 hover:underline">Try again</button>
+              )}
+            </p>
+          )}
           {empty && <EmptyNear radius={radius} onWider={pickRadius} />}
           <TitleChips titles={titles} colours={colours} selected={selected} onSelect={setSelected} />
         </div>

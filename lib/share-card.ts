@@ -95,6 +95,7 @@ export function projectDots(dots: CardDot[], width: number, height: number, pad:
   return dots.map((d, i) => ({ x: offX + (xs[i] - minX) * s, y: offY + (ys[i] - minY) * s, colour: d.colour }));
 }
 
-export function shareText(placeCount: number, cityName: string, link: string): string {
-  return `My Screen Passport: ${placeCount} ${placeCount === 1 ? "place" : "places"} from my films near ${cityName}. Find yours: ${link}`;
+/** The link travels separately as the share's url. */
+export function shareText(placeCount: number, cityName: string): string {
+  return `My Screen Passport: ${placeCount} ${placeCount === 1 ? "place" : "places"} from my films near ${cityName}. Find yours:`;
 }

@@ -104,7 +104,7 @@ describe("projectDots", () => {
 
 describe("shareText", () => {
   it("matches the skill's copy", () => {
-    expect(shareText(18, "Berlin", "https://x.app")).toBe("My Screen Passport: 18 places from my films near Berlin. Find yours: https://x.app");
-    expect(shareText(1, "Berlin", "https://x.app")).toContain("1 place from");
+    expect(shareText(18, "Berlin")).toBe("My Screen Passport: 18 places from my films near Berlin. Find yours:");
+    expect(shareText(1, "Berlin")).toContain("1 place from");
   });
 });

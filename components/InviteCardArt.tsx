@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { INVITE_HEIGHT, INVITE_WIDTH, type InviteData } from "@/lib/invite-card";
+import { QrCode } from "./QrCode";
 
 // The 1080×1920 "Now showing" story image: a cinema ticket in our own colours.
 // Plain inline styles in px so the export looks the same on every phone.
@@ -103,6 +104,10 @@ export function InviteCardArt({ data }: { data: InviteData }) {
             <div style={{ fontFamily: DISPLAY, fontSize: 96, fontWeight: 700, lineHeight: 1, marginTop: 8, color: GOLD }}>
               {data.seatsLeft}
             </div>
+          </div>
+          {/* Inside the ticket, so a long title can't push the link into Instagram's covered bottom edge. */}
+          <div style={{ marginLeft: 32, alignSelf: "center" }}>
+            <QrCode text={data.link} size={150} />
           </div>
         </div>
       </div>

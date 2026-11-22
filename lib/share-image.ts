@@ -33,8 +33,11 @@ export function canShareFiles(): boolean {
 
 export type ShareOutcome = "shared" | "cancelled" | "tap_again" | "downloaded";
 
-/** Web Share with the file; download when sharing files isn't possible or fails. */
-export async function shareOrDownload(file: File, canShare: boolean, data: { title: string; text: string }): Promise<ShareOutcome> {
+/**
+ * Web Share with the image and the link back to the app; download when sharing files isn't possible
+ * or fails. The link goes in `url`, not in `text`, so apps that show both don't print it twice.
+ */
+export async function shareOrDownload(file: File, canShare: boolean, data: { title: string; text: string; url: string }): Promise<ShareOutcome> {
   if (canShare) {
     try {
       await navigator.share({ files: [file], ...data });

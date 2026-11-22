@@ -6,6 +6,7 @@ import { copyText } from "@/lib/clipboard";
 import { INVITE_HEIGHT, INVITE_WIDTH, inviteCaption, type InviteData } from "@/lib/invite-card";
 import { canShareFiles, renderPng, shareOrDownload } from "@/lib/share-image";
 import { InviteCardArt } from "./InviteCardArt";
+import { ShareExtras } from "./ShareExtras";
 
 const PREVIEW_SCALE = 0.25;
 const FILE_NAME = "screen-passport-invite.png";
@@ -54,7 +55,8 @@ export function InviteCard({ tripId, data }: { tripId: string; data: InviteData 
     if (!b) return;
     const outcome = await shareOrDownload(new File([b], FILE_NAME, { type: "image/png" }), canShare, {
       title: data.tripTitle,
-      text: caption,
+      text: caption.replace(data.link, "").replace(/\s+/g, " ").trim(),
+      url: data.link,
     });
     if (outcome === "tap_again") setMessage("Your invite is ready. Tap Share again.");
     else if (outcome !== "cancelled") setMessage(copied ? LINK_COPIED : `Add this link as a sticker in your story: ${data.link}`);
@@ -68,7 +70,7 @@ export function InviteCard({ tripId, data }: { tripId: string; data: InviteData 
     <section className="mt-6 bg-surface p-5 sm:p-6">
       <h2 className="label text-accent">Invite friends</h2>
       <p className="mt-2 font-display text-2xl leading-tight">Now showing, in your story.</p>
-      <p className="mt-1 text-sm text-ink/70">A &quot;Now showing&quot; ticket for your story, with the trip link.</p>
+      <p className="mt-1 text-sm text-ink/70">A &quot;Now showing&quot; ticket for your story, with the trip link and a QR code to join.</p>
       <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-end">
         <div
           className="shrink-0 rotate-[-2deg] overflow-hidden shadow-2xl shadow-black/60"
@@ -90,6 +92,7 @@ export function InviteCard({ tripId, data }: { tripId: string; data: InviteData 
           <button type="button" onClick={onCaption} className="label border border-ink/30 px-5 py-3.5 transition-colors hover:border-accent hover:text-accent">
             Copy caption
           </button>
+          <ShareExtras url={data.link} />
           {message && <p role="status" className="max-w-xs text-sm">{message}</p>}
           {!canShare && <p className="max-w-xs text-xs text-ink/60">Then post the image from your photos.</p>}
         </div>

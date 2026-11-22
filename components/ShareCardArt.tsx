@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import { CARD_HEIGHT, CARD_WIDTH, projectDots, type CardData } from "@/lib/share-card";
+import { linkLabel } from "@/lib/share-link";
+import { QrCode } from "./QrCode";
 
 // The 1080×1920 story image. Plain inline styles in px so the export looks
 // the same on every phone. No map tiles, posters or stills.
@@ -30,7 +32,7 @@ const stampBox = (border: string, background: string, color: string): CSSPropert
   alignItems: "center", justifyContent: "center", textAlign: "center", overflow: "hidden",
 });
 
-export function ShareCardArt({ data, host }: { data: CardData; host: string }) {
+export function ShareCardArt({ data, link }: { data: CardData; link: string }) {
   const dots = projectDots(data.dots, MAP_W, MAP_H, 40);
   return (
     <div style={card}>
@@ -77,8 +79,12 @@ export function ShareCardArt({ data, host }: { data: CardData; host: string }) {
         {data.collection && (
           <div style={{ ...oneLine, fontFamily: DISPLAY, fontSize: 34, color: GOLD, fontWeight: 600, marginTop: 10 }}>{data.collection}</div>
         )}
-        <div style={{ borderTop: "2px solid rgba(244,239,228,0.25)", marginTop: 24, paddingTop: 22, fontSize: 34 }}>
-          Find yours at <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: GOLD }}>{host}</span>
+        <div style={{ borderTop: "2px solid rgba(244,239,228,0.25)", marginTop: 24, paddingTop: 24, display: "flex", alignItems: "center", gap: 32 }}>
+          <QrCode text={link} size={150} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 32 }}>Scan or visit</div>
+            <div style={{ fontFamily: DISPLAY, fontSize: 34, fontWeight: 700, color: GOLD, marginTop: 8, overflowWrap: "anywhere" }}>{linkLabel(link)}</div>
+          </div>
         </div>
       </div>
     </div>

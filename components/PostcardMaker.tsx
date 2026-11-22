@@ -1,11 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { track } from "@/lib/analytics";
+import { copyText } from "@/lib/clipboard";
 import { cleanCaption, coverCrop, CAPTION_MAX, POSTCARD_SIZE, postcardLayout, type PostcardFormat } from "@/lib/postcard";
+import { QR_QUIET, qrMatrix } from "@/lib/qr";
 import { canShareFiles, shareOrDownload } from "@/lib/share-image";
+import { linkLabel, shareUrl } from "@/lib/share-link";
+import { ShareExtras } from "./ShareExtras";
 
 const NAVY = "#16213A", CREAM = "#F4EFE4", GOLD = "#E3B04B";
+const QR_SIZE = 210;
+const noop = () => () => {};
+
+/** The link's QR code, dark modules on cream, with its quiet zone. */
+function drawQr(g: CanvasRenderingContext2D, text: string, x: number, y: number, size: number) {
+  const m = qrMatrix(text);
+  const unit = size / (m.length + QR_QUIET * 2);
+  g.fillStyle = CREAM;
+  g.fillRect(x, y, size, size);
+  g.fillStyle = NAVY;
+  m.forEach((row, r) => row.forEach((on, c) => {
+    if (on) g.fillRect(x + (c + QR_QUIET) * unit, y + (r + QR_QUIET) * unit, Math.ceil(unit), Math.ceil(unit));
+  }));
+}
 
 function draw(canvas: HTMLCanvasElement, img: HTMLImageElement, f: PostcardFormat, t: { title: string; place: string; caption: string; link: string }) {
   const { w, h } = POSTCARD_SIZE[f];
@@ -29,18 +47,21 @@ function draw(canvas: HTMLCanvasElement, img: HTMLImageElement, f: PostcardForma
   }
   g.fillStyle = NAVY;
   g.fillRect(band.x, band.y, band.w, band.h);
+  const qrX = w - 64 - QR_SIZE;
+  drawQr(g, t.link, qrX, band.y + 40, QR_SIZE); // top of the band: Instagram covers a story's bottom ~250 px
+  const textW = qrX - 40 - 64;
   g.textAlign = "left";
   g.fillStyle = GOLD;
   g.font = `600 30px ${BODY}`;
-  g.fillText("FILMED HERE", 64, band.y + 70);
+  g.fillText("FILMED HERE · SCREEN PASSPORT", 64, band.y + 70, textW);
   g.fillStyle = CREAM;
   g.font = `700 64px ${DISPLAY}`;
-  g.fillText(t.title, 64, band.y + 150, w - 128);
+  g.fillText(t.title, 64, band.y + 150, textW);
   g.font = `40px ${BODY}`;
-  g.fillText(t.place, 64, band.y + 210, w - 128);
+  g.fillText(t.place, 64, band.y + 210, textW);
   g.fillStyle = GOLD;
   g.font = `600 28px ${BODY}`;
-  g.fillText(`SCREEN PASSPORT · ${t.link}`, 64, band.y + band.h - 50, w - 128);
+  g.fillText(linkLabel(t.link), 64, band.y + 270, textW);
 }
 
 /**
@@ -53,10 +74,13 @@ export function PostcardMaker({ placeId, place, title }: { placeId: number; plac
   const [format, setFormat] = useState<PostcardFormat>("4:5");
   const [caption, setCaption] = useState("");
   const [note, setNote] = useState<string | null>(null);
+  // The place's own page: whoever scans or taps lands where this was filmed. Known only in the browser.
+  const site = useSyncExternalStore(noop, () => process.env.NEXT_PUBLIC_SITE_URL || window.location.origin, () => "");
+  const link = site ? shareUrl(site, `/location/${placeId}`) : "";
 
   useEffect(() => {
-    if (img && canvas.current) draw(canvas.current, img, format, { title, place, caption: cleanCaption(caption), link: window.location.host });
-  }, [img, format, caption, title, place]);
+    if (img && link && canvas.current) draw(canvas.current, img, format, { title, place, caption: cleanCaption(caption), link });
+  }, [img, format, caption, title, place, link]);
 
   const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -72,7 +96,8 @@ export function PostcardMaker({ placeId, place, title }: { placeId: number; plac
     if (!blob) return setNote("Couldn't make the image. Try again.");
     const file = new File([blob], `postcard-${placeId}.png`, { type: "image/png" });
     track("postcard_made", { location: placeId, format }); // no image data
-    const r = await shareOrDownload(file, canShareFiles(), { title: `${title} · ${place}`, text: `Filmed here: ${place}. Find yours: ${window.location.origin}` });
+    copyText(link); // ready for an Instagram story link sticker
+    const r = await shareOrDownload(file, canShareFiles(), { title: `${title} · ${place}`, text: `Filmed here: ${place} (${title}).`, url: link });
     setNote(r === "downloaded" ? "Saved to your downloads." : r === "tap_again" ? "Tap Share again." : null);
   }, "image/png");
 
@@ -100,6 +125,7 @@ export function PostcardMaker({ placeId, place, title }: { placeId: number; plac
           </label>
           <canvas ref={canvas} className="w-full max-w-sm border border-ink/15" aria-label={`Postcard preview: ${title}, ${place}`} />
           <button type="button" onClick={share} className="label inline-flex min-h-11 w-fit items-center bg-accent px-5 text-paper">Share postcard ↗</button>
+          {link && <ShareExtras url={link} />}
         </div>
       )}
       {note && <p role="status" className="mt-2 text-sm text-ink/80">{note}</p>}

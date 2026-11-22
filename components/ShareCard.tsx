@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 import { CARD_HEIGHT, CARD_WIDTH, shareText, type CardData } from "@/lib/share-card";
+import { copyText } from "@/lib/clipboard";
 import { canShareFiles, renderPng, shareOrDownload } from "@/lib/share-image";
+import { shareUrl } from "@/lib/share-link";
 import { usePassport } from "@/lib/use-passport";
 import { ShareCardArt } from "./ShareCardArt";
+import { ShareExtras } from "./ShareExtras";
 
 const PREVIEW_SCALE = 0.3;
 const FILE_NAME = "screen-passport.png";
@@ -14,17 +17,16 @@ const FILE_NAME = "screen-passport.png";
 export function ShareCard({ passportId, data }: { passportId: string; data: CardData }) {
   const { id } = usePassport();
   if (id !== passportId) return null;
-  return <ShareCardInner data={data} />;
+  return <ShareCardInner passportId={passportId} data={data} />;
 }
 
-function ShareCardInner({ data }: { data: CardData }) {
+function ShareCardInner({ passportId, data }: { passportId: string; data: CardData }) {
   const node = useRef<HTMLDivElement>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [canShare] = useState(canShareFiles);
-  const link = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-  const host = new URL(link).host.replace(/^www\./, "");
+  const link = shareUrl(process.env.NEXT_PUBLIC_SITE_URL || window.location.origin, `/p/${passportId}`);
 
   // Draw ahead of time: iOS only opens the share sheet straight after a tap,
   // so the image has to be ready before the tap.
@@ -38,9 +40,10 @@ function ShareCardInner({ data }: { data: CardData }) {
     return () => {
       cancelled = true;
     };
-  }, [data, host]);
+  }, [data, link]);
 
   const onShare = async () => {
+    copyText(link); // ready for an Instagram story link sticker
     track("share_clicked", { method: canShare ? "share" : "download", titles: data.stamps.length + data.moreStamps });
     setMessage(null);
     let b = blob;
@@ -59,7 +62,8 @@ function ShareCardInner({ data }: { data: CardData }) {
     const file = new File([b], FILE_NAME, { type: "image/png" });
     const outcome = await shareOrDownload(file, canShare, {
       title: "My Screen Passport",
-      text: shareText(data.placeCount, data.cityName, link),
+      text: shareText(data.placeCount, data.cityName),
+      url: link,
     });
     if (outcome === "tap_again") setMessage("Your card is ready. Tap Share again.");
   };
@@ -75,7 +79,7 @@ function ShareCardInner({ data }: { data: CardData }) {
         >
           <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: "top left" }}>
             <div ref={node}>
-              <ShareCardArt data={data} host={host} />
+              <ShareCardArt data={data} link={link} />
             </div>
           </div>
         </div>
@@ -85,7 +89,7 @@ function ShareCardInner({ data }: { data: CardData }) {
         <h2 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl">
           Your passport, as a story.
         </h2>
-        <p className="mt-4 max-w-md text-ink/70">A 1080×1920 card with your stamps, places and link, drawn on your phone.</p>
+        <p className="mt-4 max-w-md text-ink/70">A 1080×1920 card with your stamps, places, link and QR code, drawn on your phone.</p>
         <button
           type="button"
           onClick={onShare}
@@ -94,6 +98,7 @@ function ShareCardInner({ data }: { data: CardData }) {
         >
           {busy ? "Drawing your card…" : canShare ? "Share to your story" : "Download image"}
         </button>
+        <ShareExtras url={link} />
         {message && <p role="status" className="mt-3 text-sm">{message}</p>}
         {!canShare && <p className="mt-2 text-xs text-ink/60">Then post the image from your photos.</p>}
       </div>

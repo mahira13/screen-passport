@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { track } from "@/lib/analytics";
 import { ensurePassport } from "@/lib/passport-store";
+import { MAX_CHALLENGERS } from "@/lib/challenges";
 import { FIRST_NAME_MAX } from "@/lib/trip";
 
 const input = "min-w-0 flex-1 border-b-2 border-ink/30 bg-transparent px-1 py-2 text-lg focus:border-accent focus:outline-none";
@@ -73,7 +74,7 @@ export function JoinChallenge({ id, full }: { id: string; full: boolean }) {
   const router = useRouter();
   const [done, setDone] = useState(false);
   if (done) return <p role="status" className="mt-4 font-display text-xl text-accent">You&apos;re in. Check in on site to move up.</p>;
-  if (full) return <p className="mt-3 text-sm">This challenge is full (50 people).</p>;
+  if (full) return <p className="mt-3 text-sm">This challenge is full ({MAX_CHALLENGERS} people).</p>;
   return (
     <NameForm label="Join with your first name" cta="Join" onSubmit={async (firstName) => {
       await post(`/api/challenge/${id}/join`, { firstName });

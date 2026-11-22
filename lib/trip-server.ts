@@ -7,18 +7,18 @@ import { LIMITS, takeRate } from "./rate-limit";
 import type { TravelMode } from "./route";
 import { supabaseAdmin } from "./supabase";
 import {
-  DEFAULT_TIME_ZONE, isTravelMode, isTripLength, isValidTimeZone, nearestCity, parseFrom, parseStartsAt,
+  DEFAULT_TIME_ZONE, FIRST_NAME_MAX, MEETING_POINT_MAX, isTravelMode, isTripLength, isValidTimeZone, nearestCity, parseFrom, parseStartsAt,
   codePlan, parseWorkIds, selectTripStops, validateFirstName, validateMeetingPoint, type TripPlan, type TripStop,
 } from "./trip";
 import { writeTripPlan } from "./trip-ai";
 import type { LatLng } from "./types";
 
 export const MESSAGES = {
-  tripLimit: "You've created 5 trips today. That's the daily limit, so please try again tomorrow.",
-  joinLimit: "You've joined 20 trips today. That's the daily limit, so please try again tomorrow.",
+  tripLimit: `You've created ${LIMITS.tripsPerIp.limit} trips today. That's the daily limit, so please try again tomorrow.`,
+  joinLimit: `You've joined ${LIMITS.joinsPerIp.limit} trips today. That's the daily limit, so please try again tomorrow.`,
   reportLimit: "Thanks, you've sent a lot of reports today. Please try again tomorrow.",
-  name: "Add your first name: letters only, up to 30, no links or rude words.",
-  meetingPoint: "Pick a different meeting point: up to 200 characters, no links or rude words.",
+  name: `Add your first name: letters only, up to ${FIRST_NAME_MAX}, no links or rude words.`,
+  meetingPoint: `Pick a different meeting point: up to ${MEETING_POINT_MAX} characters, no links or rude words.`,
 };
 
 export type CreateResult =

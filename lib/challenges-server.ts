@@ -1,19 +1,19 @@
-import { challengeGoal, newlyFinished, standings, type Participant, type Standing } from "./challenges";
+import { MAX_CHALLENGERS, challengeGoal, newlyFinished, standings, type Participant, type Standing } from "./challenges";
 import type { CollectionModel } from "./collections-model";
 import { isPassportId, randomId } from "./ids";
 import { allCollections } from "./page-data";
 import { editKeyMatches } from "./passport-server";
 import { LIMITS, takeRate } from "./rate-limit";
 import { supabaseAdmin } from "./supabase";
-import { validateFirstName } from "./trip";
+import { FIRST_NAME_MAX, validateFirstName } from "./trip";
 
 export const CHALLENGE_MESSAGES = {
-  name: "Add your first name: letters only, up to 30, no links or rude words.",
+  name: `Add your first name: letters only, up to ${FIRST_NAME_MAX}, no links or rude words.`,
   passport: "We couldn't find your passport on this phone. Reload the page and try again.",
   collection: "This collection has no places you can check in at yet.",
-  createLimit: "You've started 10 challenges today. That's the daily limit, so please try again tomorrow.",
-  joinLimit: "You've joined 30 challenges today. That's the daily limit, so please try again tomorrow.",
-  full: "This challenge is full (50 people).",
+  createLimit: `You've started ${LIMITS.challengesPerIp.limit} challenges today. That's the daily limit, so please try again tomorrow.`,
+  joinLimit: `You've joined ${LIMITS.challengeJoinsPerIp.limit} challenges today. That's the daily limit, so please try again tomorrow.`,
+  full: `This challenge is full (${MAX_CHALLENGERS} people).`,
   notFound: "Unknown challenge.",
 } as const;
 

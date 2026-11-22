@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { readJson, serverError } from "@/lib/http";
 import { isTripId } from "@/lib/ids";
 import { requestIpHash } from "@/lib/rate-limit";
+import { MAX_JOINS } from "@/lib/trip";
 import { joinTrip, MESSAGES as M } from "@/lib/trip-server";
 
 const MESSAGES = {
-  full: ["This trip is full (50 people).", 409],
+  full: [`This trip is full (${MAX_JOINS} people).`, 409],
   not_found: ["Unknown trip.", 404],
   bad_name: [M.name, 400],
   limit: [M.joinLimit, 429],

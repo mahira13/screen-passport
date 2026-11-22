@@ -1,6 +1,8 @@
 "use client";
 
-import { RADII, radiusLabel, type Radius } from "@/lib/discover";
+import { AUTO_MIN_PLACES, RADII, radiusLabel, type Radius } from "@/lib/discover";
+
+const WIDEST_KM = RADII.filter((r) => r !== null).at(-1);
 
 type Props = { value: Radius; auto?: boolean; onPick: (r: Radius) => void };
 
@@ -24,8 +26,8 @@ export function RadiusChips({ value, auto = false, onPick }: Props) {
       {auto && (
         <p className="mt-2 text-xs text-ink/65">
           {value === null
-            ? "Picked for you: fewer than 3 places within 50 km, so showing everything, closest first."
-            : "Picked for you: the smallest distance with at least 3 places."}
+            ? `Picked for you: fewer than ${AUTO_MIN_PLACES} places within ${WIDEST_KM} km, so showing everything, closest first.`
+            : `Picked for you: the smallest distance with at least ${AUTO_MIN_PLACES} places.`}
         </p>
       )}
     </div>

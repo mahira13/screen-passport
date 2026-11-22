@@ -9,7 +9,10 @@ import { PhotoCredit } from "./PlacePhoto";
 import { ScenePlate } from "./ScenePlate";
 
 export type ChallengeCollection = {
-  id: string;
+  id: string; // unique key: "curated:<id>", "city:<slug>", "title:<work id>"
+  href: string;
+  kind: "curated" | "city" | "title";
+  tripFrom: string | null; // ?from= for a trip: a start city id or "lat,lng"
   name: string;
   city: string | null;
   from: string | null; // start city id for a trip, when the collection's city is one
@@ -29,7 +32,7 @@ function Challenge({ c, n, watched, visited, big, wide }: Props) {
   const notYet = c.places.filter((x) => !x.checkIn).length;
   const seen = new Set(watched);
   const live = c.works.filter((w) => w.live).map((w) => w.id);
-  const tripHref = live.length ? `/trip/new?works=${encodeURIComponent(live.slice(0, 10).join(","))}${c.from ? `&from=${c.from}` : ""}` : null;
+  const tripHref = live.length ? `/trip/new?works=${encodeURIComponent(live.slice(0, 10).join(","))}${c.tripFrom ? `&from=${encodeURIComponent(c.tripFrom)}` : ""}` : null;
 
   return (
     <article className={`relative h-full bg-surface ${wide ? "md:grid md:grid-cols-2" : "flex flex-col"}`}>
@@ -43,7 +46,7 @@ function Challenge({ c, n, watched, visited, big, wide }: Props) {
         )}
         <p className="label text-ink/75">Challenge {String(n + 1).padStart(2, "0")}{c.city && ` · ${c.city}`}</p>
         <h3 className={`mt-1 font-serif leading-[0.9] tracking-tight text-ink ${big ? "text-5xl sm:text-7xl" : "text-4xl sm:text-5xl"}`}>
-          <Link href={`/collection/${encodeURIComponent(c.id)}`} className="underline-offset-8 hover:text-accent hover:underline">{c.name}</Link>
+          <Link href={c.href} className="underline-offset-8 hover:text-accent hover:underline">{c.name}</Link>
         </h3>
       </ScenePlate>
       {c.cover && <PhotoCredit photo={c.cover} className="px-5 sm:px-6" />}
@@ -131,7 +134,7 @@ export function CollectionChallenges({ collections }: { collections: ChallengeCo
               Cinematic <span className="italic text-accent">challenges.</span>
             </h2>
             <p className="mt-4 max-w-lg text-ink/70">
-              Each collection is a small adventure through one city&apos;s films. Visit every place and check in on site to complete the set.
+              Each collection is a small adventure: the films of one city, or every place one title was shot. Visit every place and check in on site to complete the set.
             </p>
           </div>
           {visited.length > 0 && (

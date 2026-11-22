@@ -1,16 +1,26 @@
 import Link from "next/link";
+import { findCityByName } from "@/lib/cities";
+import { getCities } from "@/lib/cities-server";
 import type { CollectionModel } from "@/lib/collections-model";
+import { centreOf } from "@/lib/discover";
 import { CollectionVisits } from "./CollectionVisits";
 import { PhotoCredit } from "./PlacePhoto";
 import { PlacesMapBox } from "./PlacesMapBox";
 import { ScenePlate } from "./ScenePlate";
+import { ShareLink } from "./ShareLink";
 
 const WRAP = "mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12";
 const KIND = { curated: "Collection", title: "Title collection", city: "City collection" } as const;
 
 /** One collection (curated or automatic): cover card, progress, map and its places. */
-export function CollectionView({ c }: { c: CollectionModel }) {
+export async function CollectionView({ c }: { c: CollectionModel }) {
   const notYet = c.places.filter((p) => !p.checkIn).length;
+  // A trip from the collection's city when it is a start city, else from the centre of its places.
+  const centre = centreOf(c.places);
+  const from = findCityByName(await getCities(), c.city)?.id ?? (centre ? `${centre.lat},${centre.lng}` : null);
+  const tripHref = c.works.length
+    ? `/trip/new?works=${encodeURIComponent(c.works.slice(0, 10).map((w) => w.id).join(","))}${from ? `&from=${encodeURIComponent(from)}` : ""}`
+    : null;
   return (
     <>
       <section className={`${WRAP} pt-10 sm:pt-16`}>
@@ -33,6 +43,14 @@ export function CollectionView({ c }: { c: CollectionModel }) {
             {notYet > 0 && (
               <p className="mt-2 text-xs text-ink/60">{notYet} {notYet === 1 ? "place needs" : "places need"} a verified pin before check-in.</p>
             )}
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              {tripHref && (
+                <Link href={tripHref} className="label inline-flex min-h-11 items-center bg-accent px-5 text-paper transition-colors hover:bg-ink">
+                  Create a trip
+                </Link>
+              )}
+              <ShareLink path={c.href} title={c.name} text={`${c.name}: ${c.places.length} real filming places to visit.`} what="collection" />
+            </div>
           </div>
           <PlacesMapBox pins={c.places} className="-mx-4 h-[45vh] max-h-[480px] min-h-[260px] sm:mx-0" />
         </div>

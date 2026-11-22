@@ -1,11 +1,11 @@
 // Server data for the public pages, built from the cached live data.
 import type { ChallengeCollection } from "@/components/CollectionChallenges";
 import { deriveCities, findCityByName, startCity, type City } from "./cities";
+import { centreOf } from "./discover";
 import { buildCollections, type CollectionModel } from "./collections-model";
 import { destinations, type Destination } from "./destinations";
 import { getLiveData } from "./live-data";
-import { buildNearby, coverPhoto, type NearbyResult } from "./nearby";
-import { checkInIds } from "./passport";
+import { buildNearby, type NearbyResult } from "./nearby";
 
 type NearbyData = { nearby: NearbyResult | null; destinations: Destination[]; cities: City[]; start: City };
 
@@ -25,28 +25,31 @@ export async function nearbyData(): Promise<NearbyData> {
   }
 }
 
+/**
+ * Every playable collection for the Collections page: curated, then by city, then by title (each
+ * group by size). A trip starts from the collection's city when it is a start city, else from the
+ * centre of its places.
+ */
 export async function collectionsData(): Promise<ChallengeCollection[]> {
   try {
     const data = await getLiveData();
-    const live = new Set(data.locations.map((l) => l.work_id));
-    const titleOf = new Map(data.works.map((w) => [w.id, w.title]));
-    const precise = checkInIds(data.locations);
     const cities = deriveCities(data.locations);
-    return data.collections.map((c) => ({
-      id: c.id,
-      name: c.name,
-      city: c.city,
-      from: findCityByName(cities, c.city)?.id ?? null,
-      description: c.description,
-      works: [...new Set(c.work_ids)].flatMap((id) => {
-        const title = titleOf.get(id);
-        return title ? [{ id, title, live: live.has(id) }] : [];
-      }),
-      // Each physical place once, even when it was filmed for several of these titles.
-      places: [...new Set(data.locations.filter((l) => c.work_ids.includes(l.work_id)).map((l) => l.id))]
-        .map((id) => ({ id, checkIn: precise.has(id) })),
-      cover: coverPhoto(c.work_ids, data.locations),
-    }));
+    const live = new Set(data.locations.map((l) => l.work_id));
+    const order = { curated: 0, city: 1, title: 2 } as const;
+    return buildCollections(data)
+      .filter((c) => c.places.length > 0)
+      .sort((a, b) => order[a.kind] - order[b.kind] || b.places.length - a.places.length || a.name.localeCompare(b.name))
+      .map((c) => {
+        const centre = centreOf(c.places);
+        return {
+          id: c.key, href: c.href, kind: c.kind, name: c.name, city: c.city, description: c.description,
+          from: findCityByName(cities, c.city)?.id ?? null,
+          tripFrom: findCityByName(cities, c.city)?.id ?? (centre ? `${centre.lat},${centre.lng}` : null),
+          works: c.works.map((w) => ({ ...w, live: live.has(w.id) })),
+          places: c.places.map((p) => ({ id: p.id, checkIn: p.checkIn })),
+          cover: c.cover,
+        };
+      });
   } catch (e) {
     console.error("collections prerender failed:", e instanceof Error ? e.message : e);
     return [];

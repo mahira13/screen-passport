@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   title: "A Screen Passport",
   description: "Filming places from films and series someone has watched.",
   robots: { index: false, follow: false },
+  openGraph: { title: "A Screen Passport", description: "Filming places from films and series someone has watched. Start yours.", siteName: "Screen Passport" },
 };
 
 type Passport = { id: string; display_name: string | null; start_city: string | null; watched: string[]; visited: number[] };

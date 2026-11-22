@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { BottomNav, BottomNavLive, SiteHeader, SiteHeaderLive, Wordmark } from "@/components/SiteHeader";
 import "./globals.css";
+import { siteUrl } from "@/lib/site-url";
 import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -13,6 +14,7 @@ const serif = Instrument_Serif({ variable: "--font-instrument", subsets: ["latin
 const condensed = Bebas_Neue({ variable: "--font-bebas", subsets: ["latin"], weight: "400" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: "Screen Passport",
   description: "See where your favourite films and series were filmed near you. Visit them, stamp them, share them.",
 };

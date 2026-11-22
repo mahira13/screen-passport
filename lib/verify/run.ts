@@ -1,5 +1,7 @@
 // The AI verification pipeline (CLAUDE.md product rule 4). Used by scripts/verify-locations.ts and
 // the admin "Run AI verification" button. Server only: uses the service role key.
+import { BudgetExhausted } from "../pipeline/ai";
+import { nominatimSearch } from "../pipeline/nominatim";
 import { geocoderContact } from "../geocode";
 import { REGION } from "../region";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -13,8 +15,6 @@ import { fetchPage } from "./fetch-page";
 import { classifyGeocode, type GeoCheck } from "./geo";
 import { extractText, quoteFound } from "./text";
 
-const NOMINATIM = "https://nominatim.openstreetmap.org/search";
-const NOMINATIM_GAP_MS = 1100; // policy: at most one request per second
 const FAR_KM = 0.5;
 
 type Link = { work_id: string; scene_note: string | null; depicts: string | null; evidence_url: string | null; works: { title: string } | null };
@@ -29,18 +29,9 @@ export type Summary = { published: number; needsReview: Record<string, number>; 
 
 export type RunOptions = { ids?: number[]; limit?: number; dryRun?: boolean; log?: (line: string) => void };
 
-let lastNominatim = 0;
-export async function geocode(q: string, contact: string): Promise<NominatimHit | null> {
-  const wait = lastNominatim + NOMINATIM_GAP_MS - Date.now();
-  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  lastNominatim = Date.now();
-  const params = new URLSearchParams({ q, format: "jsonv2", limit: "1", countrycodes: REGION.countryCode.toLowerCase(), addressdetails: "1" });
-  const res = await fetch(`${NOMINATIM}?${params}`, {
-    headers: { "User-Agent": `ScreenPassport/0.1 (${contact})`, "Accept-Language": "de,en" },
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!res.ok) throw new Error(`Nominatim ${res.status}`);
-  return ((await res.json()) as NominatimHit[])[0] ?? null;
+/** One Nominatim lookup in the launch region, cached and throttled for all workers together. */
+export function geocode(db: SupabaseClient, q: string, contact: string, extra: Record<string, string> = {}): Promise<NominatimHit | null> {
+  return nominatimSearch(db, { q, format: "jsonv2", limit: "1", countrycodes: REGION.countryCode.toLowerCase(), addressdetails: "1", ...extra }, contact);
 }
 
 export function contactOrThrow(): string {
@@ -74,7 +65,7 @@ async function loadQueue(db: SupabaseClient, o: RunOptions): Promise<Row[]> {
 
 async function verifyRow(db: SupabaseClient, row: Row, contact: string, log: (s: string) => void): Promise<{ result: LocationResult; hit: NominatimHit | null; geo: GeoCheck | null }> {
   // Code checks shared by every title: where the place is.
-  const hit = await geocode(row.geocode_query ?? [row.name, row.city, REGION.country].filter(Boolean).join(", "), contact).catch(() => null);
+  const hit = await geocode(db, row.geocode_query ?? [row.name, row.city, REGION.country].filter(Boolean).join(", "), contact).catch(() => null);
   const geo = hit ? classifyGeocode(hit, row.name, row.city) : null;
   const precise = row.coord_quality === "source" || row.coord_quality === "verified";
   const point = precise && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng }
@@ -100,6 +91,7 @@ async function verifyRow(db: SupabaseClient, row: Row, contact: string, log: (s:
       try {
         verdict = (await askVerdict({ title, place: row.name, city: row.city }, text)).verdict;
       } catch (e) {
+        if (e instanceof BudgetExhausted) throw e; // stop the run; the place stays a draft
         const status = (e as { status?: number }).status;
         // A bad key or missing permission fails every call: stop instead of filling the review queue.
         if (status === 401 || status === 403) throw new Error(`Anthropic API rejected the key (HTTP ${status}). Check ANTHROPIC_API_KEY.`);

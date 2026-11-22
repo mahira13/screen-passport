@@ -158,3 +158,39 @@ export function pickWorkItem(
     && (work.year === null || i.year === work.year));
   return fits.length === 1 ? { qid: fits[0].qid } : { ambiguous: fits };
 }
+
+// Instance-of classes that count as a film or a series (direct P31, so the query stays fast).
+const FILM_CLASSES = ["wd:Q11424", "wd:Q24869", "wd:Q506240", "wd:Q202866"]; // film, feature film, TV film, animated film
+const SERIES_CLASSES = ["wd:Q5398426", "wd:Q1259759", "wd:Q526877"]; // TV series, miniseries, web series
+
+export type Discovered = { qid: string; label: string; year: number | null; type: "film" | "series"; places: number };
+
+/**
+ * Films and series with filming locations (P915) in the launch region, most locations first.
+ * Paged with limit/offset; the pipeline skips items it already has (works.wikidata_id).
+ */
+export function discoverQuery(limit: number, offset: number): string {
+  if (!Number.isInteger(limit) || !Number.isInteger(offset) || limit < 1 || limit > 500 || offset < 0) throw new Error("bad page");
+  return `SELECT ?work (SAMPLE(?name) AS ?label) (MIN(YEAR(?d)) AS ?year) (SAMPLE(?isSeries) AS ?series) (COUNT(DISTINCT ?loc) AS ?n) WHERE {
+  VALUES ?cls { ${[...FILM_CLASSES, ...SERIES_CLASSES].join(" ")} }
+  ?work wdt:P31 ?cls ; wdt:P915 ?loc .
+  ?loc wdt:P17 wd:${REGION.wikidataQid} .
+  BIND(?cls IN (${SERIES_CLASSES.join(", ")}) AS ?isSeries)
+  OPTIONAL { ?work wdt:P577|wdt:P580 ?d }
+  OPTIONAL { ?work rdfs:label ?de . FILTER(LANG(?de) = "de") }
+  OPTIONAL { ?work rdfs:label ?en . FILTER(LANG(?en) = "en") }
+  BIND(STR(COALESCE(?en, ?de)) AS ?name)
+} GROUP BY ?work ORDER BY DESC(?n) ?work LIMIT ${limit} OFFSET ${offset}`;
+}
+
+export function toDiscovered(row: SparqlRow): Discovered | null {
+  const qid = row.work?.value.split("/").pop() ?? "";
+  const label = row.label?.value?.trim();
+  if (!/^Q\d+$/.test(qid) || !label) return null; // no English or German name: skip
+  return {
+    qid, label,
+    year: row.year?.value ? Number(row.year.value) : null,
+    type: row.series?.value === "true" || row.series?.value === "1" ? "series" : "film",
+    places: Number(row.n?.value ?? 0),
+  };
+}

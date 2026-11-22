@@ -1,4 +1,4 @@
-// Wikidata filming locations (P915) in Germany for our works, as DRAFT candidates.
+// Wikidata filming locations (P915) in the launch region for our works, as DRAFT candidates.
 // Never publishes: drafts go through `npm run verify` (or a teammate) with a trusted source.
 // Usage: npm run wikidata                              (all works, print only)
 //        npm run wikidata -- --works dark,unorthodox   (just these)
@@ -6,17 +6,15 @@
 //        npm run wikidata -- --apply                   (insert the new candidates as draft)
 import { config } from "dotenv";
 import { normaliseTitle } from "../lib/match";
+import { searchItems, sparql } from "../lib/pipeline/sources-net";
 import { supabaseAdmin } from "../lib/supabase";
 import type { Work } from "../lib/types";
 import {
-  draftRow, filmingLocationsQuery, findExisting, pickWorkItem, SPARQL_ENDPOINT, type SparqlRow, toCandidate, toWorkItem,
+  draftRow, filmingLocationsQuery, findExisting, pickWorkItem, toCandidate, toWorkItem,
   workTypesQuery, type Existing,
 } from "../lib/wikidata";
 
 config({ path: ".env.local" });
-
-// Wikimedia asks for a descriptive User-Agent. No personal contact unless you set one.
-const UA = `ScreenPassport-candidates/0.1${process.env.WIKIDATA_CONTACT ? ` (${process.env.WIKIDATA_CONTACT})` : ""}`;
 
 const arg = (name: string) => {
   const i = process.argv.indexOf(name);
@@ -25,32 +23,10 @@ const arg = (name: string) => {
 const args = (name: string) => process.argv.flatMap((a, i) => (process.argv[i - 1] === name ? [a] : []));
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function sparql(query: string, retries = 2): Promise<SparqlRow[]> {
-  const res = await fetch(SPARQL_ENDPOINT, {
-    method: "POST",
-    headers: { "User-Agent": UA, Accept: "application/sparql-results+json", "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ query }),
-    signal: AbortSignal.timeout(60_000),
-  });
-  if (res.status >= 500 && retries > 0) {
-    await pause(5000);
-    return sparql(query, retries - 1);
-  }
-  if (!res.ok) throw new Error(`Wikidata query service ${res.status}`);
-  return ((await res.json()) as { results: { bindings: SparqlRow[] } }).results.bindings;
-}
-
-async function search(text: string): Promise<string[]> {
-  const params = new URLSearchParams({ action: "wbsearchentities", search: text, language: "en", type: "item", limit: "10", format: "json" });
-  const res = await fetch(`https://www.wikidata.org/w/api.php?${params}`, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20_000) });
-  if (!res.ok) throw new Error(`Wikidata search ${res.status}`);
-  return ((await res.json()) as { search: { id: string }[] }).search.map((s) => s.id);
-}
-
 async function resolve(work: Work, overrides: Map<string, string>): Promise<string | null> {
   const fixed = overrides.get(work.id);
   if (fixed) return fixed;
-  const hits = [...new Set([...(await search(work.title)), ...(work.aliases[0] ? await search(work.aliases[0]) : [])])];
+  const hits = [...new Set([...(await searchItems(work.title)), ...(work.aliases[0] ? await searchItems(work.aliases[0]) : [])])];
   if (!hits.length) return null;
   const picked = pickWorkItem(work, (await sparql(workTypesQuery(hits))).map(toWorkItem), normaliseTitle);
   if ("qid" in picked) return picked.qid;

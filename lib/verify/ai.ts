@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { aiModel, guardedCreate } from "../pipeline/ai";
 
 export type Verdict = {
   filmed_here: true | false | "unclear";
@@ -60,14 +60,12 @@ export function parseVerdict(raw: string): Verdict | null {
 }
 
 export async function askVerdict(claim: Claim, pageText: string): Promise<{ verdict: Verdict | null; raw: string; model: string }> {
-  const model = process.env.ANTHROPIC_MODEL;
-  if (!process.env.ANTHROPIC_API_KEY || !model) throw new Error("Set ANTHROPIC_API_KEY and ANTHROPIC_MODEL");
-  const client = new Anthropic({ timeout: 60_000, maxRetries: 1 });
+  const model = aiModel();
   const user = [
     `Claim: "${claim.title}" was filmed at "${claim.place}"${claim.city ? ` in ${claim.city}` : ""}.`,
     `<page>\n${pageText.slice(0, MAX_PAGE_CHARS)}\n</page>`,
   ].join("\n\n");
-  const res = await client.messages.create({
+  const res = await guardedCreate({
     model,
     max_tokens: 1000,
     system: SYSTEM,

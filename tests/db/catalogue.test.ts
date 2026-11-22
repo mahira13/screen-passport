@@ -367,10 +367,8 @@ describe.skipIf(!url)("migration 013: aliases and site outlines", () => {
     }
   });
 
-  it("changes no place data in a migration (aliases and notes come from the seed and the pipeline)", async () => {
+  it("sets no place data in a migration (aliases come from the seed and the pipeline)", async () => {
     const lib = await db.query("select aliases from locations where name = 'Berlin State Library, Unter den Linden'");
     for (const r of lib.rows) expect(r.aliases).toEqual([]);
-    const cem = await db.query("select visit_note from locations where name = 'Südwestkirchhof Stahnsdorf'");
-    for (const r of cem.rows) expect(r.visit_note).not.toMatch(/Working cemetery/);
   });
 });

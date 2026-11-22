@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { aiModel, guardedCreate } from "../pipeline/ai";
 
 export type ImageMatch = { matches: boolean; reason: string };
 
@@ -30,9 +30,8 @@ export function parseMatch(raw: string): ImageMatch | null {
 }
 
 export async function askImageMatch(thumbUrl: string, place: { name: string; city: string | null; description: string }): Promise<ImageMatch | null> {
-  const model = process.env.ANTHROPIC_MODEL;
-  if (!process.env.ANTHROPIC_API_KEY || !model) throw new Error("Set ANTHROPIC_API_KEY and ANTHROPIC_MODEL");
-  const res = await new Anthropic({ timeout: 60_000, maxRetries: 1 }).messages.create({
+  const model = aiModel();
+  const res = await guardedCreate({
     model,
     max_tokens: 300,
     system: SYSTEM,

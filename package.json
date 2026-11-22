@@ -18,7 +18,8 @@
     "tmdb": "tsx scripts/tmdb-metadata.ts",
     "images": "tsx scripts/fetch-images.ts",
     "upgrade-coords": "tsx scripts/upgrade-coords.ts",
-    "fetch-outline": "tsx scripts/fetch-outline.ts"
+    "fetch-outline": "tsx scripts/fetch-outline.ts",
+    "pipeline": "tsx scripts/pipeline.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",

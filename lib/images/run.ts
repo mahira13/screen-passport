@@ -1,5 +1,6 @@
 // Finds Commons photos for published locations. Used by scripts/fetch-images.ts and the admin page.
 // Server only (service role key). Order: Wikidata P18, Commons search by name + city, geosearch 100 m.
+import { BudgetExhausted } from "../pipeline/ai";
 import { geocoderContact } from "../geocode";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { byGeo, bySearch, byTitles, type Candidate, COMMONS_API, type CommonsPage, p18File, toCandidate } from "./commons";
@@ -99,6 +100,7 @@ export async function runImages(db: SupabaseClient, o: ImageOptions = {}): Promi
         reason = m ? `${m.matches ? "match" : "no match"}: ${m.reason}` : "AI answer invalid";
         if (m?.matches) chosen = c;
       } catch (e) {
+        if (e instanceof BudgetExhausted) throw e; // stop; nothing is saved for this place
         const status = (e as { status?: number }).status;
         aiDown = status ? `AI unavailable (HTTP ${status})` : "AI unavailable";
         reason = aiDown;

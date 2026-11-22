@@ -1,0 +1,42 @@
+# Hourly data pipeline: new Wikidata candidates (once a day), research, AI verification, photos,
+# outlines, duplicate merges and re-checks. Secrets live in the repository's GitHub Secrets; the
+# service role key is used only here and on the server.
+name: Data pipeline
+
+on:
+  schedule:
+    - cron: "17 * * * *" # hourly, off the top of the hour
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Minutes to work the queue"
+        default: "45"
+
+concurrency:
+  group: data-pipeline # never two scheduled runs at once
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run pipeline -- --cron --minutes "${MINUTES}"
+        env:
+          MINUTES: ${{ github.event.inputs.minutes || '45' }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+          DAILY_AI_BUDGET: ${{ secrets.DAILY_AI_BUDGET }}
+          GEOCODER_CONTACT: ${{ secrets.GEOCODER_CONTACT }}
+          TMDB_READ_TOKEN: ${{ secrets.TMDB_READ_TOKEN }}

@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { readJson, serverError } from "@/lib/http";
 import { getLiveData } from "@/lib/live-data";
 import { matchTitle, normaliseTitle } from "@/lib/match";
+import { startTitleSearch, workOnRequest } from "@/lib/pipeline/requests";
+import { requestIpHash } from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase";
 
-// POST {title} -> {known: workId} if we have it, else counts a request -> {requested: true}
+export const maxDuration = 60;
+
+// POST {title} -> {known: workId} if we have it; otherwise the request is counted and a search for
+// verified filming locations starts -> {requestId, status, text, ...}. Poll GET /api/request/<id>.
 export async function POST(req: Request) {
   try {
     const body = await readJson(req, 1_000);
@@ -15,12 +20,11 @@ export async function POST(req: Request) {
     const known = matchTitle(raw, (await getLiveData()).works);
     if (known) return NextResponse.json({ known: known.id });
 
-    const { error } = await supabaseAdmin().rpc("add_request", { p_raw: raw, p_normalised: normalised });
-    if (error) {
-      console.error("request failed:", error.message);
-      return NextResponse.json({ error: "Couldn't save that. Try again." }, { status: 500 });
-    }
-    return NextResponse.json({ requested: true }, { status: 201 });
+    const db = supabaseAdmin();
+    const result = await startTitleSearch(db, raw, normalised, requestIpHash(req));
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+    if (!result.status.done) after(() => workOnRequest(db, result.status.requestId)); // the first batch, right away
+    return NextResponse.json({ requested: true, ...result.status }, { status: result.started ? 201 : 200 });
   } catch (e) {
     return serverError("request", e);
   }

@@ -2,6 +2,7 @@
 // (rules in lib/verify/upgrade.ts). Dry run by default; --apply writes the new pin, its outline and a
 // review-log entry with the source URL and quote. Never touches places that don't qualify.
 // Usage: npm run upgrade-coords -- --work dark [--apply]
+import { REGION } from "../lib/region";
 import { config } from "dotenv";
 import { canCheckIn } from "../lib/distance";
 import { supabaseAdmin } from "../lib/supabase";
@@ -52,7 +53,7 @@ async function main() {
     const page = await fetchPage(url, contact);
     const text = page.ok ? extractText(page.html) : "";
     const quote = page.ok ? findPlaceQuote(text, [row.name, ...(row.aliases ?? [])], row.city) : null;
-    const hit = await geocode(row.geocode_query ?? [row.name, row.city, "Germany"].filter(Boolean).join(", "), contact).catch(() => null);
+    const hit = await geocode(db, row.geocode_query ?? [row.name, row.city, REGION.country].filter(Boolean).join(", "), contact).catch(() => null);
     const geo = hit ? classifyAny(hit, [row.name, ...(row.aliases ?? [])], row.city) : null;
     const notes = (links ?? []).filter((l) => l.location_id === row.id).map((l) => l.scene_note ?? "");
     const u = decideUpgrade({ name: row.name, aliases: row.aliases, city: row.city, old: { lat: row.lat, lng: row.lng }, trusted: isTrustedSource(page.ok ? page.url : url), quote, hit, geo, sceneNotes: notes });

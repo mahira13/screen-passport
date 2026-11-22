@@ -58,3 +58,41 @@ export function duplicateGroups(locations: DuplicateCandidate[]): DuplicateGroup
     })
     .sort((a, b) => a.ids[0] - b.ids[0]);
 }
+
+export type MergePlace = DuplicateCandidate & { aliases?: string[] | null };
+
+/**
+ * Automatic merges (the pipeline's rule, stricter than the suggestions above): within 30 m AND the
+ * same named place (namesMatch on name or alias, ignoring the city's own words). Each group keeps
+ * its lowest id. Passports and trips are remapped by merge_locations().
+ */
+export function autoMerges(places: MergePlace[], sameName: (a: string, b: string, city: string | null) => boolean): { keep: number; drop: number[] }[] {
+  const names = (p: MergePlace) => [p.name, ...(p.aliases ?? [])];
+  const near = places.filter((p) => p.lat !== null && p.lng !== null);
+  const parent = new Map(near.map((p) => [p.id, p.id]));
+  const root = (id: number): number => (parent.get(id) === id ? id : root(parent.get(id)!));
+  for (let i = 0; i < near.length; i++) {
+    for (let j = i + 1; j < near.length; j++) {
+      const [a, b] = [near[i], near[j]];
+      if (haversineKm({ lat: a.lat!, lng: a.lng! }, { lat: b.lat!, lng: b.lng! }) > DUPLICATE_RADIUS_KM) continue;
+      if (!names(a).some((x) => names(b).some((y) => sameName(x, y, a.city ?? b.city)))) continue;
+      const [ra, rb] = [root(a.id), root(b.id)];
+      parent.set(Math.max(ra, rb), Math.min(ra, rb));
+    }
+  }
+  const groups = new Map<number, number[]>();
+  for (const p of near) groups.set(root(p.id), [...(groups.get(root(p.id)) ?? []), p.id]);
+  return [...groups.entries()]
+    .filter(([, ids]) => ids.length > 1)
+    .map(([keep, ids]) => ({ keep, drop: ids.filter((id) => id !== keep).sort((x, y) => x - y) }))
+    .sort((x, y) => x.keep - y.keep);
+}
+
+const DUPLICATE_REASON = /^published place within 30 m \(#([\d, #]+)\)$/;
+
+/** Ids of the published places a verified draft duplicates, when that is the ONLY reason it wasn't published. */
+export function onlyDuplicateOf(reasons: string[]): number[] | null {
+  if (reasons.length !== 1) return null;
+  const m = reasons[0].match(DUPLICATE_REASON);
+  return m ? m[1].split(/[,\s#]+/).filter(Boolean).map(Number) : null;
+}

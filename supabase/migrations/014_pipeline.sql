@@ -21,7 +21,7 @@ alter table public.requests
 
 create table if not exists public.pipeline_jobs (
   id           bigserial primary key,
-  kind         text not null check (kind in ('discover', 'title', 'verify', 'images', 'outline', 'dedupe', 'recheck')),
+  kind         text not null check (kind in ('discover', 'title', 'research', 'verify', 'images', 'outline', 'dedupe', 'recheck')),
   payload      jsonb not null default '{}',
   dedupe_key   text,                         -- same key, not finished: not queued twice
   request_id   int references public.requests (id) on delete set null,

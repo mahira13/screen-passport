@@ -7,6 +7,9 @@ export const LIMITS = {
   claudeGlobal: { bucket: "claude", limit: 300, window: "1 day" },
   joinsPerIp: { bucket: "join", limit: 20, window: "1 day" },
   reportsPerIp: { bucket: "report", limit: 20, window: "1 day" },
+  // On-demand title searches (each can make several AI calls): per visitor and in total.
+  titleSearchPerIp: { bucket: "title_search", limit: 5, window: "1 day" },
+  titleSearchGlobal: { bucket: "title_search_all", limit: 200, window: "1 day" },
 } as const;
 
 type Limit = (typeof LIMITS)[keyof typeof LIMITS];
@@ -24,7 +27,7 @@ export function requestIpHash(req: Request): string {
 
 /**
  * Per-IP limits are skipped in local dev and when RATE_LIMITS=off (for testing; never set it in
- * production). The global Claude cap always applies: it protects the bill.
+ * production). The global caps always apply: they protect the bill.
  */
 export function perIpLimitsOff(env: Record<string, string | undefined> = process.env): boolean {
   return env.RATE_LIMITS === "off" || env.NODE_ENV === "development";
@@ -32,7 +35,7 @@ export function perIpLimitsOff(env: Record<string, string | undefined> = process
 
 /** True if the call may go ahead (and counts it). key: an IP hash, or "global". */
 export async function takeRate(limit: Limit, key: string): Promise<boolean> {
-  if (limit !== LIMITS.claudeGlobal && perIpLimitsOff()) return true;
+  if (limit !== LIMITS.claudeGlobal && limit !== LIMITS.titleSearchGlobal && perIpLimitsOff()) return true;
   const { data, error } = await supabaseAdmin().rpc("take_rate", {
     p_bucket: limit.bucket, p_key: key, p_limit: limit.limit, p_window: limit.window,
   });

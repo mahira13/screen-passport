@@ -1,6 +1,9 @@
 export type WorkType = "series" | "film";
 export type CoordQuality = "source" | "approx" | "geocoded" | "verified";
 export type LocationStatus = "live" | "unverified";
+export type VerificationStatus = "draft" | "verified" | "published" | "rejected";
+export type LocationConfidence = "exact" | "building" | "street" | "area";
+export type PublicAccess = "public" | "exterior_only" | "restricted" | "unknown";
 
 export interface Work {
   id: string;
@@ -26,6 +29,26 @@ export interface FilmLocation {
   source_url: string;
   status: LocationStatus;
   geocode_query: string | null;
+  // Added by migration 007. work_id and status above are deprecated: titles are in
+  // location_works and status follows verification_status.
+  country?: string | null;
+  country_code?: string | null;
+  verification_status?: VerificationStatus;
+  location_confidence?: LocationConfidence | null;
+  public_access?: PublicAccess;
+  is_filming_location?: boolean;
+  verified_at?: string | null;
+  merged_into?: number | null;
+  depicts?: string | null; // from location_works, per title
+}
+
+/** One title filmed at one place (migration 007). */
+export interface LocationWork {
+  location_id: number;
+  work_id: string;
+  scene_note: string | null;
+  depicts: string | null;
+  evidence_url: string | null;
 }
 
 export interface Collection {

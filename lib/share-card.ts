@@ -49,7 +49,9 @@ export function buildCardData(input: {
   collections: Collection[];
 }): CardData {
   const colourOf = new Map(input.stamps.map((s, i) => [s.workId, TITLE_COLOURS[i % TITLE_COLOURS.length]]));
-  const places = input.stamps.flatMap((s) => s.places).sort((a, b) => a.distanceKm - b.distanceKm);
+  // One entry per physical place, even when it was filmed for several of these titles.
+  const places = [...new Map(input.stamps.flatMap((s) => s.places).map((p) => [p.id, p])).values()]
+    .sort((a, b) => a.distanceKm - b.distanceKm);
   const closest = places[0];
   // Six slots: with more titles, five stamps and a "+N more" circle.
   const shown = input.stamps.length > MAX_STAMPS ? MAX_STAMPS - 1 : input.stamps.length;

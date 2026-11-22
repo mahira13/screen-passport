@@ -1,5 +1,6 @@
-// Product rule 3: no Wikipedia or fan wikis as sources.
-const UNTRUSTED = /(^|\.)(wikipedia\.(org|com)|wikia\.com|fandom\.com)$/i;
+// Product rule 3: no Wikipedia or fan wikis as sources. Wikidata finds candidates but is
+// never the only evidence for a published place (it often cites nothing).
+const UNTRUSTED = /(^|\.)(wikipedia\.(org|com)|wikidata\.org|wikia\.com|fandom\.com)$/i;
 
 export function isUntrustedSource(url: string): boolean {
   try {

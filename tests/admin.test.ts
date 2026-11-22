@@ -38,6 +38,9 @@ describe("isUntrustedSource", () => {
     expect(isUntrustedSource("https://dark-netflix.fandom.com/wiki/Winden")).toBe(true);
     expect(isUntrustedSource("not a url")).toBe(true);
   });
+  it("rejects Wikidata as the only evidence for a published place", () => {
+    expect(isUntrustedSource("https://www.wikidata.org/wiki/Q123")).toBe(true);
+  });
   it("accepts tourism sites and guides", () => {
     expect(isUntrustedSource("https://www.visitberlin.de/en/node/2120789")).toBe(false);
     expect(isUntrustedSource("https://www.atlasofwonders.com/2020/07/x.html")).toBe(false);

@@ -52,7 +52,9 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
       return work && { work, places, visited: places.some((p) => visited.has(p.id)) };
     })
     .filter((s) => !!s);
-  const allPlaces = stamps.flatMap((s) => s.places).sort((a, b) => a.distanceKm - b.distanceKm);
+  // One entry per physical place, even when it was filmed for several watched titles.
+  const allPlaces = [...new Map(stamps.flatMap((s) => s.places).map((p) => [p.id, p])).values()]
+    .sort((a, b) => a.distanceKm - b.distanceKm);
   const card = buildCardData({
     cityName: city.name,
     displayName: passport.display_name,

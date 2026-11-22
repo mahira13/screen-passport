@@ -5,7 +5,9 @@ export type LiveLocation = Pick<
   FilmLocation,
   "id" | "work_id" | "name" | "city" | "lat" | "lng" | "coord_quality"
 > &
-  Partial<Pick<FilmLocation, "scene_note" | "visit_note" | "source_name" | "source_url">>;
+  Partial<Pick<FilmLocation, "scene_note" | "visit_note" | "source_name" | "source_url">> &
+  // From catalogue_entries (migration 007); missing before it is applied.
+  Partial<Pick<FilmLocation, "country" | "country_code" | "location_confidence" | "public_access" | "depicts">>;
 
 export interface NearbyPlace {
   id: number;

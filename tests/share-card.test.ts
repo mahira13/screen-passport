@@ -45,6 +45,23 @@ describe("buildCardData", () => {
     expect(card.closest).toBe("Closest: Alexanderplatz (The Bourne Supremacy), about 0.6 km");
     expect(card.collection).toBe("Cold War Berlin 1/4");
   });
+  it("counts a place shared by two titles once, with one dot", () => {
+    const shared = buildNearby(
+      [
+        { id: 1, work_id: "bourne", name: "Alexanderplatz", city: "Berlin", lat: 52.522133, lng: 13.41345, coord_quality: "source" },
+        { id: 1, work_id: "dark", name: "Alexanderplatz", city: "Berlin", lat: 52.522133, lng: 13.41345, coord_quality: "source" },
+      ],
+      works,
+      findCity("berlin")!,
+    );
+    const two = buildCardData({
+      cityName: "Berlin", displayName: null, collections: [],
+      stamps: ["bourne", "dark"].map((id) => ({ workId: id, title: id, places: shared.places.filter((p) => p.workId === id), visited: false })),
+    });
+    expect(two.placeCount).toBe(1);
+    expect(two.dots).toHaveLength(1);
+    expect(two.stamps.map((s) => s.places)).toEqual([1, 1]);
+  });
   it("caps stamps and counts the rest", () => {
     const many = Array.from({ length: 8 }, (_, i) => ({ ...stamp("dark"), workId: `w${i}` }));
     const c = buildCardData({ cityName: "Berlin", displayName: null, collections: [], stamps: many });

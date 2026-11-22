@@ -50,6 +50,10 @@ describe("selectTripStops", () => {
     expect(selectTripStops(locations, works, ["bb"], berlin, "car", "full").some((s) => s.id === 4)).toBe(false);
     expect(selectTripStops([loc(4, "bb", 51.05, 13.74)], works, ["bb"], berlin, "car", "full")).toHaveLength(0);
   });
+  it("visits a place shared by two chosen titles once", () => {
+    const shared = [loc(1, "bb", 52.521, 13.41), loc(1, "dark", 52.521, 13.41), loc(2, "bb", 52.5, 13.3)];
+    expect(selectTripStops(shared, works, ["bb", "dark"], berlin, "car", "full").map((s) => s.id)).toEqual([1, 2]);
+  });
   it("orders nearest-next and caps by length", () => {
     const half = selectTripStops(locations, works, ["bb", "dark"], berlin, "car", "half");
     expect(half).toHaveLength(5);

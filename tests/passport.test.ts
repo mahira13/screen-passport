@@ -93,6 +93,17 @@ describe("passportSummary", () => {
     expect(s).toMatchObject({ titles: 2, places: 3 });
     expect(s.closestKm).toBeCloseTo(0.6, 1);
   });
+  it("counts a place shared by two watched titles once", () => {
+    const shared = buildNearby(
+      [
+        { id: 1, work_id: "bourne", name: "Alexanderplatz", city: null, lat: 52.522133, lng: 13.41345, coord_quality: "source" },
+        { id: 1, work_id: "dark", name: "Alexanderplatz", city: null, lat: 52.522133, lng: 13.41345, coord_quality: "source" },
+      ],
+      works,
+      DEFAULT_CITY,
+    );
+    expect(passportSummary(["bourne", "dark"], shared)).toMatchObject({ titles: 2, places: 1 });
+  });
   it("counts a watched title with no live places", () => {
     expect(passportSummary(["other"], nearby)).toEqual({ titles: 1, places: 0, closestKm: null });
   });

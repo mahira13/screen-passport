@@ -55,7 +55,8 @@ export interface PassportSummary {
 /** "3 titles · 18 places · closest about 0.3 km", from the places currently live. */
 export function passportSummary(watched: string[], nearby: NearbyResult | null): PassportSummary {
   const set = new Set(watched);
-  const mine = (nearby?.places ?? []).filter((p) => set.has(p.workId));
+  // A place filmed for two watched titles appears once per title: count it once.
+  const mine = [...new Map((nearby?.places ?? []).filter((p) => set.has(p.workId)).map((p) => [p.id, p])).values()];
   return {
     titles: set.size,
     places: mine.length,

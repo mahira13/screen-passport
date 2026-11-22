@@ -74,10 +74,13 @@ export function selectTripStops(
   length: TripLength,
 ): TripStop[] {
   const titles = new Map(works.map((w) => [w.id, w.title]));
+  const seen = new Set<number>(); // a place filmed for two chosen titles is one stop
   const inRange = locations.flatMap((l) => {
     if (l.lat === null || l.lng === null || !workIds.includes(l.work_id) || !titles.has(l.work_id)) return [];
+    if (seen.has(l.id)) return [];
     const p = { lat: l.lat, lng: l.lng };
     if (haversineKm(start, p) > RADIUS_KM[mode]) return [];
+    seen.add(l.id);
     return [{
       id: l.id, workId: l.work_id, title: titles.get(l.work_id)!, name: l.name, city: l.city, ...p,
       sceneNote: l.scene_note ?? null, visitNote: l.visit_note ?? null,

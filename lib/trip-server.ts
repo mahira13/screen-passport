@@ -113,7 +113,9 @@ export async function getTrip(id: string): Promise<TripView | null> {
   const plan = trip.plan as TripPlan;
   let here: LatLng = { lat: trip.start_lat, lng: trip.start_lng };
   const stops = plan.stops.flatMap((p) => {
-    const l = live.locations.find((x) => x.id === p.location_id);
+    // A place can belong to several titles: prefer the entry for one of this trip's titles.
+    const l = live.locations.find((x) => x.id === p.location_id && trip.work_ids?.includes(x.work_id))
+      ?? live.locations.find((x) => x.id === p.location_id);
     const w = l && live.works.find((x) => x.id === l.work_id);
     if (!l || !w || l.lat === null || l.lng === null) return [];
     const at = { lat: l.lat, lng: l.lng };

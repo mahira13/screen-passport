@@ -28,7 +28,7 @@ export function TitleCard({ title: t, places, colour, watched, selected, tripFro
   const head = (
     <>
       <div className="flex items-center gap-3">
-        <span className="font-condensed text-2xl leading-none text-ink/55 tabular-nums">{number}</span>
+        <span className="font-display text-2xl leading-none text-ink/55 tabular-nums">{number}</span>
         <span aria-hidden className="h-2.5 w-2.5 rounded-full ring-1 ring-paper" style={{ background: colour }} />
         <span className="label text-ink/65">
           {t.type === "series" ? "Series" : "Film"}
@@ -39,7 +39,7 @@ export function TitleCard({ title: t, places, colour, watched, selected, tripFro
       <button type="button" onClick={onSelect} aria-pressed={selected}
         aria-label={`${selected ? "Showing" : "Show"} ${t.title} on the map`}
         className="mt-2 block min-h-11 text-left">
-        <h3 className={`font-serif leading-[0.95] tracking-tight text-ink decoration-accent decoration-2 underline-offset-4 hover:underline ${
+        <h3 className={`font-display leading-[0.95] tracking-tight text-ink decoration-accent decoration-2 underline-offset-4 hover:underline ${
           featured ? "text-5xl sm:text-6xl" : "text-[2.1rem]"}`}>
           {t.title}
         </h3>
@@ -55,7 +55,7 @@ export function TitleCard({ title: t, places, colour, watched, selected, tripFro
   return (
     <article className={`relative border-t-2 bg-surface p-5 transition-colors ${selected ? "border-accent" : "border-transparent"}`}>
       {watched && (
-        <span aria-hidden className="pointer-events-none absolute right-4 top-4 z-10 rotate-[8deg] border-2 border-double border-accent px-2 py-0.5 font-condensed text-sm tracking-[0.18em] text-accent">
+        <span aria-hidden className="pointer-events-none absolute right-4 top-4 z-10 rotate-[8deg] border-2 border-double border-accent px-2 py-0.5 font-display text-sm tracking-[0.18em] text-accent">
           Stamped
         </span>
       )}
@@ -65,8 +65,8 @@ export function TitleCard({ title: t, places, colour, watched, selected, tripFro
           <button type="button" onClick={onSelect} tabIndex={-1} aria-hidden className="block text-left">
             <ScenePlate index={index} className="aspect-[2.39/1] w-full">
               <p className="label text-ink/70">Closest scene · {formatDistance(t.closest.distanceKm)}</p>
-              <p className="font-condensed text-3xl leading-none tracking-wide text-ink sm:text-4xl">{t.closest.name}</p>
-              {t.closest.sceneNote && <p className="mt-1 line-clamp-1 font-serif italic text-accent">{t.closest.sceneNote}</p>}
+              <p className="font-display text-3xl leading-none tracking-wide text-ink sm:text-4xl">{t.closest.name}</p>
+              {t.closest.sceneNote && <p className="mt-1 line-clamp-1 font-display text-accent">{t.closest.sceneNote}</p>}
             </ScenePlate>
           </button>
           <div>{head}</div>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue, Instrument_Serif, Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
 import { BottomNav, BottomNavLive, SiteHeader, SiteHeaderLive, Wordmark } from "@/components/SiteHeader";
@@ -10,8 +10,6 @@ import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 // Space Grotesk stays for the share and invite images (see the share-card skill).
 const grotesk = Space_Grotesk({ variable: "--font-grotesk", subsets: ["latin"] });
-const serif = Instrument_Serif({ variable: "--font-instrument", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
-const condensed = Bebas_Neue({ variable: "--font-bebas", subsets: ["latin"], weight: "400" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -29,7 +27,7 @@ const PILLARS = [
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${grotesk.variable} ${serif.variable} ${condensed.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${grotesk.variable} h-full antialiased`}>
       {/* Mobile: room for the bottom nav. */}
       <body className="flex min-h-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <Suspense fallback={<SiteHeader />}><SiteHeaderLive /></Suspense>
@@ -40,8 +38,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               {PILLARS.map(([verb, rest, text], i) => (
                 <li key={verb}>
                   <p className="label text-ink/60">0{i + 1}</p>
-                  <p className="mt-3 font-serif text-4xl leading-none sm:text-5xl">
-                    {verb} <span className="italic text-accent">{rest}.</span>
+                  <p className="mt-3 font-display text-4xl leading-none sm:text-5xl">
+                    {verb} <span className="text-accent">{rest}.</span>
                   </p>
                   <p className="mt-3 max-w-xs text-sm text-ink/60">{text}</p>
                 </li>

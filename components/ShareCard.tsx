@@ -82,8 +82,8 @@ function ShareCardInner({ data }: { data: CardData }) {
       </div>
       <div className="order-1 md:order-2">
         <p className="label text-accent">Share</p>
-        <h2 className="mt-3 font-serif text-5xl leading-[0.95] tracking-tight sm:text-6xl">
-          Your passport, <span className="italic">as a story.</span>
+        <h2 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl">
+          Your passport, as a story.
         </h2>
         <p className="mt-4 max-w-md text-ink/70">A 1080×1920 card with your stamps, places and link, drawn on your phone.</p>
         <button

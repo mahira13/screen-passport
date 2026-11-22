@@ -71,7 +71,7 @@ function popup(p: MapPlace, from: LatLng | null): HTMLElement {
     box.append(img, credit);
   }
   box.append(
-    el("strong", p.name, "display:block;font:400 22px/1.05 var(--font-instrument),Georgia,serif;margin-top:6px"),
+    el("strong", p.name, "display:block;font:600 20px/1.1 var(--font-grotesk),system-ui,sans-serif;margin-top:6px"),
     el("div", p.titles.map((t) => t.title).join(" · "), `font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:${GOLD};margin-top:4px`),
   );
   const facts = [

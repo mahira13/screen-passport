@@ -10,7 +10,7 @@ export default async function MapPage() {
   if (failed) {
     return (
       <main className="mx-auto max-w-screen-md px-4 py-24 text-center">
-        <p className="font-serif text-3xl italic text-ink/70">The map didn&apos;t load. It may be a connection problem.</p>
+        <p className="font-display text-3xl text-ink/70">The map didn&apos;t load. It may be a connection problem.</p>
         <Link href="/map" className="label mt-6 inline-flex min-h-11 items-center bg-accent px-5 text-paper">Try again</Link>
       </main>
     );

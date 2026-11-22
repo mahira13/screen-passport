@@ -22,10 +22,10 @@ export default function AdminLocationsPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-2xl font-semibold">Locations to review</h1>
-      <p className="mt-1 text-sm text-neutral-600">
+      <p className="mt-1 text-sm text-ink/60">
         Check each source, fix the pin, then verify the coordinates and set the location live.
       </p>
-      <Suspense fallback={<p className="mt-6 text-sm text-neutral-500">Loading…</p>}>
+      <Suspense fallback={<p className="mt-6 text-sm text-ink/60">Loading…</p>}>
         <AdminLocations />
       </Suspense>
     </main>
@@ -45,7 +45,7 @@ async function AdminLocations() {
     .select("id, name, scene_note, address, city, lat, lng, coord_quality, visit_note, source_name, source_url, geocode_query, verification_status, works(title)")
     .eq("status", "unverified")
     .order("id");
-  if (error) return <p className="mt-6 text-red-400">Could not load locations: {error.message}</p>;
+  if (error) return <p className="mt-6 text-red-300">Could not load locations: {error.message}</p>;
 
   // The latest AI review per place (internal: reasons and evidence quote). Table from migration 008.
   const reviews = await supabaseAdmin()
@@ -80,7 +80,7 @@ async function AdminLocations() {
       <VerificationPanel />
       <details className="mt-4 text-sm">
         <summary className="cursor-pointer">Trusted source domains ({TRUSTED_DOMAINS.length}, read-only)</summary>
-        <p className="mt-2 text-neutral-600">AI verification can only publish with evidence from these domains (and their subdomains). The list lives in lib/trusted-sources.ts and changes through code review.</p>
+        <p className="mt-2 text-ink/60">AI verification can only publish with evidence from these domains (and their subdomains). The list lives in lib/trusted-sources.ts and changes through code review.</p>
         <p className="mt-2 break-words font-mono text-xs">{TRUSTED_DOMAINS.join(" · ")}</p>
       </details>
       {featured ? (
@@ -88,11 +88,11 @@ async function AdminLocations() {
           rows={featured.filter((c) => c.kind === "curated").map((c) => ({ id: c.slug, name: c.name, rank: c.pinRank, places: c.places.length, checkIn: c.places.filter((p) => p.checkIn).length }))}
           preview={featuredPicks(featured, { from: null, radiusKm: null }).map((c) => c.name)}
         />
-      ) : <p className="mt-6 text-sm text-red-500">Featured collections need migrations 009 and 010: {(cols.error ?? locs.error ?? works.error)?.message}</p>}
+      ) : <p className="mt-6 text-sm text-red-300">Featured collections need migrations 009 and 010: {(cols.error ?? locs.error ?? works.error)?.message}</p>}
       <div className="mt-4 flex items-center justify-between text-sm">
         <span>{rows.length === 0 ? "Nothing to review." : `${rows.length} unverified`}</span>
         <form action={logout}>
-          <button className="text-neutral-600 underline">Sign out</button>
+          <button className="text-ink/60 underline">Sign out</button>
         </form>
       </div>
       {(photos.data?.length ?? 0) > 0 && (

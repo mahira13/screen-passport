@@ -12,6 +12,10 @@ export const LIMITS = {
   titleSearchGlobal: { bucket: "title_search_all", limit: 200, window: "1 day" },
   challengesPerIp: { bucket: "challenge", limit: 10, window: "1 day" },
   challengeJoinsPerIp: { bucket: "challenge_join", limit: 30, window: "1 day" },
+  passportCreatesPerIp: { bucket: "passport_create", limit: 20, window: "1 day" },
+  passportSavesPerIp: { bucket: "passport_save", limit: 600, window: "1 day" },
+  requestsPerIp: { bucket: "request", limit: 30, window: "1 day" },
+  eventsPerIp: { bucket: "event", limit: 500, window: "1 day" },
 } as const;
 
 type Limit = (typeof LIMITS)[keyof typeof LIMITS];

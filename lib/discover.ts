@@ -1,5 +1,4 @@
 // Discover: radius chips, empty states, popular titles and search-result centres. Pure functions.
-import { haversineKm } from "./distance";
 import type { LatLng } from "./types";
 
 /** Radius chips in km; null is "Anywhere". */
@@ -41,11 +40,6 @@ export function emptyMessage(r: Radius): string {
   const wider = widerRadius(r);
   const next = wider === null ? "searching anywhere" : radiusLabel(wider!);
   return `No verified locations within ${radiusLabel(r)}. Try ${next} or explore a collection.`;
-}
-
-/** Fallback when nearby_locations isn't available: same straight-line rule in code. */
-export function withinRadius<T extends LatLng>(items: T[], from: LatLng, r: Radius): T[] {
-  return r === null ? items : items.filter((i) => haversineKm(from, i) <= r);
 }
 
 /** A search_catalogue result; cities and countries carry a centre to start from. */

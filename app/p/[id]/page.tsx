@@ -14,6 +14,7 @@ import { getLiveData } from "@/lib/live-data";
 import { buildNearby } from "@/lib/nearby";
 import { buildCardData } from "@/lib/share-card";
 import { supabasePublic } from "@/lib/supabase";
+import { TrackView } from "@/components/TrackView";
 
 export const metadata: Metadata = {
   title: "A Screen Passport",
@@ -97,6 +98,7 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       {/* Cover and data page */}
+      <TrackView page="passport" id="shared" />
       <section className="relative overflow-hidden">
         <div aria-hidden className="pointer-events-none absolute -right-32 top-0 h-[32rem] w-[32rem] rounded-full bg-accent/10 blur-[120px]" />
         <div className={`${WRAP} relative grid gap-10 pb-14 pt-10 sm:pt-14 lg:grid-cols-[minmax(0,340px)_1fr] lg:gap-16`}>
@@ -111,17 +113,17 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
                 ))}
                 <circle cx="50" cy="50" r="4" fill="currentColor" />
               </svg>
-              <p className="mt-6 font-condensed text-4xl leading-none tracking-[0.14em]">Screen</p>
-              <p className="font-condensed text-4xl leading-none tracking-[0.14em]">Passport</p>
+              <p className="mt-6 font-display text-4xl leading-none tracking-[0.14em]">Screen</p>
+              <p className="font-display text-4xl leading-none tracking-[0.14em]">Passport</p>
             </div>
-            <p className="relative z-[2] font-serif text-lg italic">Discover · Explore · Collect</p>
+            <p className="relative z-[2] font-display text-lg">Discover · Explore · Collect</p>
           </div>
 
           <div className="flex min-w-0 flex-col">
             <p className="label text-ink/60">Passport no. <span className="text-ink">{passport.id}</span></p>
             <p className="label mt-6 text-ink/60">Holder</p>
-            <h1 className="mt-1 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-              {passport.display_name ?? <span className="italic">A film lover</span>}
+            <h1 className="mt-1 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+              {passport.display_name ?? "A film lover"}
             </h1>
             <p className="mt-3 text-lg text-ink/70">
               {allPlaces.length} filming {allPlaces.length === 1 ? "place" : "places"} from {stamps.length} {stamps.length === 1 ? "title" : "titles"} near {city.name}
@@ -131,7 +133,7 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
               {stats.map(([n, label]) => (
                 <div key={label} className="border-b border-ink/15 py-4 pr-4 sm:border-b-0">
                   <dt className="label text-ink/60">{label}</dt>
-                  <dd className="mt-1 font-condensed text-6xl leading-none text-accent">{n}</dd>
+                  <dd className="mt-1 font-display text-5xl leading-none text-accent">{n}</dd>
                 </div>
               ))}
             </dl>
@@ -164,11 +166,11 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
       <section className="border-t border-ink/10 py-14 sm:py-20">
         <div className={WRAP}>
           <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink/20 pb-5">
-            <h2 className="font-serif text-5xl leading-none tracking-tight sm:text-6xl">Stamps<span className="italic text-accent">.</span></h2>
+            <h2 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Stamps<span className="text-accent">.</span></h2>
             <p className="label text-ink/60">Gold means checked in on site</p>
           </div>
           {stamps.length === 0 ? (
-            <p className="mt-8 font-serif text-2xl italic text-ink/70">No titles in this passport yet.</p>
+            <p className="mt-8 font-display text-2xl text-ink/70">No titles in this passport yet.</p>
           ) : (
             <ul className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
               {stamps.map((s, i) => (
@@ -177,8 +179,8 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
                     s.visited ? "border-paper bg-accent text-paper" : "border-ink/50 text-ink"
                   }`}>
                   <span className="label text-[9px] opacity-80">{s.work.type === "series" ? "Series" : "Film"}{s.work.year ? ` · ${s.work.year}` : ""}</span>
-                  <span className="mt-1 font-serif text-xl leading-[1.05]">{s.work.title}</span>
-                  <span className="mt-1.5 font-condensed text-base tracking-[0.15em]">
+                  <span className="mt-1 font-display text-xl leading-[1.05]">{s.work.title}</span>
+                  <span className="mt-1.5 font-display text-base tracking-[0.15em]">
                     {s.visited ? "Checked in" : `${s.places.length} ${s.places.length === 1 ? "place" : "places"}`}
                   </span>
                 </li>
@@ -194,7 +196,7 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
                   <li key={c.id} className={`relative bg-surface p-5 ${c.complete ? "ring-1 ring-accent" : ""}`}>
                     <div className="flex items-center gap-4">
                       <ProgressRing done={c.done} total={c.total} />
-                      <Link href={c.href} className="font-serif text-2xl leading-tight hover:text-accent">{c.name}</Link>
+                      <Link href={c.href} className="font-display text-2xl leading-tight hover:text-accent">{c.name}</Link>
                     </div>
                     <p className="mt-2 text-xs text-ink/70">
                       Visited {c.done} of {c.total} {c.total === 1 ? "place" : "places"}
@@ -218,7 +220,7 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
                 <li key={p.id}>
                   <Link href={`/location/${p.id}`} className="block h-full border-l-2 border-accent bg-surface/60 p-4 hover:bg-surface">
                     <span aria-hidden className="text-accent">★</span>
-                    <p className="font-serif text-xl leading-tight">{p.name}</p>
+                    <p className="font-display text-xl leading-tight">{p.name}</p>
                     <p className="label mt-1 text-ink/60">{p.title}</p>
                   </Link>
                 </li>
@@ -233,11 +235,11 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
         <section className="border-t border-ink/10 py-14 sm:py-20">
           <div className={WRAP}>
             <p className="label text-accent">Travel journal</p>
-            <h2 className="mt-3 font-serif text-5xl leading-none tracking-tight sm:text-6xl">Places to visit</h2>
+            <h2 className="mt-3 font-display text-5xl leading-none tracking-tight sm:text-6xl">Places to visit</h2>
             <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {stamps.filter((s) => s.places.length > 0).map((s) => (
                 <div key={s.work.id} className="border-t border-ink/15 pt-4">
-                  <h3 className="font-serif text-2xl italic text-accent">{s.work.title}</h3>
+                  <h3 className="font-display text-2xl text-accent">{s.work.title}</h3>
                   <ul className="mt-3 space-y-2 text-sm">
                     {s.places.map((p) => (
                       <li key={p.id} className="flex items-baseline gap-2">
@@ -264,8 +266,8 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       <div className={`${WRAP} py-14`}>
-        <Link href="/" className="group inline-flex items-baseline gap-3 font-serif text-4xl tracking-tight hover:text-accent sm:text-5xl">
-          Find filming places near you <span className="italic text-accent transition-transform group-hover:translate-x-1">→</span>
+        <Link href="/" className="group inline-flex items-baseline gap-3 font-display text-4xl tracking-tight hover:text-accent sm:text-5xl">
+          Find filming places near you <span className="text-accent transition-transform group-hover:translate-x-1">→</span>
         </Link>
       </div>
     </>

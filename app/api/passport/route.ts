@@ -5,9 +5,11 @@ import { deriveCities } from "@/lib/cities";
 import { getLiveData } from "@/lib/live-data";
 import { checkInIds, cleanStartCity, cleanVisited, cleanWatched } from "@/lib/passport";
 import { editKeyMatches, hashEditKey } from "@/lib/passport-server";
+import { LIMITS, requestIpHash, takeRate } from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const bad = (message: string, status = 400) => NextResponse.json({ error: message }, { status });
+const LIMITED = "Too many saves from this connection today. Try again tomorrow.";
 
 async function readJson(req: Request): Promise<Record<string, unknown> | null> {
   const text = await req.text();
@@ -27,6 +29,7 @@ async function catalogue() {
 
 // POST {watched, visited?, startCity} -> {id, editKey}. The browser keeps editKey; we store its hash.
 export async function POST(req: Request) {
+  if (!(await takeRate(LIMITS.passportCreatesPerIp, requestIpHash(req)))) return bad(LIMITED, 429);
   const body = await readJson(req);
   const known = await catalogue();
   const watched = body && cleanWatched(body.watched, known.works);
@@ -52,6 +55,7 @@ export async function POST(req: Request) {
 
 // PATCH {id, editKey, watched, visited?} -> 204. Without visited (older pages) check-ins stay as they are.
 export async function PATCH(req: Request) {
+  if (!(await takeRate(LIMITS.passportSavesPerIp, requestIpHash(req)))) return bad(LIMITED, 429);
   const body = await readJson(req);
   if (!body || !isPassportId(body.id)) return bad("Unknown passport.", 404);
   const known = await catalogue();

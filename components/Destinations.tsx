@@ -12,8 +12,8 @@ export function Destinations({ items, current, onPick }: Props) {
       {items.map((d, i) => {
         const body = (
           <>
-            <span className="font-condensed text-lg text-ink/60 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-            <span className={`min-w-0 flex-1 truncate font-serif text-3xl leading-tight sm:text-4xl ${d.cityId === current ? "italic text-accent" : ""}`}>
+            <span className="font-display text-lg text-ink/60 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+            <span className={`min-w-0 flex-1 truncate font-display text-3xl leading-tight sm:text-4xl ${d.cityId === current ? "text-accent" : ""}`}>
               {d.city}
             </span>
             <span className="label shrink-0 text-right text-ink/60">

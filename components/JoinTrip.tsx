@@ -38,20 +38,20 @@ export function JoinTrip({ tripId, organiser, joined }: { tripId: string; organi
   return (
     <section className="mt-12 border-t-2 border-accent bg-surface p-5 sm:p-6">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-serif text-3xl">Who&apos;s coming</h2>
+        <h2 className="font-display text-3xl">Who&apos;s coming</h2>
         <span className="label text-ink/60">{joined.length + 1} going</span>
       </div>
       {/* First names only, as people typed them. */}
       <ul className="mt-4 flex flex-wrap gap-2 text-sm">
         <li className="flex items-center gap-2 bg-accent py-1 pl-1 pr-3 font-medium text-paper">
-          <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-paper font-condensed text-base text-accent">
+          <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-paper font-display text-base text-accent">
             {organiser.charAt(0).toUpperCase()}
           </span>
           {organiser} <span className="label text-[9px] text-paper/70">organiser</span>
         </li>
         {joined.map((n, i) => (
           <li key={i} className="flex items-center gap-2 border border-ink/15 py-1 pl-1 pr-3">
-            <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-surface font-condensed text-base text-ink">
+            <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-surface font-display text-base text-ink">
               {n.charAt(0).toUpperCase()}
             </span>
             {n}
@@ -59,7 +59,7 @@ export function JoinTrip({ tripId, organiser, joined }: { tripId: string; organi
         ))}
       </ul>
       {done ? (
-        <p role="status" className="mt-4 font-serif text-xl italic text-accent">You&apos;re in. See you there!</p>
+        <p role="status" className="mt-4 font-display text-xl text-accent">You&apos;re in. See you there!</p>
       ) : full ? (
         <p className="mt-3 text-sm">This trip is full.</p>
       ) : (

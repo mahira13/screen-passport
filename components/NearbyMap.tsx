@@ -58,7 +58,7 @@ function clusterIcon(cluster: L.MarkerCluster) {
   const ring = colourRing(cluster.getAllChildMarkers().map((m) => markerColour.get(m) ?? OTHER_COLOUR));
   return L.divIcon({
     className: "",
-    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:${ring};box-shadow:0 0 0 2px ${GOLD},0 2px 8px rgba(0,0,0,.5)"><span style="display:flex;align-items:center;justify-content:center;width:${size - 14}px;height:${size - 14}px;border-radius:50%;background:${INK};color:${CREAM};font:400 18px var(--font-bebas),system-ui,sans-serif;letter-spacing:.04em">${n}</span></span>`,
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:${ring};box-shadow:0 0 0 2px ${GOLD},0 2px 8px rgba(0,0,0,.5)"><span style="display:flex;align-items:center;justify-content:center;width:${size - 14}px;height:${size - 14}px;border-radius:50%;background:${INK};color:${CREAM};font:600 15px var(--font-grotesk),system-ui,sans-serif;letter-spacing:.04em">${n}</span></span>`,
     iconSize: [size, size],
   });
 }
@@ -75,9 +75,9 @@ function popupContent(p: NearbyPlace): HTMLElement {
   box.append(
     el("div", `${p.title} · ${formatDistance(p.distanceKm)}`,
       `font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:${GOLD}`),
-    el("strong", p.name, "display:block;font:400 22px/1.05 var(--font-instrument),Georgia,serif;margin-top:4px"),
+    el("strong", p.name, "display:block;font:600 20px/1.1 var(--font-grotesk),system-ui,sans-serif;margin-top:4px"),
   );
-  if (p.sceneNote) box.append(el("div", p.sceneNote, "font:italic 14px/1.3 var(--font-instrument),Georgia,serif;margin-top:6px;opacity:.8"));
+  if (p.sceneNote) box.append(el("div", p.sceneNote, "font:14px/1.35 var(--font-inter),system-ui,sans-serif;margin-top:6px;opacity:.8"));
   const a = el("a", "Directions →",
     `display:inline-block;margin-top:10px;font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:${GOLD};text-decoration:none`);
   Object.assign(a, { href: directionsUrl(p), target: "_blank", rel: "noopener noreferrer" });

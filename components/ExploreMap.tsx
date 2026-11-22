@@ -64,7 +64,7 @@ export function ExploreMap({ places, collections, cities, start }: Props) {
   if (places.length === 0) {
     return (
       <div className="mx-auto max-w-screen-md px-4 py-24 text-center">
-        <p className="font-serif text-3xl italic text-ink/70">No verified places on the map yet. We&apos;re checking the sources first.</p>
+        <p className="font-display text-3xl text-ink/70">No verified places on the map yet. We&apos;re checking the sources first.</p>
         <a href="/collections" className="label mt-6 inline-flex min-h-11 items-center bg-accent px-5 text-paper">Browse collections</a>
       </div>
     );

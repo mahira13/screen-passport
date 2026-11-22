@@ -12,7 +12,7 @@ export default async function CollectionsPage() {
       <CollectionChallenges collections={collections} />
       {collections.length === 0 && (
         <div className="mx-auto w-full max-w-screen-2xl px-4 py-24 sm:px-8 lg:px-12">
-          <p className="font-serif text-3xl italic text-ink/70">
+          <p className="font-display text-3xl text-ink/70">
             Collections are on their way. We&apos;re checking the sources for every place first.
           </p>
           <Link href="/discover" className="label mt-6 inline-flex min-h-11 items-center bg-accent px-5 py-3 text-paper">

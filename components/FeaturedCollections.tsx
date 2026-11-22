@@ -20,8 +20,8 @@ export function FeaturedCollections({ collections, ctx }: { collections: Collect
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="label text-accent">02 — Featured collections</p>
-            <h2 id="featured-h" className="mt-3 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-              Cinematic <span className="italic text-accent">adventures.</span>
+            <h2 id="featured-h" className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+              Cinematic <span className="text-accent">adventures.</span>
             </h2>
           </div>
           <Link href="/collections" className="label inline-flex min-h-11 items-center text-ink/70 transition-colors hover:text-accent">
@@ -43,7 +43,7 @@ export function FeaturedCollections({ collections, ctx }: { collections: Collect
                       </>
                     )}
                     <p className="label text-ink/75">{KIND[c.kind]}{c.city && c.kind !== "city" ? ` · ${c.city}` : ""} · {c.places.length} places</p>
-                    <p className="mt-1 font-serif text-3xl leading-[0.95] text-ink transition-colors group-hover:text-accent sm:text-4xl">{c.name}</p>
+                    <p className="mt-1 font-display text-3xl leading-[0.95] text-ink transition-colors group-hover:text-accent sm:text-4xl">{c.name}</p>
                     <p className="label mt-2 text-ink/65">{playable} with check-in</p>
                   </ScenePlate>
                 </Link>

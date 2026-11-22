@@ -13,6 +13,7 @@ import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { ACCESS_TEXT, CONFIDENCE_TEXT } from "@/lib/catalogue-pages";
 import { catalogueIds, loadLocation } from "@/lib/catalogue-loaders";
 import { siteUrl } from "@/lib/site-url";
+import { TrackView } from "@/components/TrackView";
 
 const WRAP = "mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12";
 
@@ -55,10 +56,11 @@ async function LocationView({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <article className={`${WRAP} pt-10 sm:pt-16`}>
+      <TrackView page="location" id={String(p.id)} />
       <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
         <div>
           {where && <p className="label text-accent">{where}</p>}
-          <h1 className="mt-4 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">{p.name}</h1>
+          <h1 className="mt-4 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">{p.name}</h1>
           {l.address && <p className="mt-4 text-lg text-ink/75">{l.address}</p>}
           <p className="mt-3 flex flex-wrap items-center gap-x-4 text-sm text-ink/70">
             {l.confidence && <span>{CONFIDENCE_TEXT[l.confidence]}</span>}
@@ -93,10 +95,10 @@ async function LocationView({ params }: { params: Promise<{ id: string }> }) {
           {l.titles.map((t) => (
             <li key={t.workId} className="border-b border-ink/15 py-6">
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <Link href={`/title/${t.workId}`} className="font-serif text-3xl leading-tight transition-colors hover:text-accent sm:text-4xl">{t.title}</Link>
+                <Link href={`/title/${t.workId}`} className="font-display text-3xl leading-tight transition-colors hover:text-accent sm:text-4xl">{t.title}</Link>
                 <span className="label text-ink/60">{t.type === "film" ? "Film" : "Series"}{t.year && ` · ${t.year}`}</span>
               </div>
-              {t.depicts && <p className="mt-2 font-serif text-xl italic text-accent">Stands in for {t.depicts}</p>}
+              {t.depicts && <p className="mt-2 font-display text-xl text-accent">Stands in for {t.depicts}</p>}
               {t.sceneNote && <p className="mt-2 max-w-2xl text-ink/80">{t.sceneNote}</p>}
               {t.sourceUrl && (
                 <a href={t.sourceUrl} target="_blank" rel="noopener noreferrer"

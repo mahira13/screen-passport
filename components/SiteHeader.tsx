@@ -8,8 +8,8 @@ import { usePassport } from "@/lib/use-passport";
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-baseline gap-1.5 leading-none ${className}`}>
-      <span className="font-serif text-2xl italic sm:text-[1.7rem]">Screen</span>
-      <span className="font-condensed text-xl tracking-[0.12em] text-accent sm:text-2xl">Passport</span>
+      <span className="font-display text-2xl sm:text-[1.7rem]">Screen</span>
+      <span className="font-display text-xl tracking-[0.12em] text-accent sm:text-2xl">Passport</span>
     </span>
   );
 }
@@ -47,7 +47,7 @@ export function SiteHeader({ active = null }: NavProps) {
             <Link key={n.key} href={n.href} aria-current={n.current ? "page" : undefined}
               className={`label relative inline-flex min-h-11 items-center gap-2 transition-colors hover:text-accent ${n.current ? "text-accent" : "text-ink/70"}`}>
               {n.label}
-              {n.key === "passport" && count > 0 && <span className="font-condensed text-sm tracking-normal">{count}</span>}
+              {n.key === "passport" && count > 0 && <span className="font-display text-sm tracking-normal">{count}</span>}
               {n.current && <span aria-hidden className="absolute inset-x-0 bottom-1.5 h-px bg-accent" />}
             </Link>
           ))}
@@ -73,7 +73,7 @@ export function BottomNav({ active = null }: NavProps) {
               </svg>
               <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
                 {n.label}
-                {n.key === "passport" && count > 0 && <span className="ml-1 font-condensed text-xs tracking-normal">{count}</span>}
+                {n.key === "passport" && count > 0 && <span className="ml-1 font-display text-xs tracking-normal">{count}</span>}
               </span>
             </Link>
           </li>

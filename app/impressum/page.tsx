@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Impressum · Screen Passport" };
 export default function ImpressumPage() {
   return (
     <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 pb-20 pt-10 sm:pt-16 text-base text-ink/85 [&>*]:max-w-2xl">
-      <h1 className="font-serif text-5xl tracking-tight text-ink sm:text-7xl">Impressum</h1>
+      <h1 className="font-display text-5xl tracking-tight text-ink sm:text-7xl">Impressum</h1>
       <p className="mt-1 text-sm text-ink/70">Information according to § 5 DDG</p>
 
       <h2 className="mt-6 label text-accent">Provider</h2>

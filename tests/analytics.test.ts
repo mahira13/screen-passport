@@ -25,3 +25,15 @@ describe("cleanProps", () => {
     expect(cleanProps([1, 2])).toEqual({});
   });
 });
+
+describe("passport id in events", () => {
+  it("keeps a well-formed anonymous passport id and drops anything else", () => {
+    expect(cleanProps({ passport: "abcdefghjkmn", work: "dark" })).toEqual({ passport: "abcdefghjkmn", work: "dark" });
+    expect(cleanProps({ passport: "someone@example.com" })).toEqual({});
+    expect(cleanProps({ passport: 12 })).toEqual({});
+  });
+  it("accepts the search and page view events", () => {
+    expect(isEventName("search")).toBe(true);
+    expect(isEventName("page_viewed")).toBe(true);
+  });
+});

@@ -10,7 +10,7 @@ const H = ({ children }: { children: React.ReactNode }) => (
 export default function PrivacyPage() {
   return (
     <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-8 lg:px-12 space-y-2 pb-20 pt-10 sm:pt-16 text-base text-ink/85 [&>*]:max-w-2xl">
-      <h1 className="font-serif text-5xl tracking-tight text-ink sm:text-7xl">Privacy</h1>
+      <h1 className="font-display text-5xl tracking-tight text-ink sm:text-7xl">Privacy</h1>
       <p className="text-sm text-ink/70">Last updated: [date]</p>
 
       <H>Who is responsible</H>
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
       <H>Usage statistics</H>
       <p>
         We count events such as &quot;map viewed&quot; or &quot;trip created&quot; with a few details like the start city.
-        These events contain no names, no IP addresses and no exact locations.
+        Each event carries your random passport id (the same anonymous id as in your share link), never names, IP addresses or exact locations.
       </p>
 
       <H>Services we use</H>

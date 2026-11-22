@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { autoRadius, centreOf, emptyMessage, parseRadius, popularTitles, radiusLabel, RADII, widerRadius, withinRadius } from "@/lib/discover";
+import { autoRadius, centreOf, emptyMessage, parseRadius, popularTitles, radiusLabel, RADII, widerRadius } from "@/lib/discover";
 
 describe("radius chips", () => {
   it("are 5 · 10 · 25 · 50 km · Anywhere", () => {
@@ -24,16 +24,6 @@ describe("emptyMessage", () => {
     expect(emptyMessage(10)).toBe("No verified locations within 10 km. Try 25 km or explore a collection.");
     expect(emptyMessage(50)).toBe("No verified locations within 50 km. Try searching anywhere or explore a collection.");
     expect(emptyMessage(null)).toMatch(/collection/);
-  });
-});
-
-describe("withinRadius", () => {
-  const berlin = { lat: 52.52, lng: 13.405 };
-  const potsdam = { lat: 52.39, lng: 13.065 }; // about 27 km
-  it("keeps points within the straight-line radius", () => {
-    expect(withinRadius([berlin, potsdam], berlin, 25)).toEqual([berlin]);
-    expect(withinRadius([berlin, potsdam], berlin, 50)).toHaveLength(2);
-    expect(withinRadius([berlin, potsdam], berlin, null)).toHaveLength(2);
   });
 });
 

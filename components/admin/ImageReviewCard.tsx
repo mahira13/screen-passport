@@ -15,13 +15,13 @@ export function ImageReviewCard({ row }: { row: ImageRow }) {
   const [pending, start] = useTransition();
   const run = (a: () => Promise<ActionResult>) => start(async () => setResult(await a()));
   return (
-    <article className="rounded-lg border border-neutral-200 p-3">
-      <p className="text-xs text-neutral-500">#{row.id} · {row.image_status ?? "needs review"}</p>
+    <article className="rounded-lg border border-ink/20 p-3">
+      <p className="text-xs text-ink/60">#{row.id} · {row.image_status ?? "needs review"}</p>
       <h3 className="font-medium">{row.name}{row.city && `, ${row.city}`}</h3>
       {row.image_thumb_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={row.image_thumb_url} alt={`Photo of ${row.name}`} className="mt-2 aspect-video w-full rounded object-cover" loading="lazy" />
-      ) : <p className="mt-2 text-sm text-neutral-500">No photo.</p>}
+      ) : <p className="mt-2 text-sm text-ink/60">No photo.</p>}
       {row.image_source_page && (
         <p className="mt-1 text-xs">
           <a href={row.image_source_page} target="_blank" rel="noopener noreferrer" className="underline">
@@ -29,16 +29,16 @@ export function ImageReviewCard({ row }: { row: ImageRow }) {
           </a>
         </p>
       )}
-      {row.image_check_reason && <p className="mt-1 text-xs text-neutral-600">Claude: {row.image_check_reason}</p>}
+      {row.image_check_reason && <p className="mt-1 text-xs text-ink/60">Claude: {row.image_check_reason}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
         <button disabled={pending || !row.image_thumb_url || row.image_status === "approved"} onClick={() => run(() => setImageStatus(row.id, "approved"))}
-          className="min-h-11 rounded bg-neutral-900 px-3 text-sm text-white disabled:opacity-40">Approve</button>
+          className="min-h-11 rounded bg-accent px-3 text-sm text-paper disabled:opacity-40">Approve</button>
         <button disabled={pending || !row.image_thumb_url || row.image_status === "rejected"} onClick={() => run(() => setImageStatus(row.id, "rejected"))}
-          className="min-h-11 rounded border border-neutral-900 px-3 text-sm disabled:opacity-40">Reject</button>
+          className="min-h-11 rounded border border-accent px-3 text-sm disabled:opacity-40">Reject</button>
         <button disabled={pending} onClick={() => run(() => findAnotherImage(row.id))}
-          className="min-h-11 rounded border border-neutral-400 px-3 text-sm disabled:opacity-40">{pending ? "Searching…" : "Find another"}</button>
+          className="min-h-11 rounded border border-ink/20 px-3 text-sm disabled:opacity-40">{pending ? "Searching…" : "Find another"}</button>
       </div>
-      {result && <p role="status" className={`mt-1 text-xs ${result.ok ? "text-green-700" : "text-red-500"}`}>{result.message}</p>}
+      {result && <p role="status" className={`mt-1 text-xs ${result.ok ? "text-emerald-300" : "text-red-300"}`}>{result.message}</p>}
     </article>
   );
 }

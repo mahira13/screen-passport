@@ -236,9 +236,9 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
 
       {/* Pillars ticker, like the credits line of a film studio site. */}
       <div aria-hidden className="overflow-hidden bg-accent py-3 text-paper">
-        <div className="ticker flex w-max gap-10 whitespace-nowrap font-condensed text-2xl tracking-[0.08em] sm:text-3xl">
+        <div className="ticker flex w-max gap-10 whitespace-nowrap font-display text-2xl tracking-[0.08em] sm:text-3xl">
           {[0, 1, 2, 3].flatMap((k) => ticker.map((t) => (
-            <span key={`${k}-${t}`} className="flex items-center gap-10">{t}<span className="font-serif italic">—</span></span>
+            <span key={`${k}-${t}`} className="flex items-center gap-10">{t}<span className="font-display">—</span></span>
           )))}
         </div>
       </div>
@@ -250,8 +250,8 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
           <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
             <div>
               <p className="label text-accent">{isMap ? "The map" : "01 — Near you"}</p>
-              <h2 className="mt-3 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-                Filmed near <span className="italic">{origin.id === "me" ? "you" : origin.label}.</span>
+              <h2 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+                Filmed near {origin.id === "me" ? "you" : origin.label}.
               </h2>
               <p className="mt-4 max-w-lg text-ink/70">
                 Every pin is a real filming place with a source. Pick where you start, then tap a title to see only its places.
@@ -289,7 +289,7 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
           <TitleChips titles={titles} colours={colours} selected={selected} onSelect={setSelected} />
         </div>
 
-        <div className={`${WRAP} mt-6 grid gap-8 pb-16 lg:grid-cols-[minmax(0,1fr)_340px] lg:pb-20`}>
+        <div className={`${WRAP} mt-6 grid grid-cols-[minmax(0,1fr)] gap-8 pb-16 lg:grid-cols-[minmax(0,1fr)_340px] lg:pb-20`}>
           <div ref={mapBox} className={`relative ${isMap ? "h-[68vh] max-h-[900px]" : "h-[56vh] max-h-[640px]"} min-h-[300px] scroll-mt-20 overflow-hidden -mx-4 sm:mx-0`}>
             <NearbyMap origin={origin} places={mapPlaces} focus={mapFocus} colours={colours} onReady={onMapReady} />
             <span aria-hidden className="pointer-events-none absolute left-3 top-3 z-[500] h-6 w-6 border-l-2 border-t-2 border-accent" />
@@ -298,7 +298,7 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
           {destinations.length > 0 && (
             <aside>
               <p className="label text-ink/60">Cinematic destinations</p>
-              <p className="mt-1 font-serif text-2xl italic text-ink/80">Where the most places are</p>
+              <p className="mt-1 font-display text-2xl text-ink/80">Where the most places are</p>
               <div className="mt-4">
                 <Destinations items={destinations} current={origin.id} onPick={(id) => {
                   pickCity(id);
@@ -317,8 +317,8 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
           <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink/20 pb-5">
             <div>
               <p className="label text-accent">Near you · {radiusLabel(radius)}</p>
-              <h2 className="mt-3 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-                The index<span className="italic text-accent">.</span>
+              <h2 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+                The index<span className="text-accent">.</span>
               </h2>
             </div>
             <p className="max-w-sm text-sm text-ink/70">
@@ -330,8 +330,8 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
           {groups.map((g, gi) => (
             <div key={g.key} className="mt-12">
               <h3 className="flex items-baseline gap-3">
-                <span className="font-condensed text-3xl tracking-wide sm:text-4xl">{g.label}</span>
-                <span className="font-serif text-xl italic text-ink/60">from {origin.label}</span>
+                <span className="font-display text-3xl tracking-wide sm:text-4xl">{g.label}</span>
+                <span className="font-display text-xl text-ink/60">from {origin.label}</span>
                 <span className="label ml-auto text-ink/60">{g.titles.length} {g.titles.length === 1 ? "title" : "titles"}</span>
               </h3>
               <ul className="mt-6 grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -375,7 +375,7 @@ function EmptyNear({ radius, onWider }: { radius: Radius; onWider: (r: Radius) =
   const wider = widerRadius(radius);
   return (
     <div role="status" className="mt-4 border-l-2 border-accent bg-surface p-5">
-      <p className="font-serif text-xl text-ink sm:text-2xl">{emptyMessage(radius)}</p>
+      <p className="font-display text-xl text-ink sm:text-2xl">{emptyMessage(radius)}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {wider !== undefined && (
           <button type="button" onClick={() => onWider(wider)}

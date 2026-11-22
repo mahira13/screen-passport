@@ -34,29 +34,3 @@ export function matchTitle(raw: string, works: Work[]): Work | null {
   const hits = works.filter((w) => namesOf(w).includes(q));
   return hits.length === 1 ? hits[0] : null;
 }
-
-/**
- * Autocomplete over our works only. Ranks: exact name, name starts with the
- * query, a word starts with the query, query appears anywhere.
- */
-export function searchWorks(raw: string, works: Work[], limit = 8): Work[] {
-  const q = normaliseTitle(raw);
-  if (!q) return [];
-  const rank = (w: Work): number => {
-    let best = Infinity;
-    for (const name of namesOf(w)) {
-      if (name === q) best = Math.min(best, 0);
-      else if (name.startsWith(q)) best = Math.min(best, 1);
-      else if (name.split(" ").some((word) => word.startsWith(q)) || name.includes(` ${q}`))
-        best = Math.min(best, 2);
-      else if (name.includes(q)) best = Math.min(best, 3);
-    }
-    return best;
-  };
-  return works
-    .map((w) => ({ w, r: rank(w) }))
-    .filter((x) => x.r !== Infinity)
-    .sort((a, b) => a.r - b.r || normaliseTitle(a.w.title).localeCompare(normaliseTitle(b.w.title)))
-    .slice(0, limit)
-    .map((x) => x.w);
-}

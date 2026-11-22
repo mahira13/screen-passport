@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchTitle, normaliseTitle, searchWorks } from "@/lib/match";
+import { matchTitle, normaliseTitle } from "@/lib/match";
 import type { Work } from "@/lib/types";
 
 const w = (id: string, title: string, aliases: string[] = []): Work => ({
@@ -46,21 +46,5 @@ describe("matchTitle", () => {
   });
   it("returns null when two works share a name", () => {
     expect(matchTitle("Dark", [...works, w("dark-2", "Dark")])).toBeNull();
-  });
-});
-
-describe("searchWorks", () => {
-  it("ranks prefix matches before word matches", () => {
-    const ids = searchWorks("b", works).map((x) => x.id);
-    expect(ids.slice(0, 2)).toEqual(["bourne-supremacy", "bridge-of-spies"]);
-  });
-  it("finds works by a word inside an alias", () => {
-    expect(searchWorks("panem", works).map((x) => x.id)).toEqual(["mockingjay-2"]);
-    expect(searchWorks("damen", works).map((x) => x.id)).toEqual(["queens-gambit"]);
-  });
-  it("returns nothing for empty or unmatched queries and respects the limit", () => {
-    expect(searchWorks("", works)).toEqual([]);
-    expect(searchWorks("zzz", works)).toEqual([]);
-    expect(searchWorks("e", works, 2)).toHaveLength(2);
   });
 });

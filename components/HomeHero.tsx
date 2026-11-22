@@ -19,10 +19,10 @@ function Plate({ t, n, className, big = false, onPick }: { t: NearbyTitle; n: nu
       className={`group block text-left transition-transform duration-500 hover:-translate-y-1 ${className}`}>
       <ScenePlate index={n} className="aspect-[2.39/1] w-full shadow-2xl shadow-black/60">
         <p className={`label text-ink/70 ${big ? "" : "hidden sm:block"}`}>Scene {String(n + 1).padStart(2, "0")} · {formatDistance(t.closest.distanceKm)}</p>
-        <p className={`mt-1 font-condensed leading-[0.9] tracking-wide text-ink ${big ? "text-3xl sm:text-5xl" : "text-2xl sm:text-3xl"}`}>
+        <p className={`mt-1 font-display leading-[0.9] tracking-wide text-ink ${big ? "text-3xl sm:text-5xl" : "text-2xl sm:text-3xl"}`}>
           {t.closest.name}
         </p>
-        <p className={`font-serif italic text-accent ${big ? "text-xl sm:text-2xl" : "text-lg"}`}>{t.title}</p>
+        <p className={`font-display text-accent ${big ? "text-xl sm:text-2xl" : "text-lg"}`}>{t.title}</p>
       </ScenePlate>
     </button>
   );
@@ -41,8 +41,8 @@ export function HomeHero({ cityLabel, titles, placeCount, onPick, search }: Prop
             <span>{cityLabel} edition</span>
             {placeCount > 0 && (<><span aria-hidden className="h-px w-8 bg-ink/30" /><span>{placeCount} sourced places</span></>)}
           </p>
-          <h1 className="mt-6 font-serif text-[3.2rem] leading-[0.92] tracking-tight sm:text-7xl xl:text-[6.5rem]">
-            Your favourite stories don&apos;t have to <span className="italic text-accent">stay on screen.</span>
+          <h1 className="mt-6 font-display text-[2.6rem] leading-[0.92] tracking-tight sm:text-7xl xl:text-[6.5rem]">
+            Your favourite stories don&apos;t have to <span className="text-accent">stay on screen.</span>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink/75">
             Screen Passport shows where films and series were really shot near you. Mark what you&apos;ve watched,

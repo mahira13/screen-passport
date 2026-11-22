@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { track } from "@/lib/analytics";
 import type { SearchHit } from "@/lib/discover";
 import { normaliseTitle } from "@/lib/match";
 import { RequestBox } from "./RequestBox";
@@ -26,7 +27,10 @@ export function CatalogueSearch({ onPick, examples }: { onPick: (hit: SearchHit)
     const t = setTimeout(() => {
       fetch(`/api/search?q=${encodeURIComponent(term)}`, { signal: ctrl.signal })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-        .then((json: { results: SearchHit[] }) => setState({ q: term, hits: json.results.slice(0, 8) }))
+        .then((json: { results: SearchHit[] }) => {
+          setState({ q: term, hits: json.results.slice(0, 8) });
+          if (json.results.length === 0) track("search", { results: 0 }); // no query text: it could be anything
+        })
         .catch((e) => e.name !== "AbortError" && setState({ q: term, error: true }));
     }, 200);
     return () => { clearTimeout(t); ctrl.abort(); };
@@ -37,6 +41,7 @@ export function CatalogueSearch({ onPick, examples }: { onPick: (hit: SearchHit)
   const nothing = !!current && "hits" in current && hits.length === 0;
 
   const pick = (hit: SearchHit) => {
+    track("search", { results: hits.length, kind: hit.kind, id: hit.id });
     onPick(hit);
     setQ("");
   };
@@ -48,15 +53,15 @@ export function CatalogueSearch({ onPick, examples }: { onPick: (hit: SearchHit)
         <input id={`${listId}-q`} type="search" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off"
           placeholder={examples.length ? `${examples.join(", ")}…` : "A film, series or city…"} aria-controls={listId}
           onKeyDown={(e) => e.key === "Enter" && hits[0] && (e.preventDefault(), pick(hits[0]))}
-          className="min-w-0 flex-1 bg-transparent py-3 font-serif text-2xl text-ink placeholder:text-ink/55 focus:outline-none sm:text-3xl" />
-        <span aria-hidden className="self-center font-condensed text-xl tracking-wider text-accent">Find ↘</span>
+          className="min-w-0 flex-1 bg-transparent py-3 font-display text-2xl text-ink placeholder:text-ink/55 focus:outline-none sm:text-3xl" />
+        <span aria-hidden className="self-center font-display text-xl tracking-wider text-accent">Find ↘</span>
       </div>
       <ul id={listId} aria-live="polite" className="mt-1">
         {hits.map((h) => (
           <li key={`${h.kind}:${h.id}`}>
             <button type="button" onClick={() => pick(h)} disabled={h.kind !== "work" && !h.centre}
               className="flex w-full items-baseline justify-between gap-3 border-b border-ink/10 py-3 text-left transition-colors hover:text-accent disabled:opacity-50">
-              <span className="font-serif text-xl">{h.label}</span>
+              <span className="font-display text-xl">{h.label}</span>
               <span className="label shrink-0 text-ink/60">{KIND[h.kind]} · {h.places} {h.places === 1 ? "place" : "places"}</span>
             </button>
           </li>

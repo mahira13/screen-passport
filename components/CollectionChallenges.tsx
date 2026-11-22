@@ -45,7 +45,7 @@ function Challenge({ c, n, watched, visited, big, wide }: Props) {
           </>
         )}
         <p className="label text-ink/75">Challenge {String(n + 1).padStart(2, "0")}{c.city && ` · ${c.city}`}</p>
-        <h3 className={`mt-1 font-serif leading-[0.9] tracking-tight text-ink ${big ? "text-5xl sm:text-7xl" : "text-4xl sm:text-5xl"}`}>
+        <h3 className={`mt-1 font-display leading-[0.9] tracking-tight text-ink ${big ? "text-5xl sm:text-7xl" : "text-4xl sm:text-5xl"}`}>
           <Link href={c.href} className="underline-offset-8 hover:text-accent hover:underline">{c.name}</Link>
         </h3>
       </ScenePlate>
@@ -54,18 +54,18 @@ function Challenge({ c, n, watched, visited, big, wide }: Props) {
       {p.complete && (
         <span aria-label="Collection complete"
           className="absolute right-4 top-4 z-10 flex h-24 w-24 rotate-[-12deg] flex-col items-center justify-center rounded-full border-[3px] border-double border-accent bg-paper/80 text-center text-accent backdrop-blur-sm">
-          <span className="font-condensed text-xl leading-none tracking-widest">Complete</span>
-          <span className="font-serif text-xs italic">{p.total}/{p.total}</span>
+          <span className="font-display text-xl leading-none tracking-widest">Complete</span>
+          <span className="font-display text-xs">{p.total}/{p.total}</span>
         </span>
       )}
 
       <div className="flex flex-1 flex-col p-5 sm:p-6">
-        {c.description && <p className="font-serif text-xl italic leading-snug text-ink/80">{c.description}</p>}
+        {c.description && <p className="font-display text-xl leading-snug text-ink/80">{c.description}</p>}
 
         <div className="mt-5">
           <div className="flex items-baseline justify-between gap-3">
             <span className="label text-ink/60">Places visited</span>
-            <span className="font-condensed text-3xl leading-none text-accent">{p.done}<span className="text-ink/60">/{p.total}</span></span>
+            <span className="font-display text-3xl leading-none text-accent">{p.done}<span className="text-ink/60">/{p.total}</span></span>
           </div>
           <div className="mt-2 flex gap-1" role="img" aria-label={`Visited ${p.done} of ${p.total} places`}>
             {c.places.map((x) => (
@@ -88,7 +88,7 @@ function Challenge({ c, n, watched, visited, big, wide }: Props) {
             const on = seen.has(w.id);
             return (
               <li key={w.id} className="flex items-center justify-between gap-3 py-2.5">
-                <span className={`font-serif text-lg ${on ? "text-ink" : "text-ink/70"}`}>{w.title}</span>
+                <span className={`font-display text-lg ${on ? "text-ink" : "text-ink/70"}`}>{w.title}</span>
                 {w.live ? (
                   <button type="button" aria-pressed={on} onClick={() => toggleWatched(w.id, c.from)}
                     aria-label={`${on ? "Watched" : "Mark as watched"}: ${w.title}`}
@@ -130,8 +130,8 @@ export function CollectionChallenges({ collections }: { collections: ChallengeCo
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="label text-accent">03 — Collect</p>
-            <h2 className="mt-3 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-              Cinematic <span className="italic text-accent">challenges.</span>
+            <h2 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+              Cinematic <span className="text-accent">challenges.</span>
             </h2>
             <p className="mt-4 max-w-lg text-ink/70">
               Each collection is a small adventure: the films of one city, or every place one title was shot. Visit every place and check in on site to complete the set.
@@ -139,7 +139,7 @@ export function CollectionChallenges({ collections }: { collections: ChallengeCo
           </div>
           {visited.length > 0 && (
             <p className="label text-ink/60">
-              <span className="font-condensed text-4xl tracking-normal text-ink">{done}</span> of {shown.length} complete
+              <span className="font-display text-4xl tracking-normal text-ink">{done}</span> of {shown.length} complete
             </p>
           )}
         </div>

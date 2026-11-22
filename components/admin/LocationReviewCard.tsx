@@ -9,7 +9,7 @@ import type { FilmLocation } from "@/lib/types";
 
 const PinMap = dynamic(() => import("./PinMap"), {
   ssr: false,
-  loading: () => <div className="h-48 w-full rounded bg-neutral-100" />,
+  loading: () => <div className="h-48 w-full rounded bg-surface" />,
 });
 
 export type ReviewLocation = Pick<
@@ -57,13 +57,13 @@ export function LocationReviewCard({ location: l }: { location: ReviewLocation }
   };
 
   return (
-    <article className="rounded-lg border border-neutral-200 p-4">
-      <p className="text-xs text-neutral-500">
+    <article className="rounded-lg border border-ink/20 p-4">
+      <p className="text-xs text-ink/60">
         #{l.id} · {l.works?.title ?? "Unknown title"} · {l.verification_status?.replace("_", " ") ?? "draft"}
       </p>
       <h2 className="text-lg font-medium">{l.name}</h2>
       {l.scene_note && <p className="text-sm">{l.scene_note}</p>}
-      <p className="mt-1 text-sm text-neutral-600">
+      <p className="mt-1 text-sm text-ink/60">
         {[l.address, l.city].filter(Boolean).join(", ")}
         {l.visit_note && ` · ${l.visit_note}`}
       </p>
@@ -72,12 +72,12 @@ export function LocationReviewCard({ location: l }: { location: ReviewLocation }
         <a href={l.source_url} target="_blank" rel="noopener noreferrer" className="underline">
           {l.source_name ?? l.source_url}
         </a>
-        {untrusted && <span className="ml-2 rounded bg-red-500/15 px-1.5 text-red-400">not a trusted source</span>}
+        {untrusted && <span className="ml-2 rounded bg-red-500/15 px-1.5 text-red-300">not a trusted source</span>}
       </p>
 
       {l.review && (
-        <div className="mt-2 rounded bg-neutral-100 p-2 text-sm text-neutral-800">
-          <p className="text-xs text-neutral-500">AI review {new Date(l.review.created_at).toLocaleString("en-GB")}: {l.review.decision.replace("_", " ")}</p>
+        <div className="mt-2 rounded bg-surface p-2 text-sm text-ink">
+          <p className="text-xs text-ink/60">AI review {new Date(l.review.created_at).toLocaleString("en-GB")}: {l.review.decision.replace("_", " ")}</p>
           {l.review.reasons.length > 0 && <ul className="mt-1 list-disc pl-5">{l.review.reasons.map((r) => <li key={r}>{r}</li>)}</ul>}
           {l.review.evidence_quote && <p className="mt-1 italic">“{l.review.evidence_quote}”</p>}
         </div>
@@ -87,10 +87,10 @@ export function LocationReviewCard({ location: l }: { location: ReviewLocation }
         {seen ? (
           <PinMap lat={point?.lat ?? null} lng={point?.lng ?? null} onPick={pick} />
         ) : (
-          <div className="h-48 w-full rounded bg-neutral-100" />
+          <div className="h-48 w-full rounded bg-surface" />
         )}
       </div>
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="mt-1 text-xs text-ink/60">
         {l.coord_quality ? `Coordinates ${QUALITY_NOTE[l.coord_quality]}.` : `No coordinates yet. Searched for: ${l.geocode_query ?? "nothing"}.`}{" "}
         Click the map or drag the pin to move it.
       </p>
@@ -99,23 +99,23 @@ export function LocationReviewCard({ location: l }: { location: ReviewLocation }
         <label className="text-xs">
           Lat
           <input value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal"
-            className="mt-0.5 block w-32 rounded border border-neutral-300 px-2 py-1 text-sm" />
+            className="mt-0.5 block w-32 rounded border border-ink/20 px-2 py-1 text-sm" />
         </label>
         <label className="text-xs">
           Lng
           <input value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal"
-            className="mt-0.5 block w-32 rounded border border-neutral-300 px-2 py-1 text-sm" />
+            className="mt-0.5 block w-32 rounded border border-ink/20 px-2 py-1 text-sm" />
         </label>
         <button disabled={pending || !point} onClick={() => run(() => verifyCoordinates(l.id, lat, lng))}
-          className="rounded border border-neutral-900 px-3 py-1.5 text-sm disabled:opacity-40">
+          className="rounded border border-accent px-3 py-1.5 text-sm disabled:opacity-40">
           Verify coordinates
         </button>
         <button disabled={pending || untrusted} onClick={() => run(() => setLive(l.id))}
-          className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-40">
+          className="rounded bg-accent px-3 py-1.5 text-sm text-paper disabled:opacity-40">
           Set live
         </button>
       </div>
-      {result && <p className={`mt-2 text-sm ${result.ok ? "text-green-700" : "text-red-400"}`}>{result.message}</p>}
+      {result && <p className={`mt-2 text-sm ${result.ok ? "text-emerald-300" : "text-red-300"}`}>{result.message}</p>}
     </article>
   );
 }

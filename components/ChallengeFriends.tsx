@@ -72,7 +72,7 @@ export function ChallengeFriends({ collection }: { collection: string }) {
 export function JoinChallenge({ id, full }: { id: string; full: boolean }) {
   const router = useRouter();
   const [done, setDone] = useState(false);
-  if (done) return <p role="status" className="mt-4 font-serif text-xl italic text-accent">You&apos;re in. Check in on site to move up.</p>;
+  if (done) return <p role="status" className="mt-4 font-display text-xl text-accent">You&apos;re in. Check in on site to move up.</p>;
   if (full) return <p className="mt-3 text-sm">This challenge is full (50 people).</p>;
   return (
     <NameForm label="Join with your first name" cta="Join" onSubmit={async (firstName) => {

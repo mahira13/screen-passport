@@ -45,7 +45,7 @@ export function OrganiserPanel({ tripId, url }: { tripId: string; url: string })
 
   return (
     <section className="mt-8 border-2 border-dashed border-accent/50 p-5">
-      <h2 className="font-serif text-2xl">You organise this trip</h2>
+      <h2 className="font-display text-2xl">You organise this trip</h2>
       <p className="mt-1 text-sm">
         Keep your secret organiser link to manage the trip from another phone. Don&apos;t share it: anyone with it can delete the trip.
       </p>

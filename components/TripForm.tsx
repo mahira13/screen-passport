@@ -86,7 +86,7 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
 
       {none ? (
         <div className="border-l-2 border-accent bg-surface p-5">
-          <p className="font-serif text-2xl">
+          <p className="font-display text-2xl">
             No films near you yet.
             {(nearest ?? nearestCity) && ` The nearest are in ${nearest ?? nearestCity}.`}
           </p>

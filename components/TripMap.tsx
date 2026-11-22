@@ -13,7 +13,7 @@ const CREAM = "#F4EFE4";
 function numberIcon(n: number) {
   return L.divIcon({
     className: "",
-    html: `<span style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:${n === 1 ? GOLD : INK};color:${n === 1 ? INK : CREAM};border:2px solid ${n === 1 ? INK : GOLD};box-shadow:0 2px 8px rgba(0,0,0,.5);font:400 18px var(--font-bebas),system-ui,sans-serif">${n}</span>`,
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:${n === 1 ? GOLD : INK};color:${n === 1 ? INK : CREAM};border:2px solid ${n === 1 ? INK : GOLD};box-shadow:0 2px 8px rgba(0,0,0,.5);font:600 15px var(--font-grotesk),system-ui,sans-serif">${n}</span>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15],
   });

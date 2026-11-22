@@ -16,7 +16,7 @@ export default function NewTripPage(props: PageProps<"/trip/new">) {
       <div className="relative mx-auto w-full max-w-screen-2xl px-4 pb-20 pt-8 sm:px-8 sm:pt-12 lg:px-12 [&>*]:max-w-2xl">
       <Link href="/" className="label inline-flex min-h-11 items-center text-ink/70 hover:text-accent">← Back</Link>
       <p className="label mt-8 text-accent">02 — Explore</p>
-      <h1 className="mt-3 font-serif text-6xl leading-[0.92] tracking-tight sm:text-8xl">Create a <span className="italic text-accent">trip.</span></h1>
+      <h1 className="mt-3 font-display text-5xl leading-[0.95] tracking-tight sm:text-8xl">Create a <span className="text-accent">trip.</span></h1>
       <Suspense fallback={<p className="label mt-6 text-ink/60">Loading…</p>}>
         <NewTrip searchParams={props.searchParams} />
       </Suspense>
@@ -54,8 +54,8 @@ async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, 
 
   return (
     <>
-      <p className="mt-6 font-serif text-2xl italic leading-snug text-ink/90">
-        {works.map((w) => w.title).join(", ")} <span className="not-italic text-ink/60">· from {start.label}</span>
+      <p className="mt-6 font-display text-2xl leading-snug text-ink/90">
+        {works.map((w) => w.title).join(", ")} <span className="text-ink/60">· from {start.label}</span>
       </p>
       <p className="mt-2 text-sm text-ink/70">
         We pick the closest filming places and put them in a sensible order. Friends can join with a link.

@@ -15,6 +15,7 @@ import { directionsUrl } from "@/lib/links";
 import { googleMapsRouteUrl, kmBetweenStops } from "@/lib/route";
 import { formatTripDate, LENGTH_LABEL, MODE_LABEL, shareText, tripLaylaPrompt, tzLabel } from "@/lib/trip";
 import { getTrip, type TripView } from "@/lib/trip-server";
+import { TrackView } from "@/components/TrackView";
 
 // "failed": the database couldn't be read. Shown as a friendly message, not a crash page.
 const loadTrip = cache(async (id: string): Promise<TripView | null | "failed"> => {
@@ -59,7 +60,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
   if (trip === "failed") {
     return (
       <div className="px-4 pt-10 text-center">
-        <h1 className="font-serif text-4xl">We can&apos;t open this trip right now</h1>
+        <h1 className="font-display text-4xl">We can&apos;t open this trip right now</h1>
         <p className="mt-2 text-ink/80">Something went wrong on our side. Please try again in a minute.</p>
         <Link href="/" className="label mt-6 inline-block bg-accent px-5 py-3.5 text-paper">
           Find filming places near you
@@ -75,13 +76,14 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <header className="relative overflow-hidden">
+      <TrackView page="trip" id={trip.id} />
         <div aria-hidden className="pointer-events-none absolute -right-40 -top-20 h-[32rem] w-[32rem] rounded-full bg-accent/10 blur-[120px]" />
         <div className="relative mx-auto w-full max-w-screen-2xl px-4 pb-12 pt-10 sm:px-8 sm:pt-16 lg:px-12">
         <p className="label flex flex-wrap items-center gap-3 text-ink/60">
           <span className="text-accent">Fan trip</span><span aria-hidden className="h-px w-8 bg-ink/30" />
           <span>Organised by {trip.organiser}</span>
         </p>
-        <h1 className="mt-5 max-w-5xl font-serif text-5xl leading-[0.92] tracking-tight sm:text-7xl xl:text-8xl">{trip.title}</h1>
+        <h1 className="mt-5 max-w-5xl font-display text-5xl leading-[0.92] tracking-tight sm:text-7xl xl:text-8xl">{trip.title}</h1>
         <dl className="mt-8 grid max-w-4xl grid-cols-2 border-t border-ink/15 sm:grid-cols-4">
           {[
             ["When", formatTripDate(trip.startsAt, trip.timeZone)],
@@ -91,11 +93,11 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
           ].map(([k, v]) => (
             <div key={k} className="border-b border-ink/15 py-4 pr-4">
               <dt className="label text-ink/60">{k}</dt>
-              <dd className="mt-1 font-serif text-xl leading-tight">{v}</dd>
+              <dd className="mt-1 font-display text-xl leading-tight">{v}</dd>
             </div>
           ))}
         </dl>
-        {trip.intro && <p className="mt-6 max-w-3xl font-serif text-2xl italic leading-snug text-ink/85">{trip.intro}</p>}
+        {trip.intro && <p className="mt-6 max-w-3xl font-display text-2xl leading-snug text-ink/85">{trip.intro}</p>}
         <div className="mt-8">
           <TripActions tripId={trip.id} routeUrl={googleMapsRouteUrl(trip.stops, trip.mode)} transit={trip.mode === "transit"}
             laylaPrompt={tripLaylaPrompt(trip.startsAt, trip.timeZone, trip.stops)} shareTitle={trip.title}
@@ -108,7 +110,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
         <div className="min-w-0">
           <section>
             <h2 className="label text-accent">Meeting point</h2>
-            <p className="mt-2 font-serif text-3xl leading-tight sm:text-4xl">{trip.meetingPoint}</p>
+            <p className="mt-2 font-display text-3xl leading-tight sm:text-4xl">{trip.meetingPoint}</p>
             {meeting && (
               <p className="text-sm text-ink/70">
                 {trip.meetingIsFirstStop ? "Stop 1 on the map" : `Then start at stop 1, ${meeting.name}`}
@@ -130,7 +132,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
             <ol className="mt-4 border-t border-ink/15">
               {trip.stops.map((s, i) => (
                 <li key={s.id} className="flex gap-5 border-b border-ink/15 py-6">
-                  <span aria-hidden className={`w-12 shrink-0 font-condensed text-6xl leading-[0.8] tabular-nums ${i === 0 ? "text-accent" : "text-ink/40"}`}>
+                  <span aria-hidden className={`w-14 shrink-0 font-display text-5xl leading-[0.8] tabular-nums ${i === 0 ? "text-accent" : "text-ink/40"}`}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div className="min-w-0">
@@ -138,8 +140,8 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
                       {s.plan.time && <span className="text-accent">{s.plan.time} · </span>}
                       {s.plan.travel_from_previous}
                     </p>
-                    <h3 className="mt-1.5 font-serif text-3xl leading-tight">{s.name}</h3>
-                    <p className="mt-0.5 font-serif text-lg italic text-accent">{s.title}{s.city && <span className="text-ink/60"> · {s.city}</span>}</p>
+                    <h3 className="mt-1.5 font-display text-3xl leading-tight">{s.name}</h3>
+                    <p className="mt-0.5 font-display text-lg text-accent">{s.title}{s.city && <span className="text-ink/60"> · {s.city}</span>}</p>
                     {(s.plan.why_fans_love_it ?? s.sceneNote) && <p className="mt-3 text-ink/80">{s.plan.why_fans_love_it ?? s.sceneNote}</p>}
                     {s.visitNote && <p className="mt-1 text-xs text-ink/60">{s.visitNote}</p>}
                     <a href={directionsUrl(s)} target="_blank" rel="noopener noreferrer"
@@ -159,7 +161,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
             <section className="mt-12 border-l-2 border-accent bg-surface p-6">
               <h2 className="label text-accent">Tips</h2>
               <ul className="mt-3 space-y-3">
-                {trip.plan.tips.map((t, i) => <li key={i} className="flex gap-3 font-serif text-lg leading-snug"><span aria-hidden className="text-accent">✦</span>{t}</li>)}
+                {trip.plan.tips.map((t, i) => <li key={i} className="flex gap-3 font-display text-lg leading-snug"><span aria-hidden className="text-accent">✦</span>{t}</li>)}
               </ul>
             </section>
           )}

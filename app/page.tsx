@@ -42,8 +42,8 @@ export default async function Home() {
             </>
           )}
         </p>
-        <h1 className="mt-6 max-w-5xl font-serif text-[3.1rem] leading-[0.92] tracking-tight sm:text-7xl xl:text-[6.5rem]">
-          What cinematic <span className="italic text-accent">adventure</span> do you want to go on?
+        <h1 className="mt-6 max-w-5xl font-display text-[2.6rem] leading-[0.92] tracking-tight sm:text-7xl xl:text-[6.5rem]">
+          What cinematic <span className="text-accent">adventure</span> do you want to go on?
         </h1>
 
         <div aria-hidden className="sprockets mb-3 mt-12 h-3 w-full sm:mt-16" />
@@ -53,8 +53,8 @@ export default async function Home() {
               <Link href={e.href} className="group block h-full transition-transform duration-500 hover:-translate-y-1">
                 <ScenePlate index={i} className="aspect-[4/3] h-full shadow-2xl shadow-black/60 md:aspect-[3/4] lg:aspect-[16/11]">
                   <p className="label text-ink/70">Reel {String(i + 1).padStart(2, "0")}</p>
-                  <p className="mt-2 font-serif text-3xl italic leading-none text-accent sm:text-4xl">{e.verb}</p>
-                  <p className="mt-1 font-condensed text-4xl leading-[0.9] tracking-wide text-ink sm:text-5xl">{e.title}</p>
+                  <p className="mt-2 font-display text-3xl leading-none text-accent sm:text-4xl">{e.verb}</p>
+                  <p className="mt-1 font-display text-4xl leading-[0.9] tracking-wide text-ink sm:text-5xl">{e.title}</p>
                   <p className="mt-3 max-w-xs text-sm text-ink/75">{e.text}</p>
                   <p className="label mt-4 text-accent">
                     Start <span aria-hidden className="inline-block transition-transform group-hover:translate-x-1">→</span>

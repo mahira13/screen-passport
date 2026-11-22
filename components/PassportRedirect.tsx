@@ -20,8 +20,8 @@ export function PassportRedirect() {
       <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-accent/10 blur-[120px]" />
       <div className="relative mx-auto w-full max-w-screen-2xl px-4 pb-24 pt-12 sm:px-8 sm:pt-20 lg:px-12">
         <p className="label text-accent">My Passport</p>
-        <h1 className="mt-4 max-w-3xl font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-          Your passport is <span className="italic text-accent">still blank.</span>
+        <h1 className="mt-4 max-w-3xl font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+          Your passport is <span className="text-accent">still blank.</span>
         </h1>
         <p className="mt-6 max-w-lg text-lg text-ink/75">
           Tap &ldquo;Watched it&rdquo; on a title and your Screen Passport starts filling with stamps. No account needed;

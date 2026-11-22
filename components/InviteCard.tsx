@@ -67,7 +67,7 @@ export function InviteCard({ tripId, data }: { tripId: string; data: InviteData 
   return (
     <section className="mt-6 bg-surface p-5 sm:p-6">
       <h2 className="label text-accent">Invite friends</h2>
-      <p className="mt-2 font-serif text-2xl leading-tight">Now showing, <span className="italic">in your story.</span></p>
+      <p className="mt-2 font-display text-2xl leading-tight">Now showing, in your story.</p>
       <p className="mt-1 text-sm text-ink/70">A &quot;Now showing&quot; ticket for your story, with the trip link.</p>
       <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-end">
         <div

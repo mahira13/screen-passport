@@ -32,7 +32,7 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
     <article className="border-l-2 border-accent/60 bg-paper/70 p-4">
       <PlacePhoto photo={p.photo} name={p.name} className="-mx-4 -mt-4 mb-1" />
       <div className="flex items-baseline justify-between gap-3">
-        <h4 className="font-serif text-2xl leading-tight">
+        <h4 className="font-display text-2xl leading-tight">
           <Link href={`/location/${p.id}`} className="underline-offset-4 transition-colors hover:text-accent hover:underline">{p.name}</Link>
         </h4>
         <span className="label shrink-0 text-ink/70">{formatDistance(p.distanceKm)}</span>
@@ -41,7 +41,7 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
         {p.title}
         {p.city && ` · ${p.city}`}
       </p>
-      {p.sceneNote && <p className="mt-2 font-serif text-lg italic leading-snug text-accent">{p.sceneNote}</p>}
+      {p.sceneNote && <p className="mt-2 font-display text-lg leading-snug text-accent">{p.sceneNote}</p>}
       {(p.visitNote || approximate) && (
         <p className="mt-2 text-xs text-ink/70">
           {p.visitNote}
@@ -70,7 +70,7 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
       </div>
       {copied !== null && (
         <p role="status" className="mt-2 text-xs text-ink/80">
-          Copied. Paste it into Layla: <span className="italic">“{copied}”</span>
+          Copied. Paste it into Layla: “{copied}”
         </p>
       )}
     </article>

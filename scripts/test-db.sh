@@ -37,7 +37,7 @@ psql_run < supabase/migrations/008_verification.sql
 psql_run < supabase/migrations/008_verification.sql # safe to run twice
 psql_run < supabase/migrations/009_images.sql
 psql_run < supabase/migrations/009_images.sql # safe to run twice
-for f in 010_featured_collections 011_search_normalise 012_featured_ranks 013_location_aliases_outline 014_pipeline 015_challenges; do
+for f in 010_featured_collections 011_search_normalise 012_featured_ranks 013_location_aliases_outline 014_pipeline 015_challenges 016_hardening; do
   psql_run < "supabase/migrations/$f.sql"
   psql_run < "supabase/migrations/$f.sql" # safe to run twice
 done

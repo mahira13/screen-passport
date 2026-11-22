@@ -3,7 +3,7 @@ import { readJson, serverError } from "@/lib/http";
 import { getLiveData } from "@/lib/live-data";
 import { matchTitle, normaliseTitle } from "@/lib/match";
 import { startTitleSearch, workOnRequest } from "@/lib/pipeline/requests";
-import { requestIpHash } from "@/lib/rate-limit";
+import { LIMITS, requestIpHash, takeRate } from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const maxDuration = 60;
@@ -20,8 +20,12 @@ export async function POST(req: Request) {
     const known = matchTitle(raw, (await getLiveData()).works);
     if (known) return NextResponse.json({ known: known.id });
 
+    const ipHash = requestIpHash(req);
+    if (!(await takeRate(LIMITS.requestsPerIp, ipHash))) {
+      return NextResponse.json({ error: "That's a lot of requests for one day. Try again tomorrow." }, { status: 429 });
+    }
     const db = supabaseAdmin();
-    const result = await startTitleSearch(db, raw, normalised, requestIpHash(req));
+    const result = await startTitleSearch(db, raw, normalised, ipHash);
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
     if (!result.status.done) after(() => workOnRequest(db, result.status.requestId)); // the first batch, right away
     return NextResponse.json({ requested: true, ...result.status }, { status: result.started ? 201 : 200 });

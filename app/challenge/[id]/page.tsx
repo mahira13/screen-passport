@@ -9,6 +9,7 @@ import { MAX_CHALLENGERS } from "@/lib/challenges";
 import { challengeStandings, getChallenge, type ChallengeView } from "@/lib/challenges-server";
 import { isPassportId } from "@/lib/ids";
 import { siteUrl } from "@/lib/site-url";
+import { TrackView } from "@/components/TrackView";
 
 const WRAP = "mx-auto w-full max-w-screen-md px-4 sm:px-8";
 
@@ -51,7 +52,7 @@ export default function ChallengePage(props: PageProps<"/challenge/[id]">) {
 function Message({ title, text }: { title: string; text: string }) {
   return (
     <div className={`${WRAP} pt-16 text-center`}>
-      <h1 className="font-serif text-4xl">{title}</h1>
+      <h1 className="font-display text-4xl">{title}</h1>
       <p className="mt-2 text-ink/80">{text}</p>
       <Link href="/collections" className="label mt-6 inline-flex min-h-11 items-center bg-accent px-5 text-paper">Browse collections</Link>
     </div>
@@ -73,8 +74,9 @@ async function Challenge({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <header className={`${WRAP} pt-10 sm:pt-16`}>
+        <TrackView page="challenge" id={id} />
         <p className="label text-accent">Friend challenge</p>
-        <h1 className="mt-2 font-serif text-5xl leading-[0.95] tracking-tight sm:text-6xl">{c.name}</h1>
+        <h1 className="mt-2 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl">{c.name}</h1>
         <p className="mt-3 text-ink/80">
           Who checks in at all {ch.goal.length} places first? Check-ins count only on site, within 200 m.
         </p>
@@ -86,10 +88,10 @@ async function Challenge({ params }: { params: Promise<{ id: string }> }) {
 
       <section className={`${WRAP} mt-10 border-t-2 border-accent bg-surface p-5 sm:p-6`}>
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="font-serif text-3xl">Standings</h2>
+          <h2 className="font-display text-3xl">Standings</h2>
           <span className="label text-ink/60">{rows.length} / {MAX_CHALLENGERS}</span>
         </div>
-        {winner && <p className="mt-2 font-serif text-xl italic text-accent">{winner.name} finished first.</p>}
+        {winner && <p className="mt-2 font-display text-xl text-accent">{winner.name} finished first.</p>}
         {rows.length === 0 ? (
           <p className="mt-4 text-ink/80">Nobody has joined yet. Be the first.</p>
         ) : (

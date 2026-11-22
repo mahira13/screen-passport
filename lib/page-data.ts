@@ -2,6 +2,8 @@
 import type { ChallengeCollection } from "@/components/CollectionChallenges";
 import { deriveCities, findCityByName, startCity, type City } from "./cities";
 import { centreOf } from "./discover";
+import { buildMapPlaces, type MapPlace } from "./explore-map";
+import type { MapCollection } from "@/components/ExploreMap";
 import { buildCollections, type CollectionModel } from "./collections-model";
 import { destinations, type Destination } from "./destinations";
 import { getLiveData } from "./live-data";
@@ -79,5 +81,23 @@ export async function homeCounts(): Promise<{ places: number; titles: number; co
     };
   } catch {
     return null;
+  }
+}
+
+/** Everything the Explore map needs: one marker per published place, collections and start cities. */
+export async function mapData(): Promise<{ places: MapPlace[]; collections: MapCollection[]; cities: City[]; start: City; failed: boolean }> {
+  try {
+    const data = await getLiveData();
+    const cities = deriveCities(data.locations);
+    return {
+      places: buildMapPlaces(data.locations, data.works),
+      collections: buildCollections(data).filter((c) => c.places.length > 0)
+        .map((c) => ({ key: c.key, name: c.name, placeIds: c.places.map((p) => p.id) }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      cities, start: startCity(cities), failed: false,
+    };
+  } catch (e) {
+    console.error("map data failed:", e instanceof Error ? e.message : e);
+    return { places: [], collections: [], cities: [], start: startCity([]), failed: true };
   }
 }

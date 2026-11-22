@@ -94,7 +94,7 @@ input:not([type="checkbox"]):not([type="radio"]) {
   filter: invert(100%) hue-rotate(180deg) saturate(0.15) brightness(0.95) contrast(0.9);
   opacity: 0.72; /* the navy container shows through, so the map reads navy */
 }
-.leaflet-container {
+html .leaflet-container { /* html: beats leaflet.css, which loads later (see the popup note below) */
   background: #16213a;
   font-family: var(--font-sans);
 }
@@ -126,17 +126,19 @@ input:not([type="checkbox"]):not([type="radio"]) {
   background: #e3b04b !important;
   color: #16213a !important;
 }
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
+/* Prefixed with .leaflet-container: leaflet.css loads with the map chunk, after this file, and
+   would otherwise win with its white popup. */
+.leaflet-container .leaflet-popup-content-wrapper,
+.leaflet-container .leaflet-popup-tip {
   background: #1d2b4a;
   color: #f4efe4;
   border-radius: 2px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
-.leaflet-popup-content-wrapper {
+.leaflet-container .leaflet-popup-content-wrapper {
   border-top: 3px solid #e3b04b;
 }
-.leaflet-container a.leaflet-popup-close-button {
+html .leaflet-container a.leaflet-popup-close-button {
   color: #b9b5ad;
 }
 

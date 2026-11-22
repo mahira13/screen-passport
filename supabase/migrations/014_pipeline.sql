@@ -156,4 +156,8 @@ grant execute on function public.ai_reserve(numeric, numeric) to service_role;
 grant execute on function public.ai_settle(numeric, numeric) to service_role;
 grant execute on function public.throttle_slot(text, int) to service_role;
 
+-- The server counts a request's published places from the public view; until now only anon and
+-- authenticated could read it ("permission denied" for the service role).
+grant select on public.catalogue_entries to service_role;
+
 notify pgrst, 'reload schema';

@@ -7,6 +7,7 @@ import { formatDistance } from "@/lib/distance";
 import { LAYLA_URL, laylaPrompt } from "@/lib/layla";
 import { directionsUrl } from "@/lib/links";
 import type { NearbyPlace } from "@/lib/nearby";
+import { CheckInButton } from "./CheckInButton";
 
 const linkBtn = "label inline-flex min-h-11 items-center justify-center px-3.5 transition-colors";
 
@@ -39,11 +40,12 @@ export function LocationCard({ place: p, titlePlaces }: Props) {
         <p className="mt-2 text-xs text-ink/70">
           {p.visitNote}
           {p.visitNote && approximate && " · "}
-          {approximate && "Pin is approximate"}
+          {approximate && "Pin is approximate, so check-in isn't offered yet"}
         </p>
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
+        <CheckInButton place={p} />
         <a href={directionsUrl(p)} target="_blank" rel="noopener noreferrer"
           onClick={() => track("directions_clicked", { location: p.id })}
           className={`${linkBtn} bg-accent text-paper hover:bg-ink`}>

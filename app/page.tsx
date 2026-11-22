@@ -2,6 +2,7 @@ import { CollectionChallenges, type ChallengeCollection } from "@/components/Col
 import { NearbyExplorer } from "@/components/NearbyExplorer";
 import { DEFAULT_CITY } from "@/lib/cities";
 import { destinations, type Destination } from "@/lib/destinations";
+import { checkInIds } from "@/lib/passport";
 import { getLiveData } from "@/lib/live-data";
 import { buildNearby, type NearbyResult } from "@/lib/nearby";
 
@@ -14,6 +15,7 @@ async function initialData(): Promise<Initial> {
     const data = await getLiveData();
     const live = new Set(data.locations.map((l) => l.work_id));
     const titleOf = new Map(data.works.map((w) => [w.id, w.title]));
+    const precise = checkInIds(data.locations);
     return {
       nearby: buildNearby(data.locations, data.works, DEFAULT_CITY),
       destinations: destinations(data.locations),
@@ -26,6 +28,9 @@ async function initialData(): Promise<Initial> {
           const title = titleOf.get(id);
           return title ? [{ id, title, live: live.has(id) }] : [];
         }),
+        // Each physical place once, even when it was filmed for several of these titles.
+        places: [...new Set(data.locations.filter((l) => c.work_ids.includes(l.work_id)).map((l) => l.id))]
+          .map((id) => ({ id, checkIn: precise.has(id) })),
       })),
     };
   } catch (e) {

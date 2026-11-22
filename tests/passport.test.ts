@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { isPassportId, randomEditKey, randomId } from "@/lib/ids";
 import { buildNearby } from "@/lib/nearby";
-import { cleanStartCity, cleanWatched, EMPTY_PASSPORT, parseLocalPassport, passportSummary, toggleId } from "@/lib/passport";
+import {
+  checkInIds, cleanStartCity, cleanVisited, cleanWatched, EMPTY_PASSPORT, parseLocalPassport, passportSummary, toggleId,
+} from "@/lib/passport";
 import { editKeyMatches, hashEditKey } from "@/lib/passport-server";
 import { DEFAULT_CITY } from "@/lib/cities";
 import type { Work } from "@/lib/types";
@@ -55,6 +57,35 @@ describe("cleanWatched", () => {
   });
 });
 
+describe("checkInIds", () => {
+  it("allows check-in only where coordinates come from the source or were verified", () => {
+    const ids = checkInIds([
+      { id: 1, work_id: "a", name: "A", city: null, lat: 52, lng: 13, coord_quality: "source" },
+      { id: 2, work_id: "a", name: "B", city: null, lat: 52, lng: 13, coord_quality: "verified" },
+      { id: 3, work_id: "a", name: "C", city: null, lat: 52, lng: 13, coord_quality: "approx" },
+      { id: 4, work_id: "a", name: "D", city: null, lat: 52, lng: 13, coord_quality: "geocoded" },
+      { id: 5, work_id: "a", name: "E", city: null, lat: null, lng: null, coord_quality: "source" },
+    ]);
+    expect([...ids].sort()).toEqual([1, 2]);
+  });
+});
+
+describe("cleanVisited", () => {
+  const eligible = new Set([1, 2, 3]);
+  it("keeps eligible place ids, deduped", () => {
+    expect(cleanVisited([2, 2, 9, 1], eligible, [])).toEqual([2, 1]);
+  });
+  it("keeps places already in the passport even if they are no longer eligible", () => {
+    expect(cleanVisited([9, 1], eligible, [9])).toEqual([9, 1]);
+  });
+  it("rejects anything that isn't a list of positive whole numbers", () => {
+    expect(cleanVisited("1", eligible, [])).toBeNull();
+    expect(cleanVisited([1, "2"], eligible, [])).toBeNull();
+    expect(cleanVisited([1.5], eligible, [])).toBeNull();
+    expect(cleanVisited(Array(2000).fill(1), eligible, [])).toBeNull();
+  });
+});
+
 describe("cleanStartCity", () => {
   it("keeps our city ids only", () => {
     expect(cleanStartCity("berlin")).toBe("berlin");
@@ -66,8 +97,9 @@ describe("cleanStartCity", () => {
 describe("parseLocalPassport", () => {
   it("reads a saved passport and survives junk", () => {
     expect(parseLocalPassport('{"id":"abc","editKey":"k","watched":["dark",5],"startCity":"berlin"}')).toEqual({
-      id: "abc", editKey: "k", watched: ["dark"], startCity: "berlin",
+      id: "abc", editKey: "k", watched: ["dark"], visited: [], startCity: "berlin",
     });
+    expect(parseLocalPassport('{"watched":[],"visited":[3,"4",3.5,-1,3,7]}').visited).toEqual([3, 7]);
     expect(parseLocalPassport(null)).toBe(EMPTY_PASSPORT);
     expect(parseLocalPassport("{not json")).toBe(EMPTY_PASSPORT);
     expect(parseLocalPassport('{"watched":"dark"}').watched).toEqual([]);

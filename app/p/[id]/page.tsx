@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { ShareCard } from "@/components/ShareCard";
 import { YourPassportNote } from "@/components/YourPassportNote";
 import { DEFAULT_CITY, findCity } from "@/lib/cities";
-import { startedCollections } from "@/lib/collections";
+import { collectionProgress, visitProgress } from "@/lib/collections";
 import { formatDistance } from "@/lib/distance";
 import { isPassportId } from "@/lib/ids";
 import { getLiveData } from "@/lib/live-data";
@@ -45,7 +45,9 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
   const live = await getLiveData();
   const nearby = buildNearby(live.locations, live.works, city);
   const visited = new Set(passport.visited);
-  const stamps = passport.watched
+  // A stamp per watched title, plus any title with a check-in (visiting counts even unwatched).
+  const stampIds = [...new Set([...passport.watched, ...nearby.places.filter((p) => visited.has(p.id)).map((p) => p.workId)])];
+  const stamps = stampIds
     .map((workId) => {
       const work = live.works.find((w) => w.id === workId);
       const places = nearby.places.filter((p) => p.workId === workId);
@@ -63,7 +65,16 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
   });
   const closest = allPlaces[0];
   const goldStamps = stamps.filter((s) => s.visited).length;
-  const collections = startedCollections(live.collections, passport.watched);
+  // Collection progress = places checked in; watched titles are the second line. A badge = every place.
+  const collections = live.collections
+    .map((c) => {
+      const placeIds = [...new Set(nearby.places.filter((p) => c.work_ids.includes(p.workId)).map((p) => p.id))];
+      const v = visitProgress(placeIds, passport.visited);
+      const w = collectionProgress(c, passport.watched);
+      return { id: c.id, name: c.name, ...v, watchedDone: w.done, watchedTotal: w.total };
+    })
+    .filter((c) => c.total > 0 && (c.done > 0 || c.watchedDone > 0))
+    .sort((a, b) => b.done / b.total - a.done / a.total || b.watchedDone - a.watchedDone);
   const complete = collections.filter((c) => c.complete).length;
   const mrz = `P<SCREEN<PASSPORT<<${city.name.toUpperCase().normalize("NFKD").replace(/[^A-Z]/g, "")}`.padEnd(44, "<");
   const mrz2 = `${passport.id.toUpperCase().replace(/[^A-Z0-9]/g, "")}<<${allPlaces.length}PLACES<<${stamps.length}TITLES`.padEnd(44, "<").slice(0, 44);
@@ -178,11 +189,15 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
                     <p className={`mt-2 font-condensed text-4xl leading-none text-accent`}>
                       {c.done}<span className="text-ink/60">/{c.total}</span>
                     </p>
-                    <div className="mt-3 flex gap-1">
+                    <div className="mt-3 flex gap-1" role="img" aria-label={`Visited ${c.done} of ${c.total} places`}>
                       {Array.from({ length: c.total }, (_, k) => (
                         <span key={k} className={`h-1 flex-1 ${k < c.done ? "bg-accent" : "bg-ink/15"}`} />
                       ))}
                     </div>
+                    <p className="mt-2 text-xs text-ink/70">
+                      Visited {c.done} of {c.total} {c.total === 1 ? "place" : "places"}
+                      {c.watchedTotal > 1 && ` · Watched ${c.watchedDone} of ${c.watchedTotal} titles`}
+                    </p>
                     {c.complete && <span className="label absolute right-4 top-4 rotate-[8deg] border border-accent px-2 py-0.5 text-accent">Complete</span>}
                   </li>
                 ))}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionProgress, startedCollections } from "@/lib/collections";
+import { collectionProgress, startedCollections, visitProgress } from "@/lib/collections";
 import type { Collection } from "@/lib/types";
 
 const coldWar: Collection = {
@@ -35,5 +35,18 @@ describe("startedCollections", () => {
   it("drops untouched collections and sorts by share done", () => {
     const res = startedCollections([coldWar, twenties, goerliwood], ["bridge-of-spies", "babylon-berlin"]);
     expect(res.map((p) => p.label)).toEqual(["Golden Twenties 1/1", "Cold War Berlin 1/4"]);
+  });
+});
+
+describe("visitProgress", () => {
+  it("counts visited places of the collection", () => {
+    expect(visitProgress([1, 2, 3], [2, 9])).toEqual({ done: 1, total: 3, complete: false });
+  });
+  it("is complete only when every place is visited", () => {
+    expect(visitProgress([1, 2], [2, 1]).complete).toBe(true);
+    expect(visitProgress([], [1]).complete).toBe(false);
+  });
+  it("ignores duplicate place ids", () => {
+    expect(visitProgress([1, 1, 2], [1, 1])).toEqual({ done: 1, total: 2, complete: false });
   });
 });

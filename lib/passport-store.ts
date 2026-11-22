@@ -26,7 +26,9 @@ function load(): PassportState {
 
 function set(patch: Partial<PassportState>) {
   state = { ...getSnapshot(), ...patch };
-  const saved: LocalPassport = { id: state.id, editKey: state.editKey, watched: state.watched, startCity: state.startCity };
+  const saved: LocalPassport = {
+    id: state.id, editKey: state.editKey, watched: state.watched, visited: state.visited, startCity: state.startCity,
+  };
   try {
     localStorage.setItem(KEY, JSON.stringify(saved));
   } catch {} // private mode: the passport still works for this visit
@@ -64,6 +66,18 @@ export function toggleWatched(workId: string, startCity: string | null) {
   scheduleSave(SAVE_DELAY_MS);
 }
 
+/**
+ * "I'm here": the browser checked the distance (within 200 m); the server only checks that the
+ * place allows check-in. Coordinates never leave the phone.
+ */
+export function checkIn(locationId: number, workId: string, startCity: string | null) {
+  const s = getSnapshot();
+  if (s.visited.includes(locationId)) return;
+  set({ visited: [...s.visited, locationId], startCity: s.startCity ?? startCity });
+  track("checkin_success", { location: locationId, work: workId, total: s.visited.length + 1 });
+  scheduleSave(0);
+}
+
 // One request at a time; taps during a request are sent right after it.
 let timer: ReturnType<typeof setTimeout> | undefined;
 let inFlight = false;
@@ -84,23 +98,24 @@ async function save() {
   const s = getSnapshot();
   try {
     if (!s.id || !s.editKey) {
-      if (s.watched.length === 0) return;
+      if (s.watched.length === 0 && s.visited.length === 0) return;
       const res = await fetch("/api/passport", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ watched: s.watched, startCity: s.startCity }),
+        body: JSON.stringify({ watched: s.watched, visited: s.visited, startCity: s.startCity }),
       });
       if (!res.ok) throw new Error(String(res.status));
       const { id, editKey } = (await res.json()) as { id: string; editKey: string };
       set({ id, editKey, sync: "idle" });
-      track("passport_created", { titles: s.watched.length });
-      if (getSnapshot().watched.join() !== s.watched.join()) again = true;
+      track("passport_created", { titles: s.watched.length, places: s.visited.length });
+      const now = getSnapshot();
+      if (now.watched.join() !== s.watched.join() || now.visited.join() !== s.visited.join()) again = true;
     } else {
       set({ sync: "saving" });
       const res = await fetch("/api/passport", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: s.id, editKey: s.editKey, watched: s.watched }),
+        body: JSON.stringify({ id: s.id, editKey: s.editKey, watched: s.watched, visited: s.visited }),
       });
       if (res.status === 404 || res.status === 403) {
         set({ id: null, editKey: null }); // passport gone or not ours: start a new one

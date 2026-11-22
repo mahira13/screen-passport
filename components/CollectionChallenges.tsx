@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { findCityByName } from "@/lib/cities";
-import { collectionProgress } from "@/lib/collections";
+import { collectionProgress, visitProgress } from "@/lib/collections";
 import { toggleWatched } from "@/lib/passport-store";
 import { usePassport } from "@/lib/use-passport";
 import { ScenePlate } from "./ScenePlate";
@@ -13,10 +13,17 @@ export type ChallengeCollection = {
   city: string | null;
   description: string | null;
   works: { id: string; title: string; live: boolean }[]; // live: has places on the map
+  places: { id: number; checkIn: boolean }[]; // published places of these titles; checkIn: precise pin
 };
 
-function Challenge({ c, n, watched, big, wide }: { c: ChallengeCollection; n: number; watched: string[]; big: boolean; wide: boolean }) {
-  const p = collectionProgress({ id: c.id, name: c.name, city: c.city, work_ids: c.works.map((w) => w.id), description: null }, watched);
+type Props = { c: ChallengeCollection; n: number; watched: string[]; visited: number[]; big: boolean; wide: boolean };
+
+function Challenge({ c, n, watched, visited, big, wide }: Props) {
+  // Progress = places checked in on site; watched titles are the second line.
+  const p = visitProgress(c.places.map((x) => x.id), visited);
+  const w = collectionProgress({ id: c.id, name: c.name, city: c.city, work_ids: c.works.map((x) => x.id), description: null }, watched);
+  const been = new Set(visited);
+  const notYet = c.places.filter((x) => !x.checkIn).length;
   const seen = new Set(watched);
   const city = findCityByName(c.city);
   const live = c.works.filter((w) => w.live).map((w) => w.id);
@@ -42,16 +49,25 @@ function Challenge({ c, n, watched, big, wide }: { c: ChallengeCollection; n: nu
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         {c.description && <p className="font-serif text-xl italic leading-snug text-ink/80">{c.description}</p>}
 
-        <div className="mt-5" role="img" aria-label={`${p.done} of ${p.total} watched`}>
-          <div className="flex items-baseline justify-between">
-            <span className="label text-ink/60">Your progress</span>
+        <div className="mt-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="label text-ink/60">Places visited</span>
             <span className="font-condensed text-3xl leading-none text-accent">{p.done}<span className="text-ink/60">/{p.total}</span></span>
           </div>
-          <div className="mt-2 flex gap-1">
-            {c.works.map((w) => (
-              <span key={w.id} className={`h-1.5 flex-1 ${seen.has(w.id) ? "bg-accent" : "bg-ink/15"}`} />
+          <div className="mt-2 flex gap-1" role="img" aria-label={`Visited ${p.done} of ${p.total} places`}>
+            {c.places.map((x) => (
+              <span key={x.id} className={`h-1.5 flex-1 ${been.has(x.id) ? "bg-accent" : "bg-ink/15"}`} />
             ))}
           </div>
+          <p className="mt-2 text-sm text-ink/70">
+            Visited {p.done} of {p.total} {p.total === 1 ? "place" : "places"}
+            {c.works.length > 1 && ` · Watched ${w.done} of ${w.total} titles`}
+          </p>
+          {notYet > 0 && (
+            <p className="mt-1 text-xs text-ink/60">
+              {notYet} {notYet === 1 ? "place needs" : "places need"} a verified pin before check-in.
+            </p>
+          )}
         </div>
 
         <ul className="mt-5 divide-y divide-ink/10">
@@ -87,12 +103,12 @@ function Challenge({ c, n, watched, big, wide }: { c: ChallengeCollection; n: nu
 // Layout: one large cover, two beside it, then the rest share a row.
 const REST_SPAN: Record<number, string> = { 1: "lg:col-span-12", 2: "lg:col-span-6", 3: "lg:col-span-4" };
 
-/** Collections as small cinematic adventures. Progress comes from the titles marked as watched. */
+/** Collections as small cinematic adventures. Complete (a badge) when every place was checked in. */
 export function CollectionChallenges({ collections }: { collections: ChallengeCollection[] }) {
-  const { watched } = usePassport();
+  const { watched, visited } = usePassport();
   const shown = collections.filter((c) => c.works.length > 0);
   if (shown.length === 0) return null;
-  const done = shown.filter((c) => collectionProgress({ ...c, work_ids: c.works.map((w) => w.id) }, watched).complete).length;
+  const done = shown.filter((c) => visitProgress(c.places.map((x) => x.id), visited).complete).length;
 
   return (
     <section id="collections" className="relative scroll-mt-16 overflow-hidden border-t border-ink/10 py-16 sm:py-24">
@@ -105,10 +121,10 @@ export function CollectionChallenges({ collections }: { collections: ChallengeCo
               Cinematic <span className="italic text-accent">challenges.</span>
             </h2>
             <p className="mt-4 max-w-lg text-ink/70">
-              Each collection is a small adventure through one city&apos;s films. Watch them, visit the places, complete the set.
+              Each collection is a small adventure through one city&apos;s films. Visit every place and check in on site to complete the set.
             </p>
           </div>
-          {watched.length > 0 && (
+          {visited.length > 0 && (
             <p className="label text-ink/60">
               <span className="font-condensed text-4xl tracking-normal text-ink">{done}</span> of {shown.length} complete
             </p>
@@ -118,7 +134,7 @@ export function CollectionChallenges({ collections }: { collections: ChallengeCo
         <div className="mt-12 grid gap-6 lg:grid-cols-12">
           {shown.map((c, i) => (
             <div key={c.id} className={i === 0 ? "lg:col-span-7 lg:row-span-2" : i < 3 ? "lg:col-span-5" : REST_SPAN[Math.min(shown.length - 3, 3)]}>
-              <Challenge c={c} n={i} watched={watched} big={i === 0} wide={i >= 3 && shown.length === 4} />
+              <Challenge c={c} n={i} watched={watched} visited={visited} big={i === 0} wide={i >= 3 && shown.length === 4} />
             </div>
           ))}
         </div>

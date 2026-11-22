@@ -25,6 +25,19 @@ export function collectionProgress(c: Collection, watched: string[]): Collection
   };
 }
 
+export interface VisitProgress {
+  done: number;
+  total: number;
+  complete: boolean; // a badge: every place visited
+}
+
+/** Collection progress: how many of its places were checked in on site. */
+export function visitProgress(placeIds: number[], visited: number[]): VisitProgress {
+  const places = new Set(placeIds);
+  const done = [...new Set(visited)].filter((id) => places.has(id)).length;
+  return { done, total: places.size, complete: places.size > 0 && done === places.size };
+}
+
 /** Collections the user has started, most progress (by share) first. */
 export function startedCollections(cs: Collection[], watched: string[]): CollectionProgress[] {
   return cs

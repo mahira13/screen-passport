@@ -1,17 +1,22 @@
 import { CITIES } from "./cities";
-import type { NearbyResult } from "./nearby";
+import { canCheckIn } from "./distance";
+import type { LiveLocation, NearbyResult } from "./nearby";
 
 export const MAX_WATCHED = 200;
+export const MAX_VISITED = 500;
 
 /** What the browser keeps in localStorage. */
 export interface LocalPassport {
   id: string | null;
   editKey: string | null;
   watched: string[];
+  visited: number[]; // location ids checked in on site
   startCity: string | null;
 }
 
-export const EMPTY_PASSPORT: LocalPassport = { id: null, editKey: null, watched: [], startCity: null };
+export const EMPTY_PASSPORT: LocalPassport = { id: null, editKey: null, watched: [], visited: [], startCity: null };
+
+const isPlaceId = (x: unknown): x is number => Number.isInteger(x) && (x as number) > 0;
 
 export function toggleId(list: string[], id: string): string[] {
   return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
@@ -22,6 +27,21 @@ export function cleanWatched(input: unknown, knownIds: Set<string>): string[] | 
   if (!Array.isArray(input) || input.length > MAX_WATCHED * 2) return null;
   if (!input.every((x) => typeof x === "string")) return null;
   return [...new Set(input as string[])].filter((id) => knownIds.has(id)).slice(0, MAX_WATCHED);
+}
+
+/** Places where check-in is allowed: coordinates from the source or checked by a human. */
+export function checkInIds(locations: LiveLocation[]): Set<number> {
+  return new Set(locations.filter(canCheckIn).map((l) => l.id));
+}
+
+/**
+ * Deduped place ids that allow check-in, capped. Places already in the passport stay even if
+ * they are no longer eligible (e.g. unpublished for a fix). Null if the input isn't a list of ids.
+ */
+export function cleanVisited(input: unknown, eligible: Set<number>, stored: number[]): number[] | null {
+  if (!Array.isArray(input) || input.length > MAX_VISITED * 2 || !input.every(isPlaceId)) return null;
+  const kept = new Set(stored);
+  return [...new Set(input)].filter((id) => eligible.has(id) || kept.has(id)).slice(0, MAX_VISITED);
 }
 
 /** Only our own city ids are stored, never a user's coordinates. */
@@ -39,6 +59,7 @@ export function parseLocalPassport(raw: string | null): LocalPassport {
       id: str(p.id),
       editKey: str(p.editKey),
       watched: Array.isArray(p.watched) ? p.watched.filter((x: unknown) => typeof x === "string") : [],
+      visited: Array.isArray(p.visited) ? [...new Set<number>(p.visited.filter(isPlaceId))] : [],
       startCity: str(p.startCity),
     };
   } catch {

@@ -34,3 +34,16 @@ npx tsx tests/db/load-legacy.ts
 psql_run < supabase/migrations/007_catalogue.sql
 psql_run < supabase/migrations/007_catalogue.sql # safe to run twice
 npx vitest run tests/db
+
+# Rollback: back to the 001–006 schema, the old view still serves the app, and 007 applies again.
+psql_run < supabase/rollback/007_catalogue_down.sql
+psql_run -At <<'SQL' | tee /dev/stderr | grep -qx "ok"
+select case when to_regclass('public.location_works') is null
+             and to_regclass('public.catalogue_entries') is null
+             and not exists (select 1 from information_schema.columns where table_name = 'locations' and column_name = 'verification_status')
+             and (select count(*) from mappable_locations) > 0
+             and exists (select 1 from pg_policies where policyname = 'live locations are public')
+            then 'ok' else 'rollback incomplete' end;
+SQL
+psql_run < supabase/migrations/007_catalogue.sql
+echo "rollback and re-apply: ok"

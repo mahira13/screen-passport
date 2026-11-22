@@ -148,20 +148,36 @@ describe.skipIf(!url)("migration 007: catalogue", () => {
     expect(await search("x")).toEqual([]); // too short
   });
 
-  it("merge_locations joins titles on one place and remaps trips and passports", async () => {
-    await db.query("select merge_locations(32, '{55}')"); // Alexanderplatz: Babylon Berlin + Atomic Blonde
-    const rows = await nearby("$1, $2", [DEFAULT_CITY.lat, DEFAULT_CITY.lng]);
-    const alex = rows.find((r) => r.id === 32)!;
-    expect(alex.works.map((w) => w.id).sort()).toEqual(["atomic-blonde", "babylon-berlin"]);
-    expect(rows.map((r) => r.id)).not.toContain(55);
+  it("the five approved merges keep every title, its source and scene note, and remap trips and passports", async () => {
+    const links = async (id: number) => (await db.query(
+      "select work_id, scene_note, source_name, source_url from catalogue_entries where id = $1 order by work_id", [id])).rows;
+    const before = new Map<string, unknown>();
+    for (const id of [22, 56, 25, 33, 32, 55, 63, 45, 58, 60, 68]) for (const l of await links(id)) before.set(l.work_id + "@" + id, l);
 
+    for (const [keep, drop] of [[22, [56]], [25, [33]], [32, [55, 63]], [45, [58]], [60, [68]]] as const) {
+      await db.query("select merge_locations($1, $2)", [keep, drop]);
+      const kept = await links(keep);
+      for (const id of [keep, ...drop]) {
+        for (const [key, link] of before) {
+          if (!key.endsWith("@" + id)) continue;
+          const { work_id, scene_note, source_name, source_url } = link as Record<string, string>;
+          expect(kept).toContainEqual({ work_id, scene_note, source_name, source_url }); // nothing lost
+        }
+      }
+    }
+    const alex = await links(32);
+    expect(alex.map((l) => l.work_id)).toEqual(["atomic-blonde", "babylon-berlin", "bourne-supremacy"]);
+    expect(alex.find((l) => l.work_id === "bourne-supremacy")?.scene_note).toMatch(/at the World Clock/);
+
+    const ids = (await nearby("$1, $2", [DEFAULT_CITY.lat, DEFAULT_CITY.lng])).map((r) => r.id);
+    for (const gone of [56, 33, 55, 63, 58, 68]) expect(ids).not.toContain(gone);
     const dropped = (await db.query("select merged_into, verification_status, status from locations where id = 55")).rows[0];
     expect(dropped).toEqual({ merged_into: 32, verification_status: "rejected", status: "unverified" });
 
     const trip = (await db.query("select plan from trips where id = 'trip-merge-test'")).rows[0];
-    expect(trip.plan.stops.map((s: { location_id: number }) => s.location_id)).toEqual([32, 56]);
+    expect(trip.plan.stops.map((s: { location_id: number }) => s.location_id)).toEqual([32, 22]);
     const passport = (await db.query("select visited from passports where id = 'passport-merge-test'")).rows[0];
-    expect([...passport.visited].sort((a: number, b: number) => a - b)).toEqual([32, 56]);
+    expect([...passport.visited].sort((a: number, b: number) => a - b)).toEqual([22, 32]);
 
     await expect(db.query("select merge_locations(32, '{32}')")).rejects.toThrow(/itself/);
   });

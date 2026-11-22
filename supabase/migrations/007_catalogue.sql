@@ -78,31 +78,38 @@ create table if not exists public.location_works (
   work_id      text not null references public.works (id) on delete cascade,
   scene_note   text,
   depicts      text, -- what the place stands for in the story, e.g. "Winden police station"
-  evidence_url text check (evidence_url ~ '^https?://'),
+  evidence_url text check (evidence_url ~ '^https?://'), -- the source for this title at this place
   primary key (location_id, work_id)
 );
+alter table public.location_works add column if not exists evidence_name text;
 create index if not exists location_works_work_idx on public.location_works (work_id);
 
--- Old writers (seed import, research) still set locations.work_id: give them a location_works row.
+-- Old writers (seed import, research) still set locations.work_id: give them a location_works
+-- row with the row's scene note and source, and keep those in step when they change.
 create or replace function public.locations_ensure_work() returns trigger
 language plpgsql as $$
 begin
   if new.work_id is not null then
-    insert into public.location_works (location_id, work_id, scene_note)
-    values (new.id, new.work_id, new.scene_note)
-    on conflict (location_id, work_id) do update set scene_note = excluded.scene_note;
+    insert into public.location_works (location_id, work_id, scene_note, evidence_url, evidence_name)
+    values (new.id, new.work_id, new.scene_note, new.source_url, new.source_name)
+    on conflict (location_id, work_id) do update
+      set scene_note = excluded.scene_note, evidence_url = excluded.evidence_url, evidence_name = excluded.evidence_name;
   end if;
   return new;
 end $$;
 drop trigger if exists locations_work on public.locations;
-create trigger locations_work after insert or update of work_id, scene_note on public.locations
+create trigger locations_work after insert or update of work_id, scene_note, source_url, source_name on public.locations
 for each row execute function public.locations_ensure_work();
 
 -- Backfill -----------------------------------------------------------------------
 
-insert into public.location_works (location_id, work_id, scene_note)
-select id, work_id, scene_note from public.locations where work_id is not null
+-- Each title link keeps its own scene note and source, so merging places later loses neither.
+insert into public.location_works (location_id, work_id, scene_note, evidence_url, evidence_name)
+select id, work_id, scene_note, source_url, source_name from public.locations where work_id is not null
 on conflict (location_id, work_id) do nothing;
+update public.location_works lw set evidence_url = l.source_url, evidence_name = l.source_name
+from public.locations l
+where l.id = lw.location_id and l.work_id = lw.work_id and lw.evidence_url is null;
 
 update public.locations set verification_status = 'published', verified_at = coalesce(verified_at, now())
 where status = 'live' and verification_status <> 'published';
@@ -119,7 +126,8 @@ with (security_invoker = true) as
 select l.id, lw.work_id, l.name,
        coalesce(lw.scene_note, l.scene_note) as scene_note,
        lw.depicts, l.address, l.city, l.region, l.country, l.country_code, l.lat, l.lng,
-       l.coord_quality, l.location_confidence, l.public_access, l.visit_note, l.source_name,
+       l.coord_quality, l.location_confidence, l.public_access, l.visit_note,
+       coalesce(lw.evidence_name, l.source_name) as source_name,
        coalesce(lw.evidence_url, l.source_url) as source_url
 from public.locations l
 join public.location_works lw on lw.location_id = l.id
@@ -143,7 +151,9 @@ language sql stable security invoker set search_path = public, extensions as $$
          st_distance(l.geog, here.g, false) / 1000 as distance_km, -- sphere, like the app's haversine
          (select jsonb_agg(jsonb_build_object(
                    'id', w.id, 'title', w.title, 'type', w.type,
-                   'scene_note', coalesce(lw.scene_note, l.scene_note), 'depicts', lw.depicts)
+                   'scene_note', coalesce(lw.scene_note, l.scene_note), 'depicts', lw.depicts,
+                   'evidence_url', coalesce(lw.evidence_url, l.source_url),
+                   'evidence_name', coalesce(lw.evidence_name, l.source_name))
                  order by w.title)
             from public.location_works lw join public.works w on w.id = lw.work_id
            where lw.location_id = l.id) as works
@@ -201,8 +211,8 @@ create or replace function public.merge_locations(p_keep int, p_drop int[])
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if p_keep = any(p_drop) then raise exception 'cannot merge a location into itself'; end if;
-  insert into public.location_works (location_id, work_id, scene_note, depicts, evidence_url)
-  select p_keep, work_id, scene_note, depicts, evidence_url from public.location_works where location_id = any(p_drop)
+  insert into public.location_works (location_id, work_id, scene_note, depicts, evidence_url, evidence_name)
+  select p_keep, work_id, scene_note, depicts, evidence_url, evidence_name from public.location_works where location_id = any(p_drop)
   on conflict (location_id, work_id) do nothing;
   update public.locations set merged_into = p_keep, verification_status = 'rejected' where id = any(p_drop);
   update public.passports

@@ -11,7 +11,8 @@
     "seed": "tsx scripts/import-seed.ts",
     "geocode": "tsx scripts/geocode.ts",
     "duplicates": "tsx scripts/find-duplicates.ts",
-    "test:db": "sh scripts/test-db.sh"
+    "test:db": "sh scripts/test-db.sh",
+    "backup": "tsx scripts/backup-tables.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",

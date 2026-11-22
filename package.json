@@ -13,7 +13,9 @@
     "duplicates": "tsx scripts/find-duplicates.ts",
     "test:db": "sh scripts/test-db.sh",
     "backup": "tsx scripts/backup-tables.ts",
-    "verify": "tsx scripts/verify-locations.ts"
+    "verify": "tsx scripts/verify-locations.ts",
+    "wikidata": "tsx scripts/wikidata-candidates.ts",
+    "tmdb": "tsx scripts/tmdb-metadata.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",

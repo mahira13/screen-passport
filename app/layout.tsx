@@ -3,6 +3,7 @@ import { Bebas_Neue, Instrument_Serif, Inter, Space_Grotesk } from "next/font/go
 import Link from "next/link";
 import { SiteHeader, Wordmark } from "@/components/SiteHeader";
 import "./globals.css";
+import { TMDB_ATTRIBUTION } from "@/lib/tmdb";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 // Space Grotesk stays for the share and invite images (see the share-card skill).
@@ -49,6 +50,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <Link href="/privacy" className="inline-flex min-h-11 items-center hover:text-accent">Privacy</Link>
               </nav>
             </div>
+            <p className="mt-6 max-w-2xl text-xs text-ink/60">
+              {TMDB_ATTRIBUTION} Map data © OpenStreetMap contributors.
+            </p>
           </div>
         </footer>
       </body>

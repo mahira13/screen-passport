@@ -2,7 +2,7 @@ export type WorkType = "series" | "film";
 // geocoded_poi: a geocoder match on a named landmark (name and city checked); allows check-in.
 export type CoordQuality = "source" | "approx" | "geocoded" | "geocoded_poi" | "verified";
 export type LocationStatus = "live" | "unverified";
-export type VerificationStatus = "draft" | "verified" | "published" | "rejected";
+export type VerificationStatus = "draft" | "needs_review" | "verified" | "published" | "rejected";
 export type LocationConfidence = "exact" | "building" | "street" | "area";
 export type PublicAccess = "public" | "exterior_only" | "restricted" | "unknown";
 

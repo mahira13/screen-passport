@@ -8,7 +8,7 @@ description: Research and add filming locations for a work, with sources, for th
 ## Sources, in order of trust
 1. Official tourism or city sites (visitBerlin, Brandenburg tourism board, berlin.de, film commissions).
 2. Established location guides (Atlas of Wonders, Movie-Locations.com, major newspapers).
-3. Wikidata `filming location` (P915). Often only city-level; mark it so. Wikidata finds candidates but is never the only evidence.
+3. Wikidata `filming location` (P915). Often only city-level; mark it so. Wikidata finds candidates but is never the only evidence. `npm run wikidata` lists them per work (Germany only) and `--apply` inserts new ones as draft; find a trusted source for each before `npm run verify` can publish it.
 
 Never scrape IMDb (terms forbid it). Never copy text or photos from guides: write the scene note in your own words and link the page.
 

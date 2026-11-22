@@ -1,17 +1,17 @@
-id,title,type,aliases
-dark,Dark,series,Dark
-queens-gambit,The Queen's Gambit,series,Das Damengambit|Queen's Gambit
-babylon-berlin,Babylon Berlin,series,Babylon Berlin
-unorthodox,Unorthodox,series,Unorthodox
-unfamiliar,Unfamiliar,series,Unfamiliar
-queen-of-tears,Queen of Tears,series,Queen of Tears
-bridge-of-spies,Bridge of Spies,film,Bridge of Spies – Der Unterhändler|Bridge of Spies
-grand-budapest,The Grand Budapest Hotel,film,Grand Budapest Hotel
-inglourious-basterds,Inglourious Basterds,film,Inglourious Basterds
-the-reader,The Reader,film,Der Vorleser
-monuments-men,The Monuments Men,film,Monuments Men
-atomic-blonde,Atomic Blonde,film,Atomic Blonde
-mockingjay-2,The Hunger Games: Mockingjay – Part 2,film,Die Tribute von Panem – Mockingjay Teil 2|Mockingjay Part 2|Mockingjay
-bourne-supremacy,The Bourne Supremacy,film,Die Bourne Verschwörung|Bourne Supremacy
-unknown-2011,Unknown,film,Unknown Identity
-captain-america-cw,Captain America: Civil War,film,The First Avenger: Civil War|Civil War
+id,title,type,aliases,year
+dark,Dark,series,Dark,
+queens-gambit,The Queen's Gambit,series,Das Damengambit|Queen's Gambit,
+babylon-berlin,Babylon Berlin,series,Babylon Berlin,
+unorthodox,Unorthodox,series,Unorthodox,
+unfamiliar,Unfamiliar,series,Unfamiliar,
+queen-of-tears,Queen of Tears,series,Queen of Tears,
+bridge-of-spies,Bridge of Spies,film,Bridge of Spies – Der Unterhändler|Bridge of Spies,
+grand-budapest,The Grand Budapest Hotel,film,Grand Budapest Hotel,
+inglourious-basterds,Inglourious Basterds,film,Inglourious Basterds,
+the-reader,The Reader,film,Der Vorleser,
+monuments-men,The Monuments Men,film,Monuments Men,
+atomic-blonde,Atomic Blonde,film,Atomic Blonde,
+mockingjay-2,The Hunger Games: Mockingjay – Part 2,film,Die Tribute von Panem – Mockingjay Teil 2|Mockingjay Part 2|Mockingjay,
+bourne-supremacy,The Bourne Supremacy,film,Die Bourne Verschwörung|Bourne Supremacy,
+unknown-2011,Unknown,film,Unknown Identity,
+captain-america-cw,Captain America: Civil War,film,The First Avenger: Civil War|Civil War,

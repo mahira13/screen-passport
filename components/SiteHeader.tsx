@@ -12,7 +12,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
   );
 }
 
-const navLink = "label hidden py-2 text-ink/70 transition-colors hover:text-accent md:inline";
+const navLink = "label hidden min-h-11 items-center text-ink/70 transition-colors hover:text-accent md:inline-flex";
 
 export function SiteHeader() {
   const { id, watched } = usePassport();
@@ -28,12 +28,12 @@ export function SiteHeader() {
           <Link href="/#collections" className={navLink}>Collect</Link>
           {id ? (
             <Link href={`/p/${id}`}
-              className="label inline-flex items-center gap-2 border border-accent px-3 py-2 text-accent transition-colors hover:bg-accent hover:text-night">
+              className="label inline-flex min-h-11 items-center gap-2 border border-accent px-3 text-accent transition-colors hover:bg-accent hover:text-paper">
               My passport
               {watched.length > 0 && <span className="font-condensed text-sm tracking-normal">{watched.length}</span>}
             </Link>
           ) : (
-            <Link href="/#discover" className="label border border-ink/30 px-3 py-2 text-ink transition-colors hover:border-accent hover:text-accent md:hidden">
+            <Link href="/#discover" className="label inline-flex min-h-11 items-center border border-ink/30 px-3 text-ink transition-colors hover:border-accent hover:text-accent md:hidden">
               Discover
             </Link>
           )}

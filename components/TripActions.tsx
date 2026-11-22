@@ -9,7 +9,7 @@ import type { LatLng } from "@/lib/types";
 
 export const TripMapLazy = dynamic(() => import("./TripMap"), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-charcoal" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-surface" />,
 });
 
 const btn = "label inline-flex items-center justify-center px-5 py-3.5 transition-colors";
@@ -48,7 +48,7 @@ export function TripActions({ tripId, routeUrl, transit, laylaPrompt, shareTitle
   return (
     <div>
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={onShare} className={`${btn} bg-accent text-night hover:bg-ink`}>Share the trip</button>
+        <button type="button" onClick={onShare} className={`${btn} bg-accent text-paper hover:bg-ink`}>Share the trip</button>
         {routeUrl && (
           <span className="inline-flex flex-col">
             <a href={routeUrl} target="_blank" rel="noopener noreferrer" className={`${btn} border border-ink/30 hover:border-accent hover:text-accent`}
@@ -58,7 +58,7 @@ export function TripActions({ tripId, routeUrl, transit, laylaPrompt, shareTitle
             {transit && <span className="mt-1 px-2 text-xs text-ink/70">Pick public transport in Google Maps.</span>}
           </span>
         )}
-        <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${btn} bg-burgundy text-cream hover:bg-ink hover:text-night`}>
+        <a href={LAYLA_URL} target="_blank" rel="noopener noreferrer" onClick={onLayla} className={`${btn} bg-surface text-ink hover:bg-ink hover:text-paper`}>
           Plan travel and stays with Layla
         </a>
       </div>

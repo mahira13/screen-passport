@@ -44,7 +44,7 @@ export function RequestBox({ near, initialTitle = "", source = "trip" }: Props) 
         <input id={`request-title-${source}`} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required
           className="min-w-0 flex-1 border border-ink/25 bg-surface px-4 py-2.5 focus:border-accent focus:outline-none" placeholder="Title" />
         <button type="submit" disabled={state.kind === "sending"}
-          className="label shrink-0 bg-accent px-5 py-2.5 text-night transition-colors hover:bg-ink disabled:opacity-60">
+          className="label shrink-0 bg-accent px-5 py-2.5 text-paper transition-colors hover:bg-ink disabled:opacity-60">
           Request
         </button>
       </div>

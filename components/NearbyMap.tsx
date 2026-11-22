@@ -21,9 +21,9 @@ type Props = {
   onReady?: () => void;
 };
 
-const INK = "#101012"; // marker ring, matches the page background
-const CREAM = "#F3EBDD";
-const GOLD = "#E5B83F";
+const INK = "#16213A"; // marker ring, matches the page background
+const CREAM = "#F4EFE4";
+const GOLD = "#E3B04B";
 
 function dotIcon(colour: string) {
   return L.divIcon({

@@ -18,7 +18,7 @@ function Plate({ t, n, className, big = false, onPick }: { t: NearbyTitle; n: nu
     <button type="button" onClick={() => onPick(t.workId)} aria-label={`Show ${t.title} on the map`}
       className={`group block text-left transition-transform duration-500 hover:-translate-y-1 ${className}`}>
       <ScenePlate index={n} className="aspect-[2.39/1] w-full shadow-2xl shadow-black/60">
-        <p className="label text-ink/70">Scene {String(n + 1).padStart(2, "0")} · {formatDistance(t.closest.distanceKm)}</p>
+        <p className={`label text-ink/70 ${big ? "" : "hidden sm:block"}`}>Scene {String(n + 1).padStart(2, "0")} · {formatDistance(t.closest.distanceKm)}</p>
         <p className={`mt-1 font-condensed leading-[0.9] tracking-wide text-ink ${big ? "text-3xl sm:text-5xl" : "text-2xl sm:text-3xl"}`}>
           {t.closest.name}
         </p>
@@ -31,15 +31,15 @@ function Plate({ t, n, className, big = false, onPick }: { t: NearbyTitle; n: nu
 export function HomeHero({ cityLabel, titles, placeCount, onPick, search }: Props) {
   const plates = titles.slice(0, 3);
   return (
-    <section className="relative overflow-hidden bg-night">
-      <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[36rem] w-[36rem] rounded-full bg-burgundy/40 blur-[120px]" />
+    <section className="relative overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[36rem] w-[36rem] rounded-full bg-accent/10 blur-[120px]" />
       <div className="relative mx-auto grid w-full max-w-screen-2xl gap-12 px-4 pb-16 pt-10 sm:px-8 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:px-12 lg:pb-24">
         <div className="flex flex-col">
-          <p className="label flex flex-wrap items-center gap-x-3 gap-y-1 text-smoke">
+          <p className="label flex flex-wrap items-center gap-x-3 gap-y-1 text-ink/60">
             <span className="text-accent">Vol. 01</span>
-            <span aria-hidden className="h-px w-8 bg-smoke/60" />
+            <span aria-hidden className="h-px w-8 bg-ink/30" />
             <span>{cityLabel} edition</span>
-            {placeCount > 0 && (<><span aria-hidden className="h-px w-8 bg-smoke/60" /><span>{placeCount} sourced places</span></>)}
+            {placeCount > 0 && (<><span aria-hidden className="h-px w-8 bg-ink/30" /><span>{placeCount} sourced places</span></>)}
           </p>
           <h1 className="mt-6 font-serif text-[3.2rem] leading-[0.92] tracking-tight sm:text-7xl xl:text-[6.5rem]">
             Your favourite stories don&apos;t have to <span className="italic text-accent">stay on screen.</span>
@@ -60,7 +60,7 @@ export function HomeHero({ cityLabel, titles, placeCount, onPick, search }: Prop
               {plates[2] && <Plate t={plates[2]} n={2} className="col-span-3 mt-6 sm:mt-10" onPick={onPick} />}
             </div>
             <div aria-hidden className="sprockets mt-3 h-3 w-full" />
-            <p className="label mt-4 text-right text-smoke">Closest filming places to {cityLabel} · tap to see on the map</p>
+            <p className="label mt-4 text-right text-ink/60">Closest filming places to {cityLabel} · tap to see on the map</p>
           </div>
         )}
       </div>

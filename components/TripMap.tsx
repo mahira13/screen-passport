@@ -6,9 +6,9 @@ import { useEffect } from "react";
 import type { LatLng } from "@/lib/types";
 import { useLeafletMap } from "@/lib/use-leaflet-map";
 
-const GOLD = "#E5B83F";
-const INK = "#101012";
-const CREAM = "#F3EBDD";
+const GOLD = "#E3B04B";
+const INK = "#16213A";
+const CREAM = "#F4EFE4";
 
 function numberIcon(n: number) {
   return L.divIcon({

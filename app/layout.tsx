@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description: "See where your favourite films and series were filmed near you. Visit them, stamp them, share them.",
 };
 
-export const viewport: Viewport = { themeColor: "#101012", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#16213A", width: "device-width", initialScale: 1 };
 
 const PILLARS = [
   ["Discover", "your cinema", "Real filming places from the films and series you love, each with a source."],
@@ -29,12 +29,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         {children}
-        <footer className="mt-auto bg-night">
+        <footer className="mt-auto bg-paper">
           <div className="mx-auto w-full max-w-screen-2xl px-4 pb-28 pt-16 sm:px-8 lg:px-12">
             <ol className="grid gap-10 border-t border-ink/15 pt-10 md:grid-cols-3">
               {PILLARS.map(([verb, rest, text], i) => (
                 <li key={verb}>
-                  <p className="label text-smoke">0{i + 1}</p>
+                  <p className="label text-ink/60">0{i + 1}</p>
                   <p className="mt-3 font-serif text-4xl leading-none sm:text-5xl">
                     {verb} <span className="italic text-accent">{rest}.</span>
                   </p>
@@ -44,9 +44,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </ol>
             <div className="mt-16 flex flex-wrap items-end justify-between gap-6 border-t border-ink/15 pt-6">
               <Wordmark />
-              <nav aria-label="Legal" className="label flex gap-6 text-ink/50">
-                <Link href="/impressum" className="hover:text-accent">Impressum</Link>
-                <Link href="/privacy" className="hover:text-accent">Privacy</Link>
+              <nav aria-label="Legal" className="label flex gap-6 text-ink/65">
+                <Link href="/impressum" className="inline-flex min-h-11 items-center hover:text-accent">Impressum</Link>
+                <Link href="/privacy" className="inline-flex min-h-11 items-center hover:text-accent">Privacy</Link>
               </nav>
             </div>
           </div>

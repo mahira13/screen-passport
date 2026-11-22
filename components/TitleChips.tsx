@@ -10,7 +10,7 @@ type Props = {
 };
 
 const chip = "flex shrink-0 items-center gap-2 border px-3.5 py-2 text-sm font-medium transition-colors";
-const on = "border-accent bg-accent text-night";
+const on = "border-accent bg-accent text-paper";
 const off = "border-ink/15 bg-transparent text-ink/85 hover:border-ink/50";
 
 /** Filter row above the map. Also the map's legend: each chip shows its colour and names the title. */
@@ -27,7 +27,7 @@ export function TitleChips({ titles, colours, selected, onSelect }: Props) {
         return (
           <button key={t.workId} type="button" aria-pressed={active} onClick={() => onSelect(active ? null : t.workId)}
             className={`${chip} ${active ? on : off}`}>
-            <span aria-hidden className="h-2.5 w-2.5 rounded-full ring-1 ring-night" style={{ background: colours.get(t.workId) }} />
+            <span aria-hidden className="h-2.5 w-2.5 rounded-full ring-1 ring-paper" style={{ background: colours.get(t.workId) }} />
             {t.title}
           </button>
         );

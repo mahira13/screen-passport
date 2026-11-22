@@ -65,7 +65,7 @@ export function InviteCard({ tripId, data }: { tripId: string; data: InviteData 
   };
 
   return (
-    <section className="mt-6 bg-burgundy/25 p-5 sm:p-6">
+    <section className="mt-6 bg-surface p-5 sm:p-6">
       <h2 className="label text-accent">Invite friends</h2>
       <p className="mt-2 font-serif text-2xl leading-tight">Now showing, <span className="italic">in your story.</span></p>
       <p className="mt-1 text-sm text-ink/70">A &quot;Now showing&quot; ticket for your story, with the trip link.</p>
@@ -84,7 +84,7 @@ export function InviteCard({ tripId, data }: { tripId: string; data: InviteData 
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto">
           <button type="button" onClick={onShare} disabled={busy}
-            className="label bg-accent px-5 py-3.5 text-night transition-colors hover:bg-ink disabled:opacity-60">
+            className="label bg-accent px-5 py-3.5 text-paper transition-colors hover:bg-ink disabled:opacity-60">
             {busy ? "Drawing your invite…" : canShare ? "Share to your story" : "Download invite"}
           </button>
           <button type="button" onClick={onCaption} className="label border border-ink/30 px-5 py-3.5 transition-colors hover:border-accent hover:text-accent">

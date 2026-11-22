@@ -21,7 +21,7 @@ import { TitleCard } from "./TitleCard";
 
 const NearbyMap = dynamic(() => import("./NearbyMap"), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-charcoal" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-surface" />,
 });
 
 type Origin = LatLng & { id: string; label: string }; // id: a city id or "me"
@@ -144,7 +144,7 @@ export function NearbyExplorer({ initial, destinations }: Props) {
         onPick={showOnMap} search={<TitleSearch titles={titles} onPick={showOnMap} />} />
 
       {/* Pillars ticker, like the credits line of a film studio site. */}
-      <div aria-hidden className="overflow-hidden border-y border-night bg-accent py-3 text-night">
+      <div aria-hidden className="overflow-hidden bg-accent py-3 text-paper">
         <div className="ticker flex w-max gap-10 whitespace-nowrap font-condensed text-2xl tracking-[0.08em] sm:text-3xl">
           {[0, 1, 2, 3].flatMap((k) => ticker.map((t) => (
             <span key={`${k}-${t}`} className="flex items-center gap-10">{t}<span className="font-serif italic">—</span></span>
@@ -152,7 +152,7 @@ export function NearbyExplorer({ initial, destinations }: Props) {
         </div>
       </div>
 
-      <section id="discover" className="scroll-mt-16 bg-charcoal pt-14 sm:pt-20">
+      <section id="discover" className="scroll-mt-16 pt-14 sm:pt-20">
         <div className={WRAP}>
           <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
             <div>
@@ -178,7 +178,7 @@ export function NearbyExplorer({ initial, destinations }: Props) {
           </div>
           {destinations.length > 0 && (
             <aside>
-              <p className="label text-smoke">Cinematic destinations</p>
+              <p className="label text-ink/60">Cinematic destinations</p>
               <p className="mt-1 font-serif text-2xl italic text-ink/80">Where the most places are</p>
               <div className="mt-4">
                 <Destinations items={destinations} current={origin.id} onPick={(id) => {
@@ -192,22 +192,22 @@ export function NearbyExplorer({ initial, destinations }: Props) {
       </section>
 
       <section id="index" aria-live="polite" aria-busy={loading}
-        className={`scroll-mt-16 bg-cream pb-20 pt-14 text-night transition-opacity sm:pt-20 ${loading ? "opacity-60" : ""}`}>
+        className={`scroll-mt-16 border-t border-ink/10 pb-20 pt-14 transition-opacity sm:pt-20 ${loading ? "opacity-60" : ""}`}>
         <div className={WRAP}>
-          <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-night pb-5">
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink/20 pb-5">
             <div>
-              <p className="label text-burgundy">02 — Explore</p>
+              <p className="label text-accent">02 — Explore</p>
               <h2 className="mt-3 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-                The index<span className="italic text-burgundy">.</span>
+                The index<span className="italic text-accent">.</span>
               </h2>
             </div>
-            <p className="max-w-sm text-sm text-night/70">
+            <p className="max-w-sm text-sm text-ink/70">
               Films and series shot around {origin.label}, closest first. Mark what you&apos;ve watched to fill your passport.
             </p>
           </div>
 
           {data && groups.length === 0 && !loading && (
-            <p className="mt-8 bg-bone p-5 text-sm">
+            <p className="mt-8 bg-surface p-5 text-sm">
               No filming places to show yet. We&apos;re checking our sources and adding them now.
             </p>
           )}
@@ -215,10 +215,10 @@ export function NearbyExplorer({ initial, destinations }: Props) {
             <div key={g.key} className="mt-12">
               <h3 className="flex items-baseline gap-3">
                 <span className="font-condensed text-3xl tracking-wide sm:text-4xl">{g.label}</span>
-                <span className="font-serif text-xl italic text-night/55">from {origin.label}</span>
-                <span className="label ml-auto text-night/50">{g.titles.length} {g.titles.length === 1 ? "title" : "titles"}</span>
+                <span className="font-serif text-xl italic text-ink/60">from {origin.label}</span>
+                <span className="label ml-auto text-ink/60">{g.titles.length} {g.titles.length === 1 ? "title" : "titles"}</span>
               </h3>
-              <ul className="mt-6 grid grid-cols-1 items-start gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="mt-6 grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {g.titles.map((t, ti) => {
                   const featured = gi === 0 && ti === 0;
                   const index = offsets[gi] + ti;

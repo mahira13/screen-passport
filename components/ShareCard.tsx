@@ -90,7 +90,7 @@ function ShareCardInner({ data }: { data: CardData }) {
           type="button"
           onClick={onShare}
           disabled={busy}
-          className="label mt-6 w-full max-w-xs bg-accent px-5 py-4 text-night transition-colors hover:bg-ink disabled:opacity-60"
+          className="label mt-6 w-full max-w-xs bg-accent px-5 py-4 text-paper transition-colors hover:bg-ink disabled:opacity-60"
         >
           {busy ? "Drawing your card…" : canShare ? "Share to your story" : "Download image"}
         </button>

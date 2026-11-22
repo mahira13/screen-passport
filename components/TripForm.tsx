@@ -18,8 +18,8 @@ type Props = {
 };
 
 const choice = (on: boolean) =>
-  `label px-5 py-3 transition-colors ${on ? "bg-accent text-night" : "border border-ink/25 hover:border-accent hover:text-accent"}`;
-const legend = "label text-smoke";
+  `label px-5 py-3 transition-colors ${on ? "bg-accent text-paper" : "border border-ink/25 hover:border-accent hover:text-accent"}`;
+const legend = "label text-ink/60";
 const field = "mt-2 block w-full border-b-2 border-ink/30 bg-transparent px-1 py-2.5 text-lg focus:border-accent focus:outline-none";
 
 export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
@@ -119,7 +119,7 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
           <div>
             <label htmlFor="trip-meet" className={legend}>Meeting point <span className="normal-case tracking-normal">(optional)</span></label>
             <input id="trip-meet" maxLength={MEETING_POINT_MAX} value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)}
-              placeholder="The first stop" className={`${field} placeholder:text-ink/30`} />
+              placeholder="The first stop" className={`${field} placeholder:text-ink/55`} />
             <p className="mt-1 text-xs text-ink/70">Pick a public place. Leave empty to meet at the first stop.</p>
           </div>
 
@@ -133,7 +133,7 @@ export function TripForm({ works, from, placesByMode, nearestCity }: Props) {
 
           {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
           <button type="submit" disabled={sending}
-            className="label w-full bg-accent px-5 py-4 text-night transition-colors hover:bg-ink disabled:opacity-60">
+            className="label w-full bg-accent px-5 py-4 text-paper transition-colors hover:bg-ink disabled:opacity-60">
             {sending ? "Planning your trip…" : "Create the trip"}
           </button>
         </form>

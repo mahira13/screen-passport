@@ -45,7 +45,7 @@ export async function generateMetadata(props: PageProps<"/trip/[id]">): Promise<
 export default function TripPage(props: PageProps<"/trip/[id]">) {
   return (
     <main className="w-full pb-16">
-      <Suspense fallback={<p className="label px-4 py-16 text-center text-smoke">Opening trip…</p>}>
+      <Suspense fallback={<p className="label px-4 py-16 text-center text-ink/60">Opening trip…</p>}>
         <TripView params={props.params} />
       </Suspense>
     </main>
@@ -61,7 +61,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
       <div className="px-4 pt-10 text-center">
         <h1 className="font-serif text-4xl">We can&apos;t open this trip right now</h1>
         <p className="mt-2 text-ink/80">Something went wrong on our side. Please try again in a minute.</p>
-        <Link href="/" className="label mt-6 inline-block bg-accent px-5 py-3.5 text-night">
+        <Link href="/" className="label mt-6 inline-block bg-accent px-5 py-3.5 text-paper">
           Find filming places near you
         </Link>
       </div>
@@ -74,11 +74,11 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
-      <header className="relative overflow-hidden bg-night">
-        <div aria-hidden className="pointer-events-none absolute -right-40 -top-20 h-[32rem] w-[32rem] rounded-full bg-burgundy/45 blur-[120px]" />
+      <header className="relative overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute -right-40 -top-20 h-[32rem] w-[32rem] rounded-full bg-accent/10 blur-[120px]" />
         <div className="relative mx-auto w-full max-w-screen-2xl px-4 pb-12 pt-10 sm:px-8 sm:pt-16 lg:px-12">
-        <p className="label flex flex-wrap items-center gap-3 text-smoke">
-          <span className="text-accent">Fan trip</span><span aria-hidden className="h-px w-8 bg-smoke/60" />
+        <p className="label flex flex-wrap items-center gap-3 text-ink/60">
+          <span className="text-accent">Fan trip</span><span aria-hidden className="h-px w-8 bg-ink/30" />
           <span>Organised by {trip.organiser}</span>
         </p>
         <h1 className="mt-5 max-w-5xl font-serif text-5xl leading-[0.92] tracking-tight sm:text-7xl xl:text-8xl">{trip.title}</h1>
@@ -90,7 +90,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
             ...(trip.stops.length > 1 ? [["Distance", `${formatDistance(km)} between stops`]] : []),
           ].map(([k, v]) => (
             <div key={k} className="border-b border-ink/15 py-4 pr-4">
-              <dt className="label text-smoke">{k}</dt>
+              <dt className="label text-ink/60">{k}</dt>
               <dd className="mt-1 font-serif text-xl leading-tight">{v}</dd>
             </div>
           ))}
@@ -130,36 +130,36 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
             <ol className="mt-4 border-t border-ink/15">
               {trip.stops.map((s, i) => (
                 <li key={s.id} className="flex gap-5 border-b border-ink/15 py-6">
-                  <span aria-hidden className={`w-12 shrink-0 font-condensed text-6xl leading-[0.8] tabular-nums ${i === 0 ? "text-accent" : "text-ink/25"}`}>
+                  <span aria-hidden className={`w-12 shrink-0 font-condensed text-6xl leading-[0.8] tabular-nums ${i === 0 ? "text-accent" : "text-ink/40"}`}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div className="min-w-0">
-                    <p className="label text-smoke">
+                    <p className="label text-ink/60">
                       {s.plan.time && <span className="text-accent">{s.plan.time} · </span>}
                       {s.plan.travel_from_previous}
                     </p>
                     <h3 className="mt-1.5 font-serif text-3xl leading-tight">{s.name}</h3>
-                    <p className="mt-0.5 font-serif text-lg italic text-accent">{s.title}{s.city && <span className="text-ink/50"> · {s.city}</span>}</p>
+                    <p className="mt-0.5 font-serif text-lg italic text-accent">{s.title}{s.city && <span className="text-ink/60"> · {s.city}</span>}</p>
                     {(s.plan.why_fans_love_it ?? s.sceneNote) && <p className="mt-3 text-ink/80">{s.plan.why_fans_love_it ?? s.sceneNote}</p>}
                     {s.visitNote && <p className="mt-1 text-xs text-ink/60">{s.visitNote}</p>}
                     <a href={directionsUrl(s)} target="_blank" rel="noopener noreferrer"
-                      className="label mt-3 inline-block text-accent hover:text-ink">
+                      className="label mt-1 inline-flex min-h-11 items-center text-accent hover:text-ink">
                       Directions →
                     </a>
                   </div>
                 </li>
               ))}
             </ol>
-            <p className="mt-3 text-xs text-ink/50">
+            <p className="mt-3 text-xs text-ink/60">
               Distances are straight-line and approximate. Times are a rough guide, in {tzLabel(trip.timeZone)} time.
             </p>
           </section>
 
           {trip.plan.tips.length > 0 && (
-            <section className="mt-12 bg-cream p-6 text-night">
-              <h2 className="label text-burgundy">Tips</h2>
+            <section className="mt-12 border-l-2 border-accent bg-surface p-6">
+              <h2 className="label text-accent">Tips</h2>
               <ul className="mt-3 space-y-3">
-                {trip.plan.tips.map((t, i) => <li key={i} className="flex gap-3 font-serif text-lg leading-snug"><span aria-hidden className="text-burgundy">✦</span>{t}</li>)}
+                {trip.plan.tips.map((t, i) => <li key={i} className="flex gap-3 font-serif text-lg leading-snug"><span aria-hidden className="text-accent">✦</span>{t}</li>)}
               </ul>
             </section>
           )}
@@ -171,7 +171,7 @@ async function TripView({ params }: { params: Promise<{ id: string }> }) {
             meetingPoint: trip.meetingPoint, stops: trip.stops.length, joined: trip.joined.length, url,
           })} />
 
-          <p className="mt-8 border-l-2 border-pink pl-3 text-xs text-ink/70">
+          <p className="mt-8 border-l-2 border-accent pl-3 text-xs text-ink/75">
             Stay safe: meet in a public place, and don&apos;t share personal details. A first name is all you need here.
           </p>
           <div className="mt-3">

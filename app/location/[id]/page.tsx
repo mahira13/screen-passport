@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ShareLink } from "@/components/ShareLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -67,6 +68,8 @@ async function LocationView({ params }: { params: Promise<{ id: string }> }) {
             {l.checkIn && <CheckInButton place={p} />}
             <DirectionsLink place={p} />
             <DistanceFromMe to={p} />
+            <ShareLink path={`/location/${p.id}`} title={p.name} what="location"
+              text={`${p.name}: filming location of ${l.titles.map((t) => t.title).slice(0, 3).join(", ")}.`} />
           </div>
 
           <div className="mt-8 border-l-2 border-accent bg-surface/60 p-4">

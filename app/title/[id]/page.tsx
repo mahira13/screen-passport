@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ShareLink } from "@/components/ShareLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -64,6 +65,8 @@ async function TitleView({ params }: { params: Promise<{ id: string }> }) {
             <Link href={tripHref} className="label inline-flex min-h-11 items-center border border-ink/30 px-5 transition-colors hover:border-accent hover:text-accent">
               Create a trip
             </Link>
+            <ShareLink path={`/title/${encodeURIComponent(work.id)}`} title={work.title} what="title"
+              text={`Where ${work.title} was filmed: ${places.length} real places to visit.`} />
           </div>
         </div>
       </section>

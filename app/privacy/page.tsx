@@ -27,6 +27,11 @@ export default function PrivacyPage() {
         If you tap &quot;Use my location&quot;, your browser shares it with this page. We round it to about 100 m and use it
         to sort places by distance. We don&apos;t store it, except as the rounded start point of a trip you create.
       </p>
+      <p className="mt-3">
+        Before you share a location, we pick a nearby start city from the approximate location our host (Vercel) derives
+        from your IP address, usually your region or city. It only chooses which city the list starts from. We don&apos;t
+        store or log it, and it is never used for check-in. You can change the start at any time.
+      </p>
 
       <H>Your passport</H>
       <p>

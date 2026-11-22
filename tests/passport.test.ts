@@ -5,7 +5,7 @@ import {
   checkInIds, cleanStartCity, cleanVisited, cleanWatched, EMPTY_PASSPORT, parseLocalPassport, passportSummary, toggleId,
 } from "@/lib/passport";
 import { editKeyMatches, hashEditKey } from "@/lib/passport-server";
-import { DEFAULT_CITY } from "@/lib/cities";
+import { BERLIN as DEFAULT_CITY, CITIES } from "./fixtures/cities";
 import type { Work } from "@/lib/types";
 
 describe("ids", () => {
@@ -88,9 +88,9 @@ describe("cleanVisited", () => {
 
 describe("cleanStartCity", () => {
   it("keeps our city ids only", () => {
-    expect(cleanStartCity("berlin")).toBe("berlin");
-    expect(cleanStartCity("me")).toBeNull();
-    expect(cleanStartCity({ lat: 1 })).toBeNull();
+    expect(cleanStartCity("berlin", CITIES)).toBe("berlin");
+    expect(cleanStartCity("me", CITIES)).toBeNull();
+    expect(cleanStartCity({ lat: 1 }, CITIES)).toBeNull();
   });
 });
 

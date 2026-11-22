@@ -1,11 +1,12 @@
 "use client";
 
+import { REGION } from "@/lib/region";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect, useRef } from "react";
 import { useLeafletMap } from "@/lib/use-leaflet-map";
 
-const BERLIN: [number, number] = [52.52, 13.405];
+const REGION_CENTRE: [number, number] = [REGION.centre.lat, REGION.centre.lng];
 
 // A plain dot avoids Leaflet's default marker images, which bundlers break.
 const pin = L.divIcon({
@@ -19,7 +20,7 @@ type Props = { lat: number | null; lng: number | null; onPick: (lat: number, lng
 
 export default function PinMap({ lat, lng, onPick }: Props) {
   const has = lat !== null && lng !== null;
-  const [ref, map] = useLeafletMap({ center: has ? [lat, lng] : BERLIN, zoom: has ? 16 : 10 });
+  const [ref, map] = useLeafletMap({ center: has ? [lat, lng] : REGION_CENTRE, zoom: has ? 16 : 6 });
   const pick = useRef(onPick);
   useEffect(() => {
     pick.current = onPick;

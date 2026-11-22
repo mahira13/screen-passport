@@ -1,5 +1,6 @@
 // Which collections Discover features, per visitor. Pure; runs on the phone because the location
-// stays there. Pinned collections first (in rank order), then the best-scoring ones fill the rest.
+// stays there. Pins set in the admin come first (in rank order), then the best-scoring ones fill
+// the rest. No collection is named in code.
 import type { CollectionModel } from "./collections-model";
 import { haversineKm } from "./distance";
 import type { LatLng } from "./types";
@@ -7,14 +8,6 @@ import type { LatLng } from "./types";
 export const FEATURED_COUNT = 3;
 export const MIN_PLACES = 3; // to be scored at all
 export const NEARBY_DEFAULT_KM = 50; // with a location but no radius chip (Anywhere)
-
-/**
- * Pins set in code by a rule, not by hand: the first collection in keys that exists gets the rank
- * once enough of its places are check-in grade. Dark in Germany (curated, once written) or, until
- * then, the automatic Dark collection.
- */
-export type PinRule = { keys: string[]; rank: number; minCheckIn: number };
-export const PIN_RULES: PinRule[] = [{ keys: ["curated:dark-in-germany", "title:dark"], rank: 1, minCheckIn: 5 }];
 
 export type ScoreContext = { from: LatLng | null; radiusKm: number | null };
 export type Scored = { c: CollectionModel; score: number; nearby: number; playable: number; visual: number };
@@ -43,23 +36,13 @@ export function scoreCollections(all: CollectionModel[], ctx: ScoreContext): Sco
     .sort((a, b) => b.score - a.score || Number(b.c.kind === "curated") - Number(a.c.kind === "curated") || a.c.name.localeCompare(b.c.name));
 }
 
-/** Pins in order: rule pins and table pins by rank (a rule pin wins a tie), each collection once. */
-export function pinned(all: CollectionModel[], rules: PinRule[] = PIN_RULES): CollectionModel[] {
-  const byKey = new Map(all.map((c) => [c.key, c]));
-  const fromRules = rules.flatMap((r) => {
-    const c = r.keys.map((k) => byKey.get(k)).find(Boolean);
-    return c && c.places.filter((p) => p.checkIn).length >= r.minCheckIn ? [{ c, rank: r.rank, rule: 0 }] : [];
-  });
-  const fromTable = all.filter((c) => c.pinRank != null && c.places.length > 0).map((c) => ({ c, rank: c.pinRank!, rule: 1 }));
-  const seen = new Set<string>();
-  return [...fromRules, ...fromTable]
-    .sort((a, b) => a.rank - b.rank || a.rule - b.rule)
-    .filter(({ c }) => !seen.has(c.key) && seen.add(c.key))
-    .map(({ c }) => c);
+/** Pins from the table (featured_rank), in rank order; a pin with no published places is skipped. */
+export function pinned(all: CollectionModel[]): CollectionModel[] {
+  return all.filter((c) => c.pinRank != null && c.places.length > 0).sort((a, b) => a.pinRank! - b.pinRank!);
 }
 
-export function featuredPicks(all: CollectionModel[], ctx: ScoreContext, count = FEATURED_COUNT, rules: PinRule[] = PIN_RULES): CollectionModel[] {
-  const pins = pinned(all, rules).slice(0, count);
+export function featuredPicks(all: CollectionModel[], ctx: ScoreContext, count = FEATURED_COUNT): CollectionModel[] {
+  const pins = pinned(all).slice(0, count);
   const taken = new Set(pins.map((c) => c.key));
   const rest = scoreCollections(all, ctx).map((s) => s.c).filter((c) => !taken.has(c.key));
   return [...pins, ...rest].slice(0, count);

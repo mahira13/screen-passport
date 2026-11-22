@@ -1,5 +1,7 @@
 // The AI verification pipeline (CLAUDE.md product rule 4). Used by scripts/verify-locations.ts and
 // the admin "Run AI verification" button. Server only: uses the service role key.
+import { geocoderContact } from "../geocode";
+import { REGION } from "../region";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { haversineKm } from "../distance";
 import type { NominatimHit } from "../geocode";
@@ -32,7 +34,7 @@ export async function geocode(q: string, contact: string): Promise<NominatimHit 
   const wait = lastNominatim + NOMINATIM_GAP_MS - Date.now();
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   lastNominatim = Date.now();
-  const params = new URLSearchParams({ q, format: "jsonv2", limit: "1", countrycodes: "de", addressdetails: "1" });
+  const params = new URLSearchParams({ q, format: "jsonv2", limit: "1", countrycodes: REGION.countryCode.toLowerCase(), addressdetails: "1" });
   const res = await fetch(`${NOMINATIM}?${params}`, {
     headers: { "User-Agent": `ScreenPassport/0.1 (${contact})`, "Accept-Language": "de,en" },
     signal: AbortSignal.timeout(15_000),
@@ -42,7 +44,7 @@ export async function geocode(q: string, contact: string): Promise<NominatimHit 
 }
 
 export function contactOrThrow(): string {
-  const c = process.env.GEOCODER_CONTACT || process.env.GEOCODE_CONTACT;
+  const c = geocoderContact();
   if (!c) throw new Error("Set GEOCODER_CONTACT (an email or project URL) for Nominatim and page fetches.");
   return c;
 }
@@ -72,7 +74,7 @@ async function loadQueue(db: SupabaseClient, o: RunOptions): Promise<Row[]> {
 
 async function verifyRow(db: SupabaseClient, row: Row, contact: string, log: (s: string) => void): Promise<{ result: LocationResult; hit: NominatimHit | null; geo: GeoCheck | null }> {
   // Code checks shared by every title: where the place is.
-  const hit = await geocode(row.geocode_query ?? [row.name, row.city, "Germany"].filter(Boolean).join(", "), contact).catch(() => null);
+  const hit = await geocode(row.geocode_query ?? [row.name, row.city, REGION.country].filter(Boolean).join(", "), contact).catch(() => null);
   const geo = hit ? classifyGeocode(hit, row.name, row.city) : null;
   const precise = row.coord_quality === "source" || row.coord_quality === "verified";
   const point = precise && row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng }

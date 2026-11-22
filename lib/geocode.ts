@@ -1,5 +1,10 @@
 // Reading Nominatim results. Network calls live in scripts/geocode.ts.
 
+/** Contact for the Nominatim and Wikimedia User-Agent (their policies require one). */
+export function geocoderContact(): string | null {
+  return process.env.GEOCODER_CONTACT || process.env.GEOCODE_CONTACT || null; // GEOCODE_CONTACT: old name
+}
+
 export interface NominatimHit {
   lat: string;
   lon: string;

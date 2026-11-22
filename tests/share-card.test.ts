@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildNearby } from "@/lib/nearby";
-import { findCity } from "@/lib/cities";
+import { BERLIN, GOERLITZ } from "./fixtures/cities";
 import { buildCardData, mapPlaces, MAX_STAMPS, projectDots, shareText, TITLE_COLOURS } from "@/lib/share-card";
 import type { Collection, Work } from "@/lib/types";
 
@@ -17,7 +17,7 @@ const nearby = buildNearby(
     { id: 4, work_id: "budapest", name: "Kaufhaus Görlitz", city: "Görlitz", lat: 51.153, lng: 14.987, coord_quality: "approx" },
   ],
   works,
-  findCity("berlin")!,
+  BERLIN,
 );
 const stamp = (workId: string, visited = false) => ({
   workId, title: works.find((w) => w.id === workId)!.title, places: nearby.places.filter((p) => p.workId === workId), visited,
@@ -52,7 +52,7 @@ describe("buildCardData", () => {
         { id: 1, work_id: "dark", name: "Alexanderplatz", city: "Berlin", lat: 52.522133, lng: 13.41345, coord_quality: "source" },
       ],
       works,
-      findCity("berlin")!,
+      BERLIN,
     );
     const two = buildCardData({
       cityName: "Berlin", displayName: null, collections: [],
@@ -79,7 +79,7 @@ describe("buildCardData", () => {
 
 describe("mapPlaces", () => {
   it("falls back to all places when fewer than 2 are local", () => {
-    const fromGoerlitz = buildNearby(nearby.places.map((p) => ({ id: p.id, work_id: p.workId, name: p.name, city: p.city, lat: p.lat, lng: p.lng, coord_quality: p.coordQuality })), works, findCity("goerlitz")!);
+    const fromGoerlitz = buildNearby(nearby.places.map((p) => ({ id: p.id, work_id: p.workId, name: p.name, city: p.city, lat: p.lat, lng: p.lng, coord_quality: p.coordQuality })), works, GOERLITZ);
     expect(mapPlaces(fromGoerlitz.places)).toHaveLength(4);
   });
 });

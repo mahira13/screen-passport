@@ -5,11 +5,12 @@ import { LocationReviewCard, type ReviewLocation } from "@/components/admin/Loca
 import { ImageReviewCard, type ImageRow } from "@/components/admin/ImageReviewCard";
 import { FeaturedPins } from "@/components/admin/FeaturedPins";
 import { buildCollections } from "@/lib/collections-model";
-import { featuredPicks, pinned, PIN_RULES } from "@/lib/featured";
+import { featuredPicks } from "@/lib/featured";
 import { LoginForm } from "@/components/admin/LoginForm";
 import { VerificationPanel } from "@/components/admin/VerificationPanel";
 import { ADMIN_COOKIE, isValidToken } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase";
+import { TRUSTED_DOMAINS } from "@/lib/trusted-sources";
 import { logout } from "./actions";
 
 export const metadata: Metadata = { title: "Review locations", robots: { index: false, follow: false } };
@@ -74,18 +75,18 @@ async function AdminLocations() {
   const featured = !works.error && !locs.error && !cols.error
     ? buildCollections({ works: works.data, locations: locs.data, collections: cols.data } as unknown as Parameters<typeof buildCollections>[0])
     : null;
-  const ruleNotes = featured ? PIN_RULES.flatMap((r) => {
-    const c = pinned(featured, [r])[0];
-    return c ? [`${c.name} at ${r.rank} (${c.places.filter((p) => p.checkIn).length} check-in places, needs ${r.minCheckIn})`] : [];
-  }) : [];
   return (
     <>
       <VerificationPanel />
+      <details className="mt-4 text-sm">
+        <summary className="cursor-pointer">Trusted source domains ({TRUSTED_DOMAINS.length}, read-only)</summary>
+        <p className="mt-2 text-neutral-600">AI verification can only publish with evidence from these domains (and their subdomains). The list lives in lib/trusted-sources.ts and changes through code review.</p>
+        <p className="mt-2 break-words font-mono text-xs">{TRUSTED_DOMAINS.join(" · ")}</p>
+      </details>
       {featured ? (
         <FeaturedPins
           rows={featured.filter((c) => c.kind === "curated").map((c) => ({ id: c.slug, name: c.name, rank: c.pinRank, places: c.places.length, checkIn: c.places.filter((p) => p.checkIn).length }))}
           preview={featuredPicks(featured, { from: null, radiusKm: null }).map((c) => c.name)}
-          rules={ruleNotes}
         />
       ) : <p className="mt-6 text-sm text-red-500">Featured collections need migrations 009 and 010: {(cols.error ?? locs.error ?? works.error)?.message}</p>}
       <div className="mt-4 flex items-center justify-between text-sm">

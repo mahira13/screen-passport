@@ -16,16 +16,8 @@ alter table public.locations
       and jsonb_typeof(check_in_area->'coordinates') = 'array'
       and octet_length(check_in_area::text) <= 50000));
 
--- Berlin State Library (Dark): the source names the building on Unter den Linden.
-update public.locations
-set aliases = array['Staatsbibliothek zu Berlin', 'Staatsbibliothek Unter den Linden']
-where name = 'Berlin State Library, Unter den Linden'
-  and not aliases @> array['Staatsbibliothek zu Berlin', 'Staatsbibliothek Unter den Linden'];
-
--- Südwestkirchhof Stahnsdorf: a working cemetery.
-update public.locations
-set visit_note = 'Working cemetery — please visit quietly and respect graves and mourners.'
-where name = 'Südwestkirchhof Stahnsdorf';
+-- Aliases and visit notes are data: they come from data/seed/locations.csv (aliases column) and
+-- the pipeline (Wikidata labels), never from a migration.
 
 -- Same columns and order as 009; the outline is appended (a view can only gain columns at the end).
 create or replace view public.catalogue_entries

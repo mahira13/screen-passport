@@ -1,5 +1,6 @@
 // Reading a Nominatim result for the verification pipeline. Pure functions; the request is in run.ts.
 import type { NominatimHit } from "../geocode";
+import { inRegion } from "../region";
 
 export type GeoKind = "poi" | "area" | "residential" | "unmatched";
 
@@ -16,7 +17,7 @@ export const words = (s: string) => fold(s).split(/[^a-z0-9]+/).filter((w) => w.
 
 // Words that name a kind of place, not a particular one: sharing only these proves nothing.
 export const GENERIC = new Set([
-  "the", "and", "der", "die", "das", "und", "von", "bei", "am", "an", "im", "berlin", "berliner",
+  "the", "and", "der", "die", "das", "und", "von", "bei", "am", "an", "im",
   "rathaus", "bahnhof", "station", "kirche", "church", "platz", "square", "strasse", "street", "bridge", "brucke",
   "airport", "flughafen", "park", "museum", "hall", "halle", "haus", "house", "school", "schule", "hotel",
   "theater", "theatre", "markt", "market", "tram", "stop", "former", "ehemalige", "alte", "alter", "altes", "old", "new", "neue",
@@ -27,7 +28,10 @@ export function namesMatch(a: string, b: string, city?: string | null): boolean 
   const [fa, fb] = [words(a).join(" "), words(b).join(" ")];
   if (!fa || !fb) return false;
   if (fa === fb || fa.includes(fb) || fb.includes(fa)) return true;
-  const skip = new Set([...GENERIC, ...(city ? words(city) : [])]);
+  // The place's own city says nothing about which place it is: "Berlin", and "Berliner" as in
+  // "Berliner Dom" vs "Berliner Philharmonie".
+  const own = city ? words(city).flatMap((w) => [w, `${w}er`]) : [];
+  const skip = new Set([...GENERIC, ...own]);
   const wb = new Set(words(b));
   return words(a).some((w) => w.length >= 4 && !skip.has(w) && wb.has(w));
 }
@@ -48,7 +52,7 @@ export function classifyGeocode(hit: NominatimHit, locationName: string, locatio
   const hitCity = cityOf(hit);
   const cities = (locationCity ?? "").split("/").map((c) => fold(c).trim()).filter(Boolean);
   const cityMatch = !cities.length || (!!hitCity && cities.some((c) => fold(hitCity) === c || fold(hitCity).startsWith(c) || c.startsWith(fold(hitCity))));
-  const countryMatch = (hit.address?.country_code ?? "de").toLowerCase() === "de";
+  const countryMatch = inRegion(hit.address?.country_code); // no country in the result: not a match
   const bb = hit.boundingbox?.map(Number);
   const bbox = bb && bb.length === 4 && bb.every(Number.isFinite) ? ([bb[0], bb[2], bb[1], bb[3]] as GeoCheck["bbox"]) : null;
 

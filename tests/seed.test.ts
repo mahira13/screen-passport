@@ -91,6 +91,14 @@ describe("seed format v2", () => {
     expect(planLocationRow({ ...csv, public_access: "exterior_only" }, db)!.public_access).toBe("exterior_only");
   });
 
+  it("merges place aliases from the CSV and the database", () => {
+    const lib = locations.find((l) => l.id === 8)!;
+    expect(lib.aliases).toEqual(["Staatsbibliothek zu Berlin", "Staatsbibliothek Unter den Linden"]);
+    expect(planLocationRow(lib, { ...db, id: 8, aliases: ["Staatsbibliothek zu Berlin", "Stabi"] })!.aliases)
+      .toEqual(["Staatsbibliothek zu Berlin", "Staatsbibliothek Unter den Linden", "Stabi"]);
+    expect(planLocationRow({ ...csv, aliases: [] }, undefined)!.aliases).toEqual([]);
+  });
+
   it("leaves places merged away in the database alone", () => {
     expect(planLocationRow(csv, { ...db, merged_into: 25 })).toBeNull();
   });

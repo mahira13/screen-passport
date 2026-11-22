@@ -1,5 +1,6 @@
 // Finds Commons photos for published locations. Used by scripts/fetch-images.ts and the admin page.
 // Server only (service role key). Order: Wikidata P18, Commons search by name + city, geosearch 100 m.
+import { geocoderContact } from "../geocode";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { byGeo, bySearch, byTitles, type Candidate, COMMONS_API, type CommonsPage, p18File, toCandidate } from "./commons";
 import { askImageMatch } from "./relevance";
@@ -19,7 +20,7 @@ async function getJson<T>(base: string, params: Record<string, string>): Promise
   const wait = last + GAP_MS - Date.now();
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   last = Date.now();
-  const contact = process.env.GEOCODER_CONTACT || process.env.GEOCODE_CONTACT;
+  const contact = geocoderContact();
   if (!contact) throw new Error("Set GEOCODER_CONTACT for the Wikimedia User-Agent.");
   const res = await fetch(`${base}?${new URLSearchParams(params)}`, {
     headers: { "User-Agent": `ScreenPassport/0.1 (${contact})` },

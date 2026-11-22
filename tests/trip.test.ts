@@ -1,3 +1,4 @@
+import { CITIES } from "./fixtures/cities";
 import { describe, expect, it } from "vitest";
 import type { LiveLocation } from "@/lib/nearby";
 import {
@@ -13,7 +14,7 @@ const works: Work[] = [
 const loc = (id: number, work_id: string, lat: number, lng: number, city = "Berlin"): LiveLocation => ({
   id, work_id, name: `Place ${id}`, city, lat, lng, coord_quality: "source", scene_note: `Scene ${id}`,
 });
-const berlin = parseFrom("berlin")!;
+const berlin = parseFrom("berlin", CITIES)!;
 const locations = [
   loc(1, "bb", 52.521, 13.41),
   loc(2, "bb", 52.5, 13.3),
@@ -26,13 +27,13 @@ const locations = [
 describe("parseFrom", () => {
   it("takes a city id or rounded lat,lng", () => {
     expect(berlin).toMatchObject({ label: "Berlin", param: "berlin", tz: "Europe/Berlin" });
-    expect(parseFrom("52.52049,13.40499")).toMatchObject({ lat: 52.52, lng: 13.405, param: "52.52,13.405", tz: null });
+    expect(parseFrom("52.52049,13.40499", CITIES)).toMatchObject({ lat: 52.52, lng: 13.405, param: "52.52,13.405", tz: null });
   });
   it("rejects anything else", () => {
-    expect(parseFrom("atlantis")).toBeNull();
-    expect(parseFrom("1,2,3")).toBeNull();
-    expect(parseFrom("95,10")).toBeNull();
-    expect(parseFrom(null)).toBeNull();
+    expect(parseFrom("atlantis", CITIES)).toBeNull();
+    expect(parseFrom("1,2,3", CITIES)).toBeNull();
+    expect(parseFrom("95,10", CITIES)).toBeNull();
+    expect(parseFrom(null, CITIES)).toBeNull();
   });
 });
 

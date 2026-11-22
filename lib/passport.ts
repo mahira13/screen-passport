@@ -1,4 +1,4 @@
-import { CITIES } from "./cities";
+import type { City } from "./cities";
 import { canCheckIn } from "./distance";
 import type { LiveLocation, NearbyResult } from "./nearby";
 
@@ -45,8 +45,8 @@ export function cleanVisited(input: unknown, eligible: Set<number>, stored: numb
 }
 
 /** Only our own city ids are stored, never a user's coordinates. */
-export function cleanStartCity(input: unknown): string | null {
-  return typeof input === "string" && CITIES.some((c) => c.id === input) ? input : null;
+export function cleanStartCity(input: unknown, cities: City[]): string | null {
+  return typeof input === "string" && cities.some((c) => c.id === input) ? input : null;
 }
 
 /** Reads localStorage JSON defensively; anything odd becomes an empty passport. */

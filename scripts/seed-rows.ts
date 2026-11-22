@@ -50,6 +50,7 @@ export function toLocation(r: Rec): FilmLocation {
     public_access: (orNull(r.public_access) ?? undefined) as PublicAccess | undefined,
     is_filming_location: orNull(r.is_filming_location) === null ? undefined : /^(true|yes|1)$/i.test(r.is_filming_location),
     merged_into: numOrNull(r.merged_into),
+    aliases: splitPipes(r.aliases),
   };
 }
 
@@ -90,7 +91,7 @@ export function keepReviewedFields(csv: FilmLocation, db: Reviewed | undefined):
 export type DbLocation = Reviewed & {
   verification_status: VerificationStatus; merged_into: number | null;
   country: string | null; country_code: string | null; location_confidence: LocationConfidence | null;
-  public_access: PublicAccess; is_filming_location: boolean;
+  public_access: PublicAccess; is_filming_location: boolean; aliases?: string[] | null;
 };
 
 /**
@@ -106,6 +107,8 @@ export function planLocationRow(csv: FilmLocation, db: DbLocation | undefined) {
     id: csv.id, work_id: csv.work_id, name: csv.name, scene_note: csv.scene_note, address: csv.address,
     city: csv.city, region: csv.region, lat, lng, coord_quality, visit_note: csv.visit_note,
     source_name: csv.source_name, source_url: csv.source_url, geocode_query: csv.geocode_query,
+    // Aliases from the CSV and the database (e.g. from Wikidata labels), each once.
+    aliases: [...new Set([...(csv.aliases ?? []), ...(db?.aliases ?? [])])],
   };
   if (db) {
     return {

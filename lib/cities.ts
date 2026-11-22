@@ -1,37 +1,88 @@
+// Start cities, built from published places: every city with enough of them. Nothing is listed by
+// hand, so a new film town appears as soon as its places are published. Pure.
+import { slugify } from "./collections-model";
+import { centreOf } from "./discover";
+import { haversineKm } from "./distance";
+import { inRegion, REGION, tzForCountry } from "./region";
 import type { LatLng } from "./types";
 
 export interface City extends LatLng {
-  id: string;
+  id: string; // slug of the name: "Görlitz" -> "goerlitz"
   name: string;
   tz: string; // IANA time zone, used for trip times
+  places: number; // distinct published places
 }
 
-// City centres, used as the start point when the user picks a city.
-export const CITIES: City[] = [
-  { id: "berlin", name: "Berlin", lat: 52.52, lng: 13.405, tz: "Europe/Berlin" },
-  { id: "potsdam", name: "Potsdam", lat: 52.3906, lng: 13.0645, tz: "Europe/Berlin" },
-  { id: "hamburg", name: "Hamburg", lat: 53.5511, lng: 9.9937, tz: "Europe/Berlin" },
-  { id: "munich", name: "München", lat: 48.1374, lng: 11.5755, tz: "Europe/Berlin" },
-  { id: "cologne", name: "Köln", lat: 50.9375, lng: 6.9603, tz: "Europe/Berlin" },
-  { id: "frankfurt", name: "Frankfurt", lat: 50.1109, lng: 8.6821, tz: "Europe/Berlin" },
-  { id: "duesseldorf", name: "Düsseldorf", lat: 51.2277, lng: 6.7735, tz: "Europe/Berlin" },
-  { id: "stuttgart", name: "Stuttgart", lat: 48.7758, lng: 9.1829, tz: "Europe/Berlin" },
-  { id: "leipzig", name: "Leipzig", lat: 51.3397, lng: 12.3731, tz: "Europe/Berlin" },
-  { id: "dresden", name: "Dresden", lat: 51.0504, lng: 13.7373, tz: "Europe/Berlin" },
-  { id: "goerlitz", name: "Görlitz", lat: 51.1528, lng: 14.9872, tz: "Europe/Berlin" },
-];
+export const MIN_CITY_PLACES = 3;
 
-export const DEFAULT_CITY = CITIES[0];
+/**
+ * Matching key for a city name, the same rule as search_norm() in SQL: "Görlitz", "Goerlitz" and
+ * "Gorlitz" are one city. Not shown anywhere; ids stay readable slugs.
+ */
+export const cityKey = (name: string) =>
+  name.toLowerCase().replace(/ß/g, "ss").normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/ae/g, "a").replace(/oe/g, "o").replace(/ue/g, "u").replace(/[^a-z0-9]+/g, "");
 
-export function findCity(id: string | null | undefined): City | undefined {
-  return CITIES.find((c) => c.id === id);
+type Row = { id: number; city: string | null; lat: number | null; lng: number | null; country_code?: string | null };
+
+/** Cities with at least MIN_CITY_PLACES distinct published places, most places first. */
+export function deriveCities(rows: Row[], min = MIN_CITY_PLACES): City[] {
+  const groups = new Map<string, { names: Map<string, number>; places: Map<number, LatLng>; country: string | null }>();
+  for (const r of rows) {
+    const name = r.city?.trim();
+    if (!name || r.lat == null || r.lng == null) continue;
+    const key = cityKey(name);
+    if (!key) continue;
+    const g = groups.get(key) ?? { names: new Map(), places: new Map(), country: r.country_code ?? null };
+    if (!g.places.has(r.id)) g.names.set(name, (g.names.get(name) ?? 0) + 1);
+    g.places.set(r.id, { lat: r.lat, lng: r.lng });
+    groups.set(key, g);
+  }
+  return [...groups.values()]
+    .filter((g) => g.places.size >= min)
+    .map((g) => {
+      const name = [...g.names.entries()].sort((a, b) => b[1] - a[1])[0][0]; // the most used spelling
+      return { id: slugify(name), name, tz: tzForCountry(g.country), places: g.places.size, ...centreOf([...g.places.values()])! };
+    })
+    .sort((a, b) => b.places - a.places || a.name.localeCompare(b.name));
 }
 
-const foldName = (s: string) => s.toLowerCase().replace(/ß/g, "ss").normalize("NFKD").replace(/[^a-z]/g, "");
+export const findCity = (cities: City[], id: string | null | undefined) => (id ? cities.find((c) => c.id === id) : undefined);
 
-/** "Görlitz" or "goerlitz" -> the start city, if it is one. */
-export function findCityByName(name: string | null | undefined): City | undefined {
-  if (!name) return undefined;
-  const key = foldName(name);
-  return CITIES.find((c) => foldName(c.name) === key || foldName(c.id) === key);
+/** "Görlitz", "goerlitz" or "GÖRLITZ" -> that city, if it is one. */
+export function findCityByName(cities: City[], name: string | null | undefined): City | undefined {
+  const key = name ? cityKey(name) : "";
+  return key ? cities.find((c) => cityKey(c.name) === key) : undefined;
+}
+
+/** The city with the most published places: the start when we know nothing about the visitor. */
+export const defaultCity = (cities: City[]): City | null => cities[0] ?? null;
+
+export function nearestCity(cities: City[], p: LatLng): City | null {
+  let best: City | null = null;
+  let bestKm = Infinity;
+  for (const c of cities) {
+    const km = haversineKm(p, c);
+    if (km < bestKm) [best, bestKm] = [c, km];
+  }
+  return best;
+}
+
+export type StartHint = { country?: string | null; lat?: string | null; lng?: string | null };
+
+/**
+ * Where to start from the hosting provider's IP location headers. A hint only: never stored,
+ * never used for check-in. Inside the region: the nearest city; otherwise the default.
+ */
+export function startFromHint(cities: City[], hint: StartHint): { city: City | null; source: "ip" | "default" } {
+  const lat = Number(hint.lat);
+  const lng = Number(hint.lng);
+  const usable = inRegion(hint.country) && hint.lat && hint.lng && Number.isFinite(lat) && Number.isFinite(lng);
+  const near = usable ? nearestCity(cities, { lat, lng }) : null;
+  return near ? { city: near, source: "ip" } : { city: defaultCity(cities), source: "default" };
+}
+
+/** The default city, or the whole region (its centre) when nothing is published yet. */
+export function startCity(cities: City[]): City {
+  return defaultCity(cities) ?? { id: slugify(REGION.country), name: REGION.country, tz: REGION.tz, places: 0, ...REGION.centre };
 }

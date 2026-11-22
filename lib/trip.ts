@@ -1,4 +1,4 @@
-import { findCity } from "./cities";
+import { findCity, type City } from "./cities";
 import { formatDistance, haversineKm, parseLatLng } from "./distance";
 import { joinNames, mainCity } from "./layla";
 import { isCleanText } from "./moderation";
@@ -30,10 +30,10 @@ export interface TripStart extends LatLng {
   tz: string | null; // the city's time zone; null for a shared location (the browser's is used)
 }
 
-/** "berlin" or "52.520,13.405". Coordinates are rounded to about 100 m. */
-export function parseFrom(raw: string | null | undefined): TripStart | null {
+/** A start city id ("berlin") or "52.520,13.405". Coordinates are rounded to about 100 m. */
+export function parseFrom(raw: string | null | undefined, cities: City[]): TripStart | null {
   if (!raw) return null;
-  const city = findCity(raw);
+  const city = findCity(cities, raw);
   if (city) return { label: city.name, param: city.id, lat: city.lat, lng: city.lng, tz: city.tz };
   const [a, b, extra] = raw.split(",");
   if (extra !== undefined) return null;

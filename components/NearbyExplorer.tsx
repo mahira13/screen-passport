@@ -1,10 +1,11 @@
 "use client";
 
+import { REGION } from "@/lib/region";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
-import { DEFAULT_CITY, findCity } from "@/lib/cities";
+import { findCity, type City } from "@/lib/cities";
 import { colourMap, OTHER_COLOUR } from "@/lib/colours";
 import { focusPlaces, titlesByBand, visiblePlaces, type NearbyResult } from "@/lib/nearby";
 import { passportSummary } from "@/lib/passport";
@@ -42,25 +43,25 @@ async function fetchNearby(query: string): Promise<NearbyResult> {
   return res.json();
 }
 
-const cityOrigin = (id: string): Origin => {
-  const c = findCity(id) ?? DEFAULT_CITY;
-  return { id: c.id, label: c.name, lat: c.lat, lng: c.lng };
-};
+const originOf = (c: City): Origin => ({ id: c.id, label: c.name, lat: c.lat, lng: c.lng });
 
-const queryFor = (o: Origin, r: Radius | "auto") =>
-  (findCity(o.id) ? `city=${encodeURIComponent(o.id)}` : `lat=${o.lat}&lng=${o.lng}`) + (r === null ? "" : `&radius=${r}`);
+const queryFor = (cities: City[], o: Origin, r: Radius | "auto") =>
+  (findCity(cities, o.id) ? `city=${encodeURIComponent(o.id)}` : `lat=${o.lat}&lng=${o.lng}`) + (r === null ? "" : `&radius=${r}`);
 
 // "discover": hero, map, the title index, featured collections and popular titles. "map": the map on its own, taller.
 type Props = {
-  initial: NearbyResult | null;
+  initial: NearbyResult | null; // places around start, rendered on the server
+  cities: City[]; // start cities, built from published places
+  start: City; // the default start: the city with the most places (or the whole region)
   destinations: Destination[];
   view?: "discover" | "map";
   featured?: CollectionModel[]; // candidates; which three show depends on where the visitor is
   popular?: PopularTitle[];
 };
 
-export function NearbyExplorer({ initial, destinations, view = "discover", featured = [], popular = [] }: Props) {
-  const [origin, setOrigin] = useState<Origin>(() => cityOrigin(DEFAULT_CITY.id));
+export function NearbyExplorer({ initial, cities, start, destinations, view = "discover", featured = [], popular = [] }: Props) {
+  const cityOrigin = (id: string): Origin => originOf(findCity(cities, id) ?? start);
+  const [origin, setOrigin] = useState<Origin>(() => originOf(start));
   const [radius, setRadius] = useState<Radius>(null);
   const [autoPicked, setAutoPicked] = useState(false); // radius chosen for the user's location, shown on the chip
   const [denied, setDenied] = useState(false); // location refused: Anywhere, with a small prompt
@@ -120,22 +121,37 @@ export function NearbyExplorer({ initial, destinations, view = "discover", featu
   useEffect(() => {
     if (initial !== null) return;
     const id = requestId.current;
-    fetchNearby(`city=${DEFAULT_CITY.id}`)
+    fetchNearby(queryFor(cities, originOf(start), null))
       .then((json) => id === requestId.current && setData(json))
       .catch(() => id === requestId.current && setMessage(LOAD_ERROR))
       .finally(() => id === requestId.current && setLoading(false));
-  }, [initial]);
+  }, [initial]); // eslint-disable-line react-hooks/exhaustive-deps -- once, for the server's start
+
+  // Without a start of the visitor's own: the host's IP location suggests the nearest city with
+  // places (a hint only; nothing is stored and check-in never uses it).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("near") === "1") return;
+    const id = requestId.current;
+    fetch("/api/start")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json: { city: string | null; source: "ip" | "default" } | null) => {
+        if (id !== requestId.current || !json?.city) return; // the visitor already picked something
+        const c = findCity(cities, json.city);
+        if (c && c.id !== start.id) load(originOf(c), queryFor(cities, originOf(c), null));
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- once, on arrival
 
   const pickCity = (id: string) => {
     setAutoPicked(false);
     setChosen(true);
-    load(cityOrigin(id), queryFor(cityOrigin(id), radius));
+    load(cityOrigin(id), queryFor(cities, cityOrigin(id), radius));
   };
 
   const pickRadius = (r: Radius) => {
     setAutoPicked(false);
     setRadius(r);
-    load(target.current, queryFor(target.current, r));
+    load(target.current, queryFor(cities, target.current, r));
   };
 
   // From search or popular titles: a title outside the radius widens to Anywhere first.
@@ -152,7 +168,7 @@ export function NearbyExplorer({ initial, destinations, view = "discover", featu
     setAutoPicked(false);
     setChosen(true);
     setRadius(r);
-    load(next, queryFor(next, r));
+    load(next, queryFor(cities, next, r));
     mapBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
@@ -171,7 +187,7 @@ export function NearbyExplorer({ initial, destinations, view = "discover", featu
         const me = { id: "me", label: "your location", lat: Number(lat), lng: Number(lng) };
         setDenied(false);
         setChosen(true);
-        load(me, queryFor(me, "auto"), true);
+        load(me, queryFor(cities, me, "auto"), true);
       },
       (err) => {
         setLocating(false);
@@ -199,7 +215,7 @@ export function NearbyExplorer({ initial, destinations, view = "discover", featu
 
   const groups = data ? titlesByBand(data.titles) : [];
   const watched = new Set(passport.watched);
-  const isCity = !!findCity(origin.id);
+  const isCity = !!findCity(cities, origin.id);
   const startCity = isCity ? origin.id : null;
   const tripFrom = isCity ? origin.id : `${origin.lat},${origin.lng}`;
 
@@ -208,6 +224,7 @@ export function NearbyExplorer({ initial, destinations, view = "discover", featu
   const offsets = groups.map((_, i) => groups.slice(0, i).reduce((sum, g) => sum + g.titles.length, 0));
 
   const isMap = view === "map";
+  const searchExamples = [...new Set([popular[0]?.title ?? titles[0]?.title, destinations[0]?.city, REGION.country].filter((x): x is string => !!x))];
   // Featured scoring: "nearby" counts only once the visitor has set a start of their own.
   const featuredCtx = useMemo(() => ({ from: chosen ? { lat: origin.lat, lng: origin.lng } : null, radiusKm: radius }), [chosen, origin.lat, origin.lng, radius]);
   const empty = !!data && !loading && places.length === 0;
@@ -215,7 +232,7 @@ export function NearbyExplorer({ initial, destinations, view = "discover", featu
     <>
       {!isMap && (<>
       <HomeHero cityLabel={origin.id === "me" ? "Near you" : origin.label} titles={titles} placeCount={new Set(places.map((p) => p.id)).size}
-        onPick={showOnMap} search={<CatalogueSearch onPick={pickHit} />} />
+        onPick={showOnMap} search={<CatalogueSearch onPick={pickHit} examples={searchExamples} />} />
 
       {/* Pillars ticker, like the credits line of a film studio site. */}
       <div aria-hidden className="overflow-hidden bg-accent py-3 text-paper">
@@ -240,8 +257,15 @@ export function NearbyExplorer({ initial, destinations, view = "discover", featu
                 Every pin is a real filming place with a source. Pick where you start, then tap a title to see only its places.
               </p>
             </div>
-            <CityPicker value={origin.id} customLabel={origin.label} locating={locating} onCity={pickCity} onMyLocation={locateMe} />
+            <CityPicker cities={cities} value={origin.id} customLabel={origin.label} locating={locating} onCity={pickCity} onMyLocation={locateMe} />
           </div>
+          {!chosen && (
+            <p className="mt-3 text-sm text-ink/70">
+              Showing places near {origin.label} ·{" "}
+              <button type="button" onClick={() => document.getElementById("city")?.focus()}
+                className="label inline-flex min-h-11 items-center text-accent underline-offset-4 hover:underline">change</button>
+            </p>
+          )}
           <RadiusChips value={radius} auto={autoPicked} onPick={pickRadius} />
           {denied && (
             <p role="status" className="mt-3 flex flex-wrap items-center gap-x-3 text-sm text-ink/75">

@@ -1,5 +1,6 @@
 import { haversineKm } from "./distance";
 import { randomEditKey, randomId } from "./ids";
+import { getCities } from "./cities-server";
 import { getLiveData } from "./live-data";
 import { editKeyMatches, hashEditKey } from "./passport-server";
 import { LIMITS, takeRate } from "./rate-limit";
@@ -27,7 +28,7 @@ export type CreateResult =
 /** Validates the form, picks stops in code, lets Claude write the words (within the daily cap), saves. */
 export async function createTrip(body: Record<string, unknown>, ipHash: string): Promise<CreateResult> {
   const workIds = parseWorkIds(Array.isArray(body.works) ? body.works.join(",") : String(body.works ?? ""));
-  const start = parseFrom(typeof body.from === "string" ? body.from : null);
+  const start = parseFrom(typeof body.from === "string" ? body.from : null, await getCities());
   // A picked city has its own zone; a shared location uses the browser's.
   const tz = start?.tz ?? (isValidTimeZone(body.timeZone) ? body.timeZone : DEFAULT_TIME_ZONE);
   const startsAt = parseStartsAt(body.startsLocal, tz);

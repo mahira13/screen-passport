@@ -1,4 +1,5 @@
 // The publish rule (CLAUDE.md product rule 4). Pure; every reason is recorded for the admin page.
+import { REGION } from "../region";
 import type { CoordQuality, LocationConfidence } from "../types";
 import type { Verdict } from "./ai";
 import type { GeoCheck } from "./geo";
@@ -44,7 +45,7 @@ export function decide(c: Checks): Decision {
     if (g.kind === "residential") reasons.push("possible private home");
     if (g.kind === "unmatched") reasons.push("geocoder found a different place");
     if (!g.cityMatch) reasons.push("city does not match");
-    if (!g.countryMatch) reasons.push("country is not Germany");
+    if (!g.countryMatch) reasons.push(`country is not ${REGION.country}`);
   }
   if (c.geocodeFarFromSource) reasons.push("geocoder result far from the stored pin");
   if (c.duplicateIds.length) reasons.push(`published place within 30 m (#${c.duplicateIds.join(", #")})`);

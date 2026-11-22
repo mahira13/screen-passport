@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { TripForm } from "@/components/TripForm";
-import { DEFAULT_CITY } from "@/lib/cities";
+import { startCity } from "@/lib/cities";
+import { getCities } from "@/lib/cities-server";
 import { getLiveData } from "@/lib/live-data";
 import { TRIP_MODES, nearestCity, parseFrom, parseWorkIds, selectTripStops } from "@/lib/trip";
 
@@ -27,7 +28,10 @@ export default function NewTripPage(props: PageProps<"/trip/new">) {
 async function NewTrip({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const q = await searchParams;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-  const start = parseFrom(one(q.from)) ?? parseFrom(DEFAULT_CITY.id)!;
+  const cities = await getCities();
+  const fallback = startCity(cities);
+  const start = parseFrom(one(q.from), cities) ?? parseFrom(fallback.id, cities)
+    ?? { label: fallback.name, param: `${fallback.lat},${fallback.lng}`, lat: fallback.lat, lng: fallback.lng, tz: fallback.tz };
   const live = await getLiveData();
   const works = parseWorkIds(one(q.works)).flatMap((id) => {
     const w = live.works.find((x) => x.id === id);

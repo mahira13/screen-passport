@@ -5,10 +5,10 @@ import { nearbyData } from "@/lib/page-data";
 export const metadata: Metadata = { title: "Map · Screen Passport" };
 
 export default async function MapPage() {
-  const { nearby, destinations } = await nearbyData();
+  const { nearby, destinations, cities, start } = await nearbyData();
   return (
     <main className="w-full">
-      <NearbyExplorer initial={nearby} destinations={destinations} view="map" />
+      <NearbyExplorer initial={nearby} cities={cities} start={start} destinations={destinations} view="map" />
     </main>
   );
 }

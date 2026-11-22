@@ -45,23 +45,22 @@ describe("scoreCollections", () => {
 });
 
 describe("pins", () => {
-  const dark = (checkIns: number) => col("title:dark", Array.from({ length: 9 }, (_, i) => near(100 + i, { checkIn: i < checkIns })));
+  const big = col("title:big", Array.from({ length: 9 }, (_, i) => near(100 + i, { checkIn: true, photo: true })));
   const streaming = col("curated:netflix-berlin", [near(1), near(2), near(3)], 1);
   const coldWar = col("curated:cold-war-berlin", [near(4), near(5), near(6)], 2);
   const goerli = col("curated:goerliwood", [far(7), far(8), far(9)], 3);
   const ctx = { from: null, radiusKm: null };
 
-  it("keeps the table pins in rank order", () => {
-    expect(featuredPicks([goerli, coldWar, streaming, dark(4)], ctx).map((c) => c.key))
+  it("keeps the table pins in rank order, ahead of a better-scoring collection", () => {
+    expect(featuredPicks([goerli, coldWar, streaming, big], ctx).map((c) => c.key))
       .toEqual(["curated:netflix-berlin", "curated:cold-war-berlin", "curated:goerliwood"]);
   });
-  it("pins Dark first by rule once 5 of its places are check-in grade", () => {
-    expect(featuredPicks([goerli, coldWar, streaming, dark(5)], ctx).map((c) => c.key))
-      .toEqual(["title:dark", "curated:netflix-berlin", "curated:cold-war-berlin"]);
+  it("names no collection in code: without pins, the scores decide", () => {
+    const unpinned = [goerli, coldWar, streaming].map((c) => ({ ...c, pinRank: null }));
+    expect(featuredPicks([...unpinned, big], ctx)[0].key).toBe("title:big");
   });
-  it("prefers the curated Dark in Germany over the automatic one when it exists", () => {
-    const curatedDark = { ...dark(5), key: "curated:dark-in-germany", kind: "curated" as const };
-    expect(pinned([dark(5), curatedDark])[0].key).toBe("curated:dark-in-germany");
+  it("skips a pin without published places", () => {
+    expect(pinned([col("curated:empty", [], 1), coldWar]).map((c) => c.key)).toEqual(["curated:cold-war-berlin"]);
   });
   it("fills the slots after the pins with the best scores", () => {
     const scored = col("city:goerlitz", [far(31, { checkIn: true }), far(32, { checkIn: true }), far(33, { checkIn: true })]);

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { findCityByName } from "@/lib/cities";
 import { collectionProgress, visitProgress } from "@/lib/collections";
 import { toggleWatched } from "@/lib/passport-store";
 import { usePassport } from "@/lib/use-passport";
@@ -13,6 +12,7 @@ export type ChallengeCollection = {
   id: string;
   name: string;
   city: string | null;
+  from: string | null; // start city id for a trip, when the collection's city is one
   description: string | null;
   works: { id: string; title: string; live: boolean }[]; // live: has places on the map
   places: { id: number; checkIn: boolean }[]; // published places of these titles; checkIn: precise pin
@@ -28,9 +28,8 @@ function Challenge({ c, n, watched, visited, big, wide }: Props) {
   const been = new Set(visited);
   const notYet = c.places.filter((x) => !x.checkIn).length;
   const seen = new Set(watched);
-  const city = findCityByName(c.city);
   const live = c.works.filter((w) => w.live).map((w) => w.id);
-  const tripHref = live.length ? `/trip/new?works=${encodeURIComponent(live.slice(0, 10).join(","))}&from=${city?.id ?? "berlin"}` : null;
+  const tripHref = live.length ? `/trip/new?works=${encodeURIComponent(live.slice(0, 10).join(","))}${c.from ? `&from=${c.from}` : ""}` : null;
 
   return (
     <article className={`relative h-full bg-surface ${wide ? "md:grid md:grid-cols-2" : "flex flex-col"}`}>
@@ -88,7 +87,7 @@ function Challenge({ c, n, watched, visited, big, wide }: Props) {
               <li key={w.id} className="flex items-center justify-between gap-3 py-2.5">
                 <span className={`font-serif text-lg ${on ? "text-ink" : "text-ink/70"}`}>{w.title}</span>
                 {w.live ? (
-                  <button type="button" aria-pressed={on} onClick={() => toggleWatched(w.id, city?.id ?? null)}
+                  <button type="button" aria-pressed={on} onClick={() => toggleWatched(w.id, c.from)}
                     aria-label={`${on ? "Watched" : "Mark as watched"}: ${w.title}`}
                     className={`label shrink-0 px-3 transition-colors ${on ? "bg-accent text-paper" : "border border-ink/25 text-ink/70 hover:border-accent hover:text-accent"}`}>
                     {on ? "✓ Watched" : "+ Watched"}

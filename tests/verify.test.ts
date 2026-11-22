@@ -68,6 +68,11 @@ describe("namesMatch", () => {
     expect(namesMatch("Tempelhof Airport", "Flughafen Tempelhof")).toBe(true); // shared distinctive word
     expect(namesMatch("Rotes Rathaus", "Berliner Rathaus")).toBe(false);
   });
+  it("ignores the place's own city and its adjective, for any city", () => {
+    expect(namesMatch("Berliner Dom", "Berliner Philharmonie", "Berlin")).toBe(false);
+    expect(namesMatch("Hamburger Michel", "Hamburger Kunsthalle", "Hamburg")).toBe(false);
+    expect(namesMatch("Kunsthalle", "Hamburger Kunsthalle", "Hamburg")).toBe(true);
+  });
 });
 
 describe("classifyGeocode", () => {
@@ -92,6 +97,7 @@ describe("classifyGeocode", () => {
     const g = classifyGeocode(hit({ category: "historic", type: "monument", name: "Rathaus", address: { town: "Potsdam", country_code: "de" } }), "Rathaus", "Berlin");
     expect(g.cityMatch).toBe(false);
     expect(classifyGeocode(hit({ category: "historic", type: "monument", name: "Rathaus", address: { city: "Wien", country_code: "at" } }), "Rathaus", "Wien").countryMatch).toBe(false);
+    expect(classifyGeocode(hit({ category: "historic", type: "monument", name: "Rathaus", address: { city: "Görlitz" } }), "Rathaus", "Görlitz").countryMatch).toBe(false);
   });
 });
 

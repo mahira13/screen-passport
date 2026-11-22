@@ -3,6 +3,7 @@
 // the fetched page), Nominatim returns a named landmark whose name and city match, and that landmark
 // agrees with the stored pin (within 200 m, or the pin lies inside its outline). Anything else stays
 // approximate: never guess.
+import { REGION } from "../region";
 import { haversineKm } from "../distance";
 import type { NominatimHit } from "../geocode";
 import type { LatLng } from "../types";
@@ -103,7 +104,7 @@ export function decideUpgrade(u: UpgradeInput): Upgrade {
     const aliasMatch = !!u.aliases?.length && namesAny(u.hit.name ?? "", u.aliases, u.city);
     if (!(u.geo.nameMatch || aliasMatch) || !namesAny(u.hit.name ?? "", names, u.city)) reasons.push(`geocoder name (“${u.hit.name ?? "none"}”) doesn't match`);
     if (!u.geo.cityMatch) reasons.push("geocoder city doesn't match");
-    if (!u.geo.countryMatch) reasons.push("not in Germany");
+    if (!u.geo.countryMatch) reasons.push(`not in ${REGION.country}`);
     if (newPoint && distanceM! > AGREE_M && !inBox(u.old, u.geo.bbox)) reasons.push(`landmark is ${distanceM} m from the stored pin (more than ${AGREE_M} m, outside its outline)`);
   }
   return { upgrade: reasons.length === 0, newPoint, distanceM, reasons, removeFromChallenge };

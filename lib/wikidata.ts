@@ -1,6 +1,7 @@
 // Wikidata filming locations (P915) as draft candidates. Product rule 3: Wikidata finds
 // candidates but is never the evidence for a published place, so every candidate is inserted
 // as draft and must pass the AI verification pipeline (or a teammate) with a trusted source.
+import { REGION } from "./region";
 import { haversineKm } from "./distance";
 import { isUntrustedSource } from "./sources";
 import { namesMatch } from "./verify/geo";
@@ -18,14 +19,14 @@ const CITY = ["wd:Q515", "wd:Q262166"]; // city, municipality of Germany
 const isA = (classes: string[], direct = false) =>
   classes.map((c) => `EXISTS { ?loc wdt:P31${direct ? "" : "/wdt:P279*"} ${c} }`).join(" || ");
 
-/** Filming locations of one work, in Germany, one row per place. */
+/** Filming locations of one work, in the launch region (REGION), one row per place. */
 export function filmingLocationsQuery(workQid: string): string {
   if (!/^Q\d+$/.test(workQid)) throw new Error(`Not a Wikidata item id: ${workQid}`);
   return `SELECT ?loc (SAMPLE(?name) AS ?label) (SAMPLE(?coord) AS ?point) (SAMPLE(STR(?cityName)) AS ?city)
   (GROUP_CONCAT(DISTINCT STR(?ref); separator=" ") AS ?refs)
   (SAMPLE(?b) AS ?building) (SAMPLE(?o) AS ?open) (SAMPLE(?w) AS ?broad) (SAMPLE(?h) AS ?home) WHERE {
   wd:${workQid} p:P915 ?st . ?st ps:P915 ?loc .
-  ?loc wdt:P17 wd:Q183 .
+  ?loc wdt:P17 wd:${REGION.wikidataQid} .
   OPTIONAL { ?st prov:wasDerivedFrom/pr:P854 ?ref }
   OPTIONAL { ?loc wdt:P625 ?coord }
   OPTIONAL { ?loc wdt:P131* ?c . VALUES ?cityClass { ${CITY.join(" ")} } ?c wdt:P31/wdt:P279* ?cityClass .
@@ -104,7 +105,7 @@ export function draftRow(c: Candidate, workId: string) {
     lat: c.lat,
     lng: c.lng,
     coord_quality: c.lat !== null ? ("approx" as const) : null, // Wikidata points are unchecked
-    geocode_query: [c.name, c.city, "Germany"].filter(Boolean).join(", "),
+    geocode_query: [c.name, c.city, REGION.country].filter(Boolean).join(", "),
     scene_note: null, // Wikidata has no scenes, and Claude never invents one
     source_url: ref ?? `https://www.wikidata.org/wiki/${c.qid}`,
     source_name: ref ? new URL(ref).hostname.replace(/^www\./, "") : "Wikidata (candidate only)",
@@ -113,8 +114,8 @@ export function draftRow(c: Candidate, workId: string) {
     location_confidence: c.confidence,
     public_access: "unknown" as const,
     is_filming_location: true,
-    country: "Germany",
-    country_code: "DE",
+    country: REGION.country,
+    country_code: REGION.countryCode,
   };
 }
 

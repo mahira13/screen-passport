@@ -5,6 +5,8 @@
 // Usage: npm run geocode              (saves precise results as 'geocoded')
 //        npm run geocode -- --dry-run (prints results, saves nothing)
 // Nominatim policy: https://operations.osmfoundation.org/policies/nominatim/
+import { geocoderContact } from "../lib/geocode";
+import { REGION } from "../lib/region";
 import { config } from "dotenv";
 import { isCoarse, placeType, type NominatimHit } from "../lib/geocode";
 import { supabaseAdmin } from "../lib/supabase";
@@ -14,13 +16,13 @@ config({ path: ".env.local" });
 const ENDPOINT = "https://nominatim.openstreetmap.org/search";
 const DELAY_MS = 1000; // Nominatim allows at most one request per second
 // An email or URL so Nominatim can reach us; required by their policy.
-const contact = process.env.GEOCODER_CONTACT || process.env.GEOCODE_CONTACT;
+const contact = geocoderContact();
 const USER_AGENT = `ScreenPassport/0.1 (${contact ?? "contact not set"})`;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function lookup(q: string): Promise<NominatimHit | null> {
-  const params = new URLSearchParams({ q, format: "jsonv2", limit: "1", countrycodes: "de" });
+  const params = new URLSearchParams({ q, format: "jsonv2", limit: "1", countrycodes: REGION.countryCode.toLowerCase() });
   const res = await fetch(`${ENDPOINT}?${params}`, {
     headers: { "User-Agent": USER_AGENT, "Accept-Language": "de,en" },
   });

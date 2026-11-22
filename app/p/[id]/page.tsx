@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ShareCard } from "@/components/ShareCard";
 import { YourPassportNote } from "@/components/YourPassportNote";
-import { DEFAULT_CITY, findCity } from "@/lib/cities";
+import { deriveCities, findCity, startCity } from "@/lib/cities";
 import { collectionProgress, visitProgress } from "@/lib/collections";
 import { formatDistance } from "@/lib/distance";
 import { isPassportId } from "@/lib/ids";
@@ -41,8 +41,9 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
   const passport = (data as Passport[])[0];
   if (!passport) notFound();
 
-  const city = findCity(passport.start_city) ?? DEFAULT_CITY;
   const live = await getLiveData();
+  const cities = deriveCities(live.locations);
+  const city = findCity(cities, passport.start_city) ?? startCity(cities);
   const nearby = buildNearby(live.locations, live.works, city);
   const visited = new Set(passport.visited);
   // A stamp per watched title, plus any title with a check-in (visiting counts even unwatched).

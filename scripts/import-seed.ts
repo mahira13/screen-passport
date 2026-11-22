@@ -47,8 +47,8 @@ async function main() {
   // Don't undo review work: keep verification, coordinates and catalogue fields already in the database.
   const { data: existing, error: readErr } = await db
     .from("locations")
-    .select("id, lat, lng, coord_quality, status, verification_status, merged_into, country, country_code, location_confidence, public_access, is_filming_location");
-  if (readErr) throw new Error(`${readErr.message} (run migrations 007 and 008 first)`);
+    .select("id, lat, lng, coord_quality, status, verification_status, merged_into, country, country_code, location_confidence, public_access, is_filming_location, aliases");
+  if (readErr) throw new Error(`${readErr.message} (run migrations 007, 008 and 013 first)`);
   const known = new Map((existing as DbLocation[]).map((e) => [e.id, e]));
   const rows = locations.flatMap((l) => planLocationRow(l, known.get(l.id)) ?? []);
   const skipped = locations.length - rows.length;

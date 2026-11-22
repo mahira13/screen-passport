@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { parse } from "csv-parse/sync";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { DEFAULT_CITY } from "@/lib/cities";
+import { BERLIN as DEFAULT_CITY } from "../fixtures/cities";
 import { buildNearby, type LiveLocation } from "@/lib/nearby";
 import { toLocation, toWork } from "../../scripts/seed-rows";
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isPassportId, randomEditKey, randomId } from "@/lib/ids";
+import { deriveCities } from "@/lib/cities";
 import { getLiveData } from "@/lib/live-data";
 import { checkInIds, cleanStartCity, cleanVisited, cleanWatched } from "@/lib/passport";
 import { editKeyMatches, hashEditKey } from "@/lib/passport-server";
@@ -20,7 +21,7 @@ async function readJson(req: Request): Promise<Record<string, unknown> | null> {
 
 async function catalogue() {
   const live = await getLiveData();
-  return { works: new Set(live.works.map((w) => w.id)), checkIn: checkInIds(live.locations) };
+  return { works: new Set(live.works.map((w) => w.id)), checkIn: checkInIds(live.locations), cities: deriveCities(live.locations) };
 }
 
 // POST {watched, visited?, startCity} -> {id, editKey}. The browser keeps editKey; we store its hash.
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
       id,
       watched,
       visited,
-      start_city: cleanStartCity(body.startCity),
+      start_city: cleanStartCity(body.startCity, known.cities),
       edit_key_hash: hashEditKey(editKey),
     });
     if (!error) return NextResponse.json({ id, editKey }, { status: 201 });

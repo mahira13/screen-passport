@@ -8,7 +8,7 @@ export type PinRow = { id: string; name: string; rank: number | null; places: nu
 const btn = "min-h-11 rounded border px-3 text-sm disabled:opacity-40";
 
 /** Pin, unpin and order the curated collections Discover shows first. */
-export function FeaturedPins({ rows, preview, rules }: { rows: PinRow[]; preview: string[]; rules: string[] }) {
+export function FeaturedPins({ rows, preview }: { rows: PinRow[]; preview: string[] }) {
   const [result, setResult] = useState<ActionResult | null>(null);
   const [pending, start] = useTransition();
   const run = (a: () => Promise<ActionResult>) => start(async () => setResult(await a()));
@@ -21,7 +21,6 @@ export function FeaturedPins({ rows, preview, rules }: { rows: PinRow[]; preview
         Pinned collections show first on Discover, in this order. The remaining slots are filled per visitor
         (places near them ×3, check-in grade ×2, photos).
       </p>
-      {rules.length > 0 && <p className="mt-2 text-sm">Pinned by rule: {rules.join("; ")}</p>}
       <p className="mt-2 text-sm">Discover now, without a location: <strong>{preview.join(" · ") || "nothing"}</strong></p>
 
       <ol className="mt-4 space-y-2">

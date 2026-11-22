@@ -12,7 +12,8 @@ type State = { q: string; hits: SearchHit[] } | { q: string; error: true };
  * Search by film, series, city or country (search_catalogue). Picks only what is in our catalogue;
  * text that matches nothing can become a request, never an AI answer.
  */
-export function CatalogueSearch({ onPick }: { onPick: (hit: SearchHit) => void }) {
+/** examples: a few real titles and places from the catalogue, shown as the placeholder. */
+export function CatalogueSearch({ onPick, examples }: { onPick: (hit: SearchHit) => void; examples: string[] }) {
   const [q, setQ] = useState("");
   const [state, setState] = useState<State | null>(null);
   const listId = useId();
@@ -44,7 +45,7 @@ export function CatalogueSearch({ onPick }: { onPick: (hit: SearchHit) => void }
       <label htmlFor={`${listId}-q`} className="label text-ink/60">Search a film, series, city or country</label>
       <div className="mt-2 flex items-stretch border-b-2 border-ink/40 transition-colors focus-within:border-accent">
         <input id={`${listId}-q`} type="search" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off"
-          placeholder="Dark, Görlitz, Germany…" aria-controls={listId}
+          placeholder={examples.length ? `${examples.join(", ")}…` : "A film, series or city…"} aria-controls={listId}
           onKeyDown={(e) => e.key === "Enter" && hits[0] && (e.preventDefault(), pick(hits[0]))}
           className="min-w-0 flex-1 bg-transparent py-3 font-serif text-2xl text-ink placeholder:text-ink/55 focus:outline-none sm:text-3xl" />
         <span aria-hidden className="self-center font-condensed text-xl tracking-wider text-accent">Find ↘</span>

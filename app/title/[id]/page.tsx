@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { PlacesMapBox } from "@/components/PlacesMapBox";
 import { StartCollection } from "@/components/StartCollection";
 import { findCityByName } from "@/lib/cities";
+import { getCities } from "@/lib/cities-server";
 import { catalogueIds, loadTitle } from "@/lib/catalogue-loaders";
 import { siteUrl } from "@/lib/site-url";
 
@@ -47,7 +48,7 @@ async function TitleView({ params }: { params: Promise<{ id: string }> }) {
   if (!t) notFound();
   const { work, places, countries } = t;
   const cities = countries.reduce((n, c) => n + c.cities.length, 0);
-  const from = findCityByName(t.mainCity)?.id;
+  const from = findCityByName(await getCities(), t.mainCity)?.id;
   const tripHref = `/trip/new?works=${encodeURIComponent(work.id)}${from ? `&from=${from}` : ""}`;
 
   return (

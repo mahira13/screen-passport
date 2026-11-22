@@ -1,14 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { findCity } from "@/lib/cities";
+import { getCities } from "@/lib/cities-server";
 import { parseRadius } from "@/lib/discover";
 import { nearbyAuto, nearbyWithin } from "@/lib/discover-server";
 import { parseLatLng } from "@/lib/distance";
 
-// GET /api/nearby?city=berlin  or  /api/nearby?lat=52.520&lng=13.405, optional &radius=5|10|25|50|auto
+// GET /api/nearby?city=<start city id>  or  /api/nearby?lat=52.520&lng=13.405, optional &radius=5|10|25|50|auto
 // (auto also returns the radius it picked).
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams;
-  const city = findCity(q.get("city"));
+  const city = findCity(await getCities(), q.get("city"));
   const from = city ?? parseLatLng(q.get("lat"), q.get("lng"));
   if (!from) return NextResponse.json({ error: "Pass a known city or lat and lng." }, { status: 400 });
 

@@ -40,6 +40,7 @@ export interface FilmLocation {
   is_filming_location?: boolean;
   verified_at?: string | null;
   merged_into?: number | null;
+  aliases?: string[]; // other names for the place (internal, for matching sources and geocoder results)
   verification_method?: "ai" | "team" | null; // migration 008
   depicts?: string | null; // from location_works, per title
 }

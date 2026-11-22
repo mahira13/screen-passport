@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CITIES, DEFAULT_CITY, findCity } from "@/lib/cities";
+import { BERLIN as DEFAULT_CITY, GOERLITZ, HAMBURG } from "./fixtures/cities";
 import { buildNearby, focusPlaces, initialMapPlaces, titlesByBand, visiblePlaces, type LiveLocation } from "@/lib/nearby";
 import type { Work } from "@/lib/types";
 
@@ -36,7 +36,7 @@ describe("buildNearby", () => {
     expect(r.titles[1].type).toBe("series");
   });
   it("changes order with the start point", () => {
-    const fromGoerlitz = buildNearby(locations, works, findCity("goerlitz")!);
+    const fromGoerlitz = buildNearby(locations, works, GOERLITZ);
     expect(fromGoerlitz.titles[0].workId).toBe("budapest");
     expect(fromGoerlitz.titles[0].closest.band).toBe("near");
   });
@@ -60,15 +60,7 @@ describe("initialMapPlaces", () => {
   it("shows places within 30 km, or the closest 3", () => {
     const r = buildNearby(locations, works, DEFAULT_CITY);
     expect(initialMapPlaces(r.places).map((p) => p.id)).toEqual([1, 2, 3]);
-    expect(initialMapPlaces(buildNearby(locations, works, findCity("hamburg")!).places)).toHaveLength(3);
-  });
-});
-
-describe("cities", () => {
-  it("defaults to Berlin and has unique ids", () => {
-    expect(DEFAULT_CITY.name).toBe("Berlin");
-    expect(new Set(CITIES.map((c) => c.id)).size).toBe(CITIES.length);
-    expect(findCity("nope")).toBeUndefined();
+    expect(initialMapPlaces(buildNearby(locations, works, HAMBURG).places)).toHaveLength(3);
   });
 });
 

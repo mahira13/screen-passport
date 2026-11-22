@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ShareCard } from "@/components/ShareCard";
+import { ProgressRing } from "@/components/ProgressRing";
 import { YourPassportNote } from "@/components/YourPassportNote";
+import { buildCollections } from "@/lib/collections-model";
 import { deriveCities, findCity, startCity } from "@/lib/cities";
 import { collectionProgress, visitProgress } from "@/lib/collections";
 import { formatDistance } from "@/lib/distance";
@@ -67,16 +69,19 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
   const closest = allPlaces[0];
   const goldStamps = stamps.filter((s) => s.visited).length;
   // Collection progress = places checked in; watched titles are the second line. A badge = every place.
-  const collections = live.collections
+  // Every playable collection (curated, city, title), not only the curated ones.
+  const collections = buildCollections(live)
     .map((c) => {
-      const placeIds = [...new Set(nearby.places.filter((p) => c.work_ids.includes(p.workId)).map((p) => p.id))];
-      const v = visitProgress(placeIds, passport.visited);
-      const w = collectionProgress(c, passport.watched);
-      return { id: c.id, name: c.name, ...v, watchedDone: w.done, watchedTotal: w.total };
+      const v = visitProgress(c.places.map((p) => p.id), passport.visited);
+      const w = collectionProgress({ id: c.key, name: c.name, city: c.city, work_ids: c.works.map((x) => x.id), description: null }, passport.watched);
+      return { id: c.key, href: c.href, name: c.name, ...v, watchedDone: w.done, watchedTotal: w.total };
     })
     .filter((c) => c.total > 0 && (c.done > 0 || c.watchedDone > 0))
     .sort((a, b) => b.done / b.total - a.done / a.total || b.watchedDone - a.watchedDone);
   const complete = collections.filter((c) => c.complete).length;
+  // Recent check-ins: visited ids are appended in order, so the last ones are the newest.
+  const placeById = new Map(nearby.places.map((p) => [p.id, p]));
+  const recent = [...passport.visited].reverse().flatMap((id) => placeById.get(id) ?? []).slice(0, 5);
   const mrz = `P<SCREEN<PASSPORT<<${city.name.toUpperCase().normalize("NFKD").replace(/[^A-Z]/g, "")}`.padEnd(44, "<");
   const mrz2 = `${passport.id.toUpperCase().replace(/[^A-Z0-9]/g, "")}<<${allPlaces.length}PLACES<<${stamps.length}TITLES`.padEnd(44, "<").slice(0, 44);
   const stats: [number, string][] = [
@@ -186,14 +191,9 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
               <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {collections.map((c) => (
                   <li key={c.id} className={`relative bg-surface p-5 ${c.complete ? "ring-1 ring-accent" : ""}`}>
-                    <p className="font-serif text-2xl leading-tight">{c.name}</p>
-                    <p className={`mt-2 font-condensed text-4xl leading-none text-accent`}>
-                      {c.done}<span className="text-ink/60">/{c.total}</span>
-                    </p>
-                    <div className="mt-3 flex gap-1" role="img" aria-label={`Visited ${c.done} of ${c.total} places`}>
-                      {Array.from({ length: c.total }, (_, k) => (
-                        <span key={k} className={`h-1 flex-1 ${k < c.done ? "bg-accent" : "bg-ink/15"}`} />
-                      ))}
+                    <div className="flex items-center gap-4">
+                      <ProgressRing done={c.done} total={c.total} />
+                      <Link href={c.href} className="font-serif text-2xl leading-tight hover:text-accent">{c.name}</Link>
                     </div>
                     <p className="mt-2 text-xs text-ink/70">
                       Visited {c.done} of {c.total} {c.total === 1 ? "place" : "places"}
@@ -207,6 +207,25 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
           )}
         </div>
       </section>
+
+      {recent.length > 0 && (
+        <section className="border-t border-ink/10 py-14 sm:py-20">
+          <div className={WRAP}>
+            <p className="label text-accent">Recent check-ins</p>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {recent.map((p) => (
+                <li key={p.id}>
+                  <Link href={`/location/${p.id}`} className="block h-full border-l-2 border-accent bg-surface/60 p-4 hover:bg-surface">
+                    <span aria-hidden className="text-accent">★</span>
+                    <p className="font-serif text-xl leading-tight">{p.name}</p>
+                    <p className="label mt-1 text-ink/60">{p.title}</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       {/* Travel journal */}
       {stamps.some((s) => s.places.length > 0) && (

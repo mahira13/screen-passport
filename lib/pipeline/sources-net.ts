@@ -1,11 +1,12 @@
 // Network calls to Wikidata and TMDB, shared by the scripts and the pipeline jobs. Server only.
+import { geocoderContact } from "../geocode";
 import { normaliseTitle } from "../match";
 import { type Details, metadataUpdate, pickHit, type SearchHit } from "../tmdb";
 import type { Work } from "../types";
 import { SPARQL_ENDPOINT, type SparqlRow } from "../wikidata";
 
 // Wikimedia asks for a descriptive User-Agent. No personal contact unless one is set.
-const contact = () => process.env.WIKIDATA_CONTACT || process.env.GEOCODER_CONTACT;
+const contact = () => process.env.WIKIDATA_CONTACT || geocoderContact();
 const UA = () => `ScreenPassport-pipeline/0.2${contact() ? ` (${contact()})` : ""}`;
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -29,7 +30,11 @@ export async function searchItems(text: string): Promise<string[]> {
   const ids = new Set<string>();
   for (const language of ["en", "de"]) {
     const params = new URLSearchParams({ action: "wbsearchentities", search: text, language, type: "item", limit: "10", format: "json" });
-    const res = await fetch(`https://www.wikidata.org/w/api.php?${params}`, { headers: { "User-Agent": UA() }, signal: AbortSignal.timeout(20_000) });
+    let res = await fetch(`https://www.wikidata.org/w/api.php?${params}`, { headers: { "User-Agent": UA() }, signal: AbortSignal.timeout(20_000) });
+    for (let retry = 1; res.status === 429 && retry <= 3; retry++) {
+      await pause(Number(res.headers.get("retry-after")) * 1000 || 10_000 * retry);
+      res = await fetch(`https://www.wikidata.org/w/api.php?${params}`, { headers: { "User-Agent": UA() }, signal: AbortSignal.timeout(20_000) });
+    }
     if (!res.ok) throw new Error(`Wikidata search ${res.status}`);
     for (const s of ((await res.json()) as { search: { id: string }[] }).search) ids.add(s.id);
   }

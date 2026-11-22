@@ -17,7 +17,7 @@ The long-term vision is in `docs/VISION.md` and the build steps in `PROMPTS-v2.m
 3. **Every location has a source.** No row in `locations` without `source_url`. Trusted sources: official tourism and city sites, established location guides and major media (see the add-filming-locations skill); not Wikipedia or fan wikis. Claude never invents locations, coordinates or scenes. Only `verification_status = 'published'` filming locations are shown (migration 007; the old `status = 'live'` is kept in step until it is removed). Wikidata finds candidates but is never the only evidence for a published place.
 4. **Code for facts, Claude for words and images.** Distance, sorting, matching, check-in radius and collections are plain code. Claude is used only to read titles from screenshots, for fuzzy title matching, to research requested titles, and to read evidence pages in the AI verification pipeline. **Publishing:** a location may be published only when it is team-verified, or when it passes the AI verification pipeline's strict criteria (filmed_here true, not a story setting, high confidence, evidence quote found on the fetched page, trusted source domain from `lib/trusted-sources.ts`, geocode not residential, no published place within 30 m). Store `verification_method` (`ai` | `team`) and show it as a badge. Anything else stays `draft` or `needs_review` and is never shown as a confirmed filming location. Locations found by Claude research are always inserted as `draft` and go through the pipeline; Claude never publishes directly.
 5. **Privacy:** no accounts, no emails, no raw uploads stored. Screenshots are read and discarded. Postcard photos are composed in the browser and never uploaded unless the user shares them. Passports store only title IDs, location IDs, start city and an optional display name.
-6. **No copyrighted media:** no film stills, scraped posters, logos or script quotes. Postcards use the user's own photo. Location photos only from Wikimedia Commons with credit.
+6. **No copyrighted media:** no film stills, scraped posters, logos or script quotes. Postcards use the user's own photo. Location photos only from Wikimedia Commons with credit. Film posters allowed ONLY if the file is on Wikimedia Commons with a public-domain or free licence (PD, CC0, CC BY, CC BY-SA), with credit. Never from Google, en.wikipedia fair-use uploads, TMDB or other sites. Posters appear only on title cards and title collections; location cards and map markers keep the place photo.
 7. **No private homes** and no closed studio sets, even if a guide lists them.
 8. **Honest numbers:** stage metrics come from real events only.
 
@@ -112,7 +112,7 @@ Under 2 km "Near you", 2–30 km "Day trip", 30–250 km "Weekend by train", abo
 
 ## Commands
 
-`npm run dev`, `npm run build`, `npm test`, `npm run seed`, `npm run geocode`
+`npm run dev`, `npm run build`, `npm test`, `npm run seed`, `npm run geocode`, `npm run images`, `npm run posters`
 
 ## Skills
 

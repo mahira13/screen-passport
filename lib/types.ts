@@ -12,6 +12,8 @@ export interface Work {
   type: WorkType;
   aliases: string[];
   year: number | null;
+  /** Free-licensed Commons poster, only when confirmed ('auto') or approved. */
+  poster?: { url: string; author: string; license: string; licenseUrl: string | null; page: string; kind: "poster" } | null;
 }
 
 export interface FilmLocation {

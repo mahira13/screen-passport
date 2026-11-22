@@ -147,3 +147,120 @@ input:not([type="checkbox"]):not([type="radio"]) {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ---- Game layer: film strip, tickets, stamps. Motion is short and stops for reduced motion. ---- */
+
+/* A strip of film frames scrolling sideways; the content is rendered twice so -50% loops seamlessly. */
+@keyframes strip-scroll {
+  to { transform: translateX(-50%); }
+}
+.film-strip {
+  background: #0b1222;
+  padding: 18px 0;
+  position: relative;
+}
+.film-strip::before,
+.film-strip::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, rgba(244, 239, 228, 0.25) 0 10px, transparent 10px 22px);
+}
+.film-strip::before { top: 5px; }
+.film-strip::after { bottom: 5px; }
+/* Small strip (progress): finer sprockets so frames stay readable. */
+.film-strip-sm { padding: 10px 6px; }
+.film-strip-sm::before,
+.film-strip-sm::after {
+  height: 3px;
+  background: repeating-linear-gradient(90deg, rgba(244, 239, 228, 0.18) 0 4px, transparent 4px 9px);
+}
+.film-strip-sm::before { top: 3.5px; }
+.film-strip-sm::after { bottom: 3.5px; }
+.film-strip-track {
+  display: flex;
+  width: max-content;
+  animation: strip-scroll 60s linear infinite;
+}
+
+/* Ticket: a dashed tear line with two half-circle notches cut out of it. */
+.ticket-tear {
+  border-left: 2px dashed rgba(22, 33, 58, 0.35);
+}
+.ticket-notch {
+  position: absolute;
+  left: -11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--color-paper);
+}
+
+/* Lift on hover and press. */
+.lift {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+}
+.lift:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+/* Rubber-stamp ink: speckled holes knocked out of the stamp. */
+.ink {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.6 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.6 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Passport page: cream paper with faint guilloche lines. */
+.passport-page {
+  background:
+    repeating-radial-gradient(circle at 50% 120%, transparent 0 14px, rgba(22, 33, 58, 0.035) 14px 15px),
+    #f4efe4;
+  color: #16213a;
+}
+
+/* Stamp drop: falls in big, thuds, settles at its tilt (--tilt). */
+@keyframes stamp-drop {
+  0% { transform: scale(2.4) rotate(calc(var(--tilt, -8deg) - 10deg)); opacity: 0; }
+  55% { transform: scale(0.92) rotate(var(--tilt, -8deg)); opacity: 1; }
+  75% { transform: scale(1.05) rotate(var(--tilt, -8deg)); }
+  100% { transform: scale(1) rotate(var(--tilt, -8deg)); }
+}
+.stamp-drop {
+  animation: stamp-drop 300ms cubic-bezier(0.3, 0.7, 0.4, 1.2) both;
+}
+@keyframes thud {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(3px); }
+}
+.thud {
+  animation: thud 160ms ease-out 170ms;
+}
+@keyframes confetti {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; }
+}
+.confetti {
+  animation: confetti 700ms ease-out 200ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .film-strip-track,
+  .stamp-drop,
+  .thud,
+  .confetti {
+    animation: none;
+  }
+  .confetti { display: none; }
+  .lift,
+  .lift:hover,
+  .lift:active {
+    transform: none;
+    transition: none;
+  }
+}

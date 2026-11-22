@@ -27,7 +27,8 @@ const quiet = "label inline-flex min-h-11 items-center px-1 text-ink/60 transiti
 export function TitleCard({ title: t, places, colour, watched, selected, tripFrom, featured = false, photo: chosen, onToggle, onSelect }: Props) {
   const [open, setOpen] = useState(false);
   const listId = `places-${t.workId}`;
-  const photo = chosen !== undefined ? chosen : t.closest.photo ?? places.find((p) => p.photo)?.photo ?? null;
+  // A confirmed free poster wins; otherwise the place photo with the title on it.
+  const photo = t.poster ? t.poster : chosen !== undefined ? chosen : t.closest.photo ?? places.find((p) => p.photo)?.photo ?? null;
 
   return (
     <article className={`relative h-full overflow-hidden rounded-sm bg-surface ring-2 transition-shadow ${selected ? "ring-accent" : "ring-transparent"}`}>
@@ -40,7 +41,7 @@ export function TitleCard({ title: t, places, colour, watched, selected, tripFro
             <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: colour }} />
             {formatDistance(t.closest.distanceKm)}{selected && " · on the map"}
           </span>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pb-7 pt-20">
+          <div className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t ${t.poster ? "sr-only" : ""} from-black/80 via-black/40 to-transparent px-4 pb-7 pt-20`}>
             <h3 className={`font-display leading-[1.02] tracking-tight text-ink drop-shadow ${featured ? "text-4xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}>
               {t.title}
             </h3>

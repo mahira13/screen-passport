@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { canCheckIn, formatDistance, haversineKm, isWithinCheckIn } from "@/lib/distance";
 import type { NearbyPlace } from "@/lib/nearby";
 import { checkIn } from "@/lib/passport-store";
 import { usePassport } from "@/lib/use-passport";
+import { StampDrop } from "./StampDrop";
 
 type State =
   | { kind: "idle" | "locating" }
@@ -21,14 +22,19 @@ const btn = "label inline-flex min-h-11 items-center justify-center gap-2 px-3.5
 export function CheckInButton({ place }: { place: NearbyPlace }) {
   const { visited } = usePassport();
   const [state, setState] = useState<State>({ kind: "idle" });
+  const [stamping, setStamping] = useState(false);
+  const done = useCallback(() => setStamping(false), []);
 
   if (!canCheckIn({ lat: place.lat, lng: place.lng, coord_quality: place.coordQuality })) return null;
 
   if (visited.includes(place.id)) {
     return (
-      <span className={`${btn} border border-accent bg-accent/15 text-accent`} role="status">
-        <span aria-hidden>★</span> Checked in
-      </span>
+      <>
+        <span className={`${btn} border border-accent bg-accent/15 text-accent`} role="status">
+          <span aria-hidden>★</span> Checked in
+        </span>
+        {stamping && <StampDrop name={place.name} city={place.city} onDone={done} />}
+      </>
     );
   }
 
@@ -45,6 +51,7 @@ export function CheckInButton({ place }: { place: NearbyPlace }) {
         if (isWithinCheckIn(here, place)) {
           checkIn(place.id, place.workId, null);
           setState({ kind: "idle" });
+          setStamping(true);
         } else setState({ kind: "far", km });
       },
       () => setState({ kind: "error", text: "Couldn't get your location. Allow location access and try again." }),

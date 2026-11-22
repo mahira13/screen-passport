@@ -38,7 +38,7 @@ const MAX_BYTES = 5_000_000;
 export class ImageFetchError extends Error {}
 
 // Claude's servers cannot fetch Wikimedia media, so we download it (with our Wikimedia User-Agent) and send the bytes.
-async function download(url: string): Promise<{ media_type: ImageType; data: string }> {
+export async function download(url: string): Promise<{ media_type: ImageType; data: string }> {
   const res = await fetch(url, { headers: { "User-Agent": `ScreenPassport/0.1 (${geocoderContact() ?? "no contact"})` }, signal: AbortSignal.timeout(20_000) })
     .catch(() => { throw new ImageFetchError("image download failed"); });
   if (!res.ok) throw new ImageFetchError(`image download failed (HTTP ${res.status})`);

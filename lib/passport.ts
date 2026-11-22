@@ -12,9 +12,10 @@ export interface LocalPassport {
   watched: string[];
   visited: number[]; // location ids checked in on site
   startCity: string | null;
+  stampedAt: Record<string, string>; // location id → check-in day (YYYY-MM-DD); this device only, never sent
 }
 
-export const EMPTY_PASSPORT: LocalPassport = { id: null, editKey: null, watched: [], visited: [], startCity: null };
+export const EMPTY_PASSPORT: LocalPassport = { id: null, editKey: null, watched: [], visited: [], startCity: null, stampedAt: {} };
 
 const isPlaceId = (x: unknown): x is number => Number.isInteger(x) && (x as number) > 0;
 
@@ -49,6 +50,14 @@ export function cleanStartCity(input: unknown, cities: City[]): string | null {
   return typeof input === "string" && cities.some((c) => c.id === input) ? input : null;
 }
 
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Only "<place id>": "YYYY-MM-DD" pairs survive. */
+export function cleanStampDates(input: unknown): Record<string, string> {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+  return Object.fromEntries(Object.entries(input).filter(([k, v]) => isPlaceId(Number(k)) && typeof v === "string" && DAY.test(v)));
+}
+
 /** Reads localStorage JSON defensively; anything odd becomes an empty passport. */
 export function parseLocalPassport(raw: string | null): LocalPassport {
   if (!raw) return EMPTY_PASSPORT;
@@ -61,6 +70,7 @@ export function parseLocalPassport(raw: string | null): LocalPassport {
       watched: Array.isArray(p.watched) ? p.watched.filter((x: unknown) => typeof x === "string") : [],
       visited: Array.isArray(p.visited) ? [...new Set<number>(p.visited.filter(isPlaceId))] : [],
       startCity: str(p.startCity),
+      stampedAt: cleanStampDates(p.stampedAt),
     };
   } catch {
     return EMPTY_PASSPORT;

@@ -90,7 +90,7 @@ export function buildCollections({ works, locations, collections }: Data): Colle
     out.push({
       key: `title:${w.id}`, kind: "title", slug: w.id, name: `${w.title} locations`,
       description: `Every published filming place of ${w.title}.`, href: `/collection/title/${encodeURIComponent(w.id)}`,
-      city: null, works: entry(w.id), places, cover: firstPhoto(places, rows), pinRank: null,
+      city: null, works: entry(w.id), places, cover: w.poster ?? firstPhoto(places, rows), pinRank: null,
     });
   }
 

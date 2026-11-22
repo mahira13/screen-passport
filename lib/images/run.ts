@@ -17,7 +17,7 @@ export type ImageSummary = { found: number; auto: number; review: number; none: 
 export type ImageOptions = { ids?: number[]; limit?: number; dryRun?: boolean; log?: (s: string) => void };
 
 let last = 0;
-async function getJson<T>(base: string, params: Record<string, string>): Promise<T> {
+export async function getJson<T>(base: string, params: Record<string, string>): Promise<T> {
   const wait = last + GAP_MS - Date.now();
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   last = Date.now();
@@ -32,7 +32,7 @@ async function getJson<T>(base: string, params: Record<string, string>): Promise
   return res.json() as Promise<T>;
 }
 
-const pages = async (params: Record<string, string>) =>
+export const pages = async (params: Record<string, string>) =>
   ((await getJson<{ query?: { pages?: CommonsPage[] } }>(COMMONS_API, params)).query?.pages ?? []);
 
 async function p18(qid: string): Promise<string[]> {

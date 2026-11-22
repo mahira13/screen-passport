@@ -16,7 +16,7 @@ export type LiveLocation = Pick<
   { check_in_area?: unknown };
 
 /** A Wikimedia Commons photo with its credit. */
-export type Photo = { url: string; author: string; license: string; licenseUrl: string | null; page: string };
+export type Photo = { url: string; author: string; license: string; licenseUrl: string | null; page: string; kind?: "poster" };
 
 export function photoOf(l: LiveLocation): Photo | null {
   if (!l.image_thumb_url || !l.image_source_page) return null;
@@ -58,6 +58,7 @@ export interface NearbyTitle {
   title: string;
   type: Work["type"];
   year: number | null;
+  poster: Photo | null;
   placeCount: number;
   closest: NearbyPlace;
 }
@@ -98,7 +99,7 @@ export function buildNearby(locations: LiveLocation[], works: Work[], from: LatL
   for (const p of places) {
     const t = titles.get(p.workId);
     if (t) t.placeCount++;
-    else titles.set(p.workId, { workId: p.workId, title: p.title, type: byId.get(p.workId)!.type, year: byId.get(p.workId)!.year ?? null, placeCount: 1, closest: p });
+    else titles.set(p.workId, { workId: p.workId, title: p.title, type: byId.get(p.workId)!.type, year: byId.get(p.workId)!.year ?? null, poster: byId.get(p.workId)!.poster ?? null, placeCount: 1, closest: p });
   }
   return { places, titles: [...titles.values()] };
 }

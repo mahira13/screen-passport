@@ -226,7 +226,7 @@ export function NearbyExplorer({ initial, cities, start, destinations, view = "d
   const groups = data ? titlesByBand(data.titles) : [];
   // Covers in display order, no Commons file twice; featured collections avoid these too.
   const order = groups.flatMap((g) => g.titles);
-  const titleCovers = distinctCovers(order.map((t) => [t.closest.photo, ...places.filter((p) => p.workId === t.workId).map((p) => p.photo)]));
+  const titleCovers = distinctCovers(order.map((t) => t.poster ? [t.poster] : [t.closest.photo, ...places.filter((p) => p.workId === t.workId).map((p) => p.photo)]));
   const coverOf = new Map(order.map((t, i) => [t.workId, titleCovers[i]]));
   const watched = new Set(passport.watched);
   const isCity = !!findCity(cities, origin.id);

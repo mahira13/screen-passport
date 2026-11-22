@@ -18,13 +18,18 @@ export function Cover({ photo, label, className = "aspect-[4/3]", priority = fal
     <div className={`relative overflow-hidden bg-surface ${className}`}>
       {photo ? (
         <>
+          {photo.kind === "poster" && (
+            // A poster is shown whole, on a blurred copy of itself.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo.url} alt="" aria-hidden loading="lazy" decoding="async" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-xl" />
+          )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={photo.url} alt="" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+            className={`absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-[1.03] ${photo.kind === "poster" ? "object-contain" : "object-cover"}`} />
           {credit && (
             <a href={photo.page} target="_blank" rel="noopener noreferrer" title={`Photo: ${photo.author}, ${photo.license}`}
               className="absolute bottom-0 right-0 z-20 max-w-[70%] truncate bg-black/45 px-2 py-1 text-[10px] leading-tight text-white/80 backdrop-blur-sm hover:text-white">
-              Photo: {photo.author} · {photo.license}
+              {photo.kind === "poster" ? "Poster" : "Photo"}: {photo.author} · {photo.license}
             </a>
           )}
         </>

@@ -4,6 +4,8 @@
 export const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 export const THUMB_WIDTH = 800;
 const UPLOAD = /^https:\/\/upload\.wikimedia\.org\//;
+/** Files hosted on Commons itself; /wikipedia/en/ and other local (often fair-use) uploads are refused. */
+export const COMMONS_UPLOAD = /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\//;
 /** The API now returns thumbnails on thumb.wikimedia.org; the same path works on upload.wikimedia.org, the host the database and map accept. */
 const uploadHost = (url: string) => url.replace(/^https:\/\/thumb\.wikimedia\.org\//, "https://upload.wikimedia.org/");
 
@@ -42,8 +44,11 @@ export function isFreeLicense(shortName: string): boolean {
 const EXCLUDED = /screenshot|screen ?shot|screencap|film still|movie still|filmstill|still from|poster|plakat|logo|trailer|promo(tional)?\b|key art|cover art|dvd|blu-?ray|portrait|porträt|selfie|headshot|\bcosplay\b/i;
 const IMAGE_MIME = /^image\/(jpeg|png|webp)$/;
 
-/** A usable candidate from a Commons page, or the reason it isn't one. */
-export function toCandidate(page: CommonsPage): Candidate | { skip: string } {
+/**
+ * A usable candidate from a Commons page, or the reason it isn't one. kind "poster" accepts film
+ * posters (and nothing hosted outside /wikipedia/commons/); "photo" refuses them.
+ */
+export function toCandidate(page: CommonsPage, kind: "photo" | "poster" = "photo"): Candidate | { skip: string } {
   const info = page.imageinfo?.[0];
   if (!info) return { skip: "no image info" };
   if (info.mime && !IMAGE_MIME.test(info.mime)) return { skip: `not a photo (${info.mime})` };
@@ -52,10 +57,10 @@ export function toCandidate(page: CommonsPage): Candidate | { skip: string } {
   if (!license || !isFreeLicense(license)) return { skip: `licence not free: ${license || "unknown"}` };
   const description = stripHtml(m.ImageDescription?.value ?? "").slice(0, 400);
   const categories = stripHtml(m.Categories?.value ?? "");
-  if (EXCLUDED.test(`${page.title} ${description} ${categories}`)) return { skip: "still, poster, logo or portrait" };
+  if (kind === "photo" && EXCLUDED.test(`${page.title} ${description} ${categories}`)) return { skip: "still, poster, logo or portrait" };
   const author = stripHtml(m.Artist?.value ?? m.Credit?.value ?? "").slice(0, 200) || "Unknown author";
   const licenseUrl = m.LicenseUrl?.value && /^https?:\/\//.test(m.LicenseUrl.value) ? m.LicenseUrl.value : null;
-  if (!UPLOAD.test(info.url)) return { skip: "not hosted on Commons" };
+  if (!(kind === "poster" ? COMMONS_UPLOAD : UPLOAD).test(info.url)) return { skip: "not hosted on Commons" };
   return {
     file: page.title,
     url: info.url,
@@ -78,6 +83,11 @@ export const bySearch = (name: string, city: string | null) => ({
 });
 export const byGeo = (lat: number, lng: number) => ({
   ...BASE, generator: "geosearch", ggsnamespace: "6", ggsradius: "100", ggslimit: "8", ggscoord: `${lat}|${lng}`,
+});
+
+/** Commons search for a title's poster: "<title> <year> poster". */
+export const byPosterSearch = (title: string, year: number | null) => ({
+  ...BASE, generator: "search", gsrnamespace: "6", gsrlimit: "6", gsrsearch: [title, year, "poster"].filter(Boolean).join(" ") + " filetype:bitmap",
 });
 
 /** Commons file name from a Wikidata P18 value ("Foo.jpg" → "File:Foo.jpg"). */

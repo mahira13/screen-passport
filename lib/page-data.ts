@@ -8,6 +8,7 @@ import { buildCollections, cardLine, cardName, coverCandidates, type CollectionM
 import { distinctCovers } from "./covers";
 import { destinations, type Destination } from "./destinations";
 import { getLiveData } from "./live-data";
+import { missionInfo } from "./mission";
 import { buildNearby, photoOf, type NearbyResult, type Photo } from "./nearby";
 
 type NearbyData = { nearby: NearbyResult | null; destinations: Destination[]; cities: City[]; start: City };
@@ -53,6 +54,7 @@ export async function collectionsData(): Promise<ChallengeCollection[]> {
           works: c.works.map((w) => ({ ...w, live: live.has(w.id) })),
           places: c.places.map((p) => ({ id: p.id, checkIn: p.checkIn })),
           cover: covers[i],
+          mission: missionInfo(c.places),
         };
       });
   } catch (e) {
@@ -76,7 +78,7 @@ export async function allCollections(): Promise<CollectionModel[]> {
  * featured collection's cover in the middle, and two real search examples (the title and the
  * city with the most published places).
  */
-export async function homeData(): Promise<{ covers: [Photo | null, Photo | null, Photo | null]; examples: string[] }> {
+export async function homeData(): Promise<{ covers: [Photo | null, Photo | null, Photo | null]; strip: Photo[]; examples: string[] }> {
   try {
     const data = await getLiveData();
     const featured = buildCollections(data).filter((c) => c.cover).sort((a, b) => (a.pinRank ?? 99) - (b.pinRank ?? 99))[0]?.cover ?? null;
@@ -90,9 +92,13 @@ export async function homeData(): Promise<{ covers: [Photo | null, Photo | null,
     };
     const titleId = top(data.locations.map((l) => l.work_id));
     const examples = [data.works.find((w) => w.id === titleId)?.title ?? null, top(data.locations.map((l) => l.city))].filter((x): x is string => !!x);
-    return { covers: [others[0] ?? null, featured, others[Math.floor(others.length / 2)] ?? null], examples };
+    // Film strip: up to 12 different photos spread over the catalogue.
+    const all = featured ? [featured, ...others] : others;
+    const stride = Math.max(1, Math.floor(all.length / 12));
+    const strip = all.filter((_, i) => i % stride === 0).slice(0, 12);
+    return { covers: [others[0] ?? null, featured, others[Math.floor(others.length / 2)] ?? null], strip, examples };
   } catch {
-    return { covers: [null, null, null], examples: [] };
+    return { covers: [null, null, null], strip: [], examples: [] };
   }
 }
 

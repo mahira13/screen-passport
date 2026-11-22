@@ -26,13 +26,14 @@ export function PhotoCard({ href, title, photo, meta, eyebrow, badge, aspect = "
         <Cover photo={photo} label={title} className={`${aspect} rounded-sm`} priority={priority} />
         {eyebrow && <span className="label absolute left-3 top-3 z-10 bg-paper/80 px-2 py-1 text-ink backdrop-blur-sm">{eyebrow}</span>}
         {badge && <div className="absolute right-3 top-3 z-10">{badge}</div>}
-        {overlay && (
+        {overlay && photo?.kind !== "poster" && (
           // Room at the bottom for the photo credit, which stays clickable above the link.
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 rounded-b-sm bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pb-7 pt-20">
             <h3 className={`font-display leading-[1.02] tracking-tight text-ink drop-shadow ${big ? "text-4xl sm:text-5xl" : "text-3xl"}`}>{title}</h3>
           </div>
         )}
       </div>
+      {overlay && photo?.kind === "poster" && <h3 className="sr-only">{title}</h3>}
       {overlay ? (
         <Link href={href} aria-label={title} className="absolute inset-0 z-0 rounded-sm focus-visible:outline-2 focus-visible:outline-accent" />
       ) : (

@@ -72,3 +72,20 @@ describe("coverPhoto", () => {
     expect(coverPhoto(["b", "a"], [loc(7, "b", true), loc(9, "b", false)])?.url).toBe("https://upload.wikimedia.org/7.jpg");
   });
 });
+
+describe("poster candidates", () => {
+  const page = (url: string, license = "Public domain", title = "File:Metropolis poster.jpg") => ({
+    title, imageinfo: [{ url, descriptionurl: `https://commons.wikimedia.org/wiki/${title}`, mime: "image/jpeg",
+      extmetadata: { LicenseShortName: { value: license }, Artist: { value: "Heinz Schulz-Neudamm" } } }],
+  });
+  it("accepts a free poster hosted on Commons", () => {
+    expect(toCandidate(page("https://upload.wikimedia.org/wikipedia/commons/a/ab/Metropolis.jpg"), "poster")).toMatchObject({ license: "Public domain" });
+  });
+  it("refuses local (fair-use) uploads and non-free licences", () => {
+    expect(toCandidate(page("https://upload.wikimedia.org/wikipedia/en/a/ab/Metropolis.jpg"), "poster")).toEqual({ skip: "not hosted on Commons" });
+    expect(toCandidate(page("https://upload.wikimedia.org/wikipedia/commons/a/ab/M.jpg", "Fair use"), "poster")).toMatchObject({ skip: expect.stringMatching(/licence/) });
+  });
+  it("still keeps posters out of place photos", () => {
+    expect(toCandidate(page("https://upload.wikimedia.org/wikipedia/commons/a/ab/Metropolis.jpg"))).toEqual({ skip: "still, poster, logo or portrait" });
+  });
+});

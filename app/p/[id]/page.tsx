@@ -3,14 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ShareCard } from "@/components/ShareCard";
-import { InfoTip } from "@/components/InfoTip";
+import { StampBook } from "@/components/StampBook";
 import { PhotoCard } from "@/components/PhotoCard";
 import { ProgressRing } from "@/components/ProgressRing";
 import { YourPassportNote } from "@/components/YourPassportNote";
 import { buildCollections } from "@/lib/collections-model";
 import { deriveCities, findCity, startCity } from "@/lib/cities";
 import { collectionProgress, visitProgress } from "@/lib/collections";
-import { formatDistance } from "@/lib/distance";
+import { canCheckIn, formatDistance } from "@/lib/distance";
 import { isPassportId } from "@/lib/ids";
 import { getLiveData } from "@/lib/live-data";
 import { buildNearby } from "@/lib/nearby";
@@ -86,6 +86,12 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
   // Recent check-ins: visited ids are appended in order, so the last ones are the newest.
   const placeById = new Map(nearby.places.map((p) => [p.id, p]));
   const recent = [...passport.visited].reverse().flatMap((id) => placeById.get(id) ?? []).slice(0, 5);
+  // Stamp book: checked-in places in order, then outlines for check-in places of watched titles (to the end of the row, at most 9).
+  const stamped = passport.visited.flatMap((id) => placeById.get(id) ?? []).map((p) => ({ id: p.id, name: p.name, city: p.city }));
+  const openSlots = allPlaces.filter((p) => !visited.has(p.id) && canCheckIn({ lat: p.lat, lng: p.lng, coord_quality: p.coordQuality }));
+  const toRowEnd = Math.max(6, Math.ceil(stamped.length / 6) * 6) - stamped.length;
+  const slotCount = Math.min(openSlots.length, 9, toRowEnd || 3);
+  const empty = openSlots.slice(0, slotCount).map((p) => ({ id: p.id, name: p.name, city: p.city }));
   const mrz = `P<SCREEN<PASSPORT<<${city.name.toUpperCase().normalize("NFKD").replace(/[^A-Z]/g, "")}`.padEnd(44, "<");
   const mrz2 = `${passport.id.toUpperCase().replace(/[^A-Z0-9]/g, "")}<<${allPlaces.length}PLACES<<${stamps.length}TITLES`.padEnd(44, "<").slice(0, 44);
   const stats: [number, string][] = [
@@ -163,27 +169,16 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
       {/* Stamp pages */}
       <section className="py-12 sm:py-16">
         <div className={WRAP}>
-          <div className="flex items-center gap-1">
-            <h2 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Stamps</h2>
-            <InfoTip label="What gold means">A gold stamp means you checked in on site.</InfoTip>
-          </div>
-          {stamps.length === 0 ? (
-            <p className="mt-8 font-display text-2xl text-ink/70">No titles in this passport yet.</p>
-          ) : (
-            <ul className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-              {stamps.map((s, i) => (
-                <li key={s.work.id} style={{ transform: `rotate(${TILT[i % TILT.length]}deg)` }}
-                  className={`mx-auto flex aspect-square w-full max-w-[180px] flex-col items-center justify-center rounded-full border-[3px] border-double p-4 text-center ${
-                    s.visited ? "border-paper bg-accent text-paper" : "border-ink/50 text-ink"
-                  }`}>
-                  <span className="label text-[9px] opacity-80">{s.work.type === "series" ? "Series" : "Film"}{s.work.year ? ` · ${s.work.year}` : ""}</span>
-                  <span className="mt-1 font-display text-xl leading-[1.05]">{s.work.title}</span>
-                  <span className="mt-1.5 font-display text-base tracking-[0.15em]">
-                    {s.visited ? "Checked in" : `${s.places.length} ${s.places.length === 1 ? "place" : "places"}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <h2 className="font-display text-5xl font-bold uppercase leading-none tracking-tight sm:text-6xl">Stamps</h2>
+          <p className="mt-2 text-ink/70">
+            {stamped.length === 0 ? "Check in on location to earn your first one." : `You've walked onto ${stamped.length} ${stamped.length === 1 ? "set" : "sets"}.`}
+          </p>
+          <div className="mt-6"><StampBook passportId={passport.id} stamped={stamped} empty={empty} /></div>
+          {stamps.length > 0 && (
+            <p className="mt-6 text-sm text-ink/65">
+              <span className="label mr-2 text-ink/60">Watched</span>
+              {stamps.map((s) => s.work.title).join(" · ")}
+            </p>
           )}
 
           {collections.length > 0 && (
@@ -268,4 +263,3 @@ async function PassportView({ params }: { params: Promise<{ id: string }> }) {
   );
 }
 
-const TILT = [-6, 4, -2, 7, -4, 2];

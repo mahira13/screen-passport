@@ -27,7 +27,7 @@ function load(): PassportState {
 function set(patch: Partial<PassportState>) {
   state = { ...getSnapshot(), ...patch };
   const saved: LocalPassport = {
-    id: state.id, editKey: state.editKey, watched: state.watched, visited: state.visited, startCity: state.startCity,
+    id: state.id, editKey: state.editKey, watched: state.watched, visited: state.visited, startCity: state.startCity, stampedAt: state.stampedAt,
   };
   try {
     localStorage.setItem(KEY, JSON.stringify(saved));
@@ -73,7 +73,8 @@ export function toggleWatched(workId: string, startCity: string | null) {
 export function checkIn(locationId: number, workId: string, startCity: string | null) {
   const s = getSnapshot();
   if (s.visited.includes(locationId)) return;
-  set({ visited: [...s.visited, locationId], startCity: s.startCity ?? startCity });
+  const day = new Date().toLocaleDateString("sv-SE"); // local YYYY-MM-DD
+  set({ visited: [...s.visited, locationId], startCity: s.startCity ?? startCity, stampedAt: { ...s.stampedAt, [locationId]: day } });
   track("checkin_success", { location: locationId, work: workId, total: s.visited.length + 1 });
   scheduleSave(0);
 }

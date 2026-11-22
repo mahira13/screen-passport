@@ -17,6 +17,7 @@
     "wikidata": "tsx scripts/wikidata-candidates.ts",
     "tmdb": "tsx scripts/tmdb-metadata.ts",
     "images": "tsx scripts/fetch-images.ts",
+    "posters": "tsx scripts/fetch-posters.ts",
     "upgrade-coords": "tsx scripts/upgrade-coords.ts",
     "fetch-outline": "tsx scripts/fetch-outline.ts",
     "pipeline": "tsx scripts/pipeline.ts"

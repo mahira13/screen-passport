@@ -36,14 +36,14 @@ export async function getLiveData(): Promise<LiveData> {
   const db = supabasePublic();
   const [locs, works, cols] = await Promise.all([
     db.from("catalogue_entries").select(COLUMNS),
-    db.from("works").select("id, title, type, aliases, year"),
+    loadWorks(db),
     db.from("collections").select("id, name, city, work_ids, description, featured_rank"),
   ]);
   if (locs.error) throw new Error(`locations: ${locs.error.message}`);
   if (works.error) throw new Error(`works: ${works.error.message}`);
   if (cols.error) throw new Error(`collections: ${cols.error.message}`);
   // A work without a real name is never shown, and its places don't carry it.
-  const named = (works.data as Work[]).filter((w) => !isPlaceholderTitle(w.title));
+  const named = (works.data as WorkRow[]).filter((w) => !isPlaceholderTitle(w.title)).map(toWork);
   const ids = new Set(named.map((w) => w.id));
   return {
     configured: true,
@@ -51,4 +51,21 @@ export async function getLiveData(): Promise<LiveData> {
     locations: (locs.data as unknown as LiveLocation[]).filter((l) => ids.has(l.work_id)),
     collections: cols.data as Collection[],
   };
+}
+
+type WorkRow = Omit<Work, "poster"> & {
+  poster_thumb_url?: string | null; poster_author?: string | null; poster_license?: string | null;
+  poster_license_url?: string | null; poster_page?: string | null; poster_status?: string | null;
+};
+
+// Before migration 017 the poster columns don't exist: load the works without them.
+async function loadWorks(db: ReturnType<typeof supabasePublic>) {
+  const withPosters = await db.from("works")
+    .select("id, title, type, aliases, year, poster_thumb_url, poster_author, poster_license, poster_license_url, poster_page, poster_status");
+  return withPosters.error?.code === "42703" ? db.from("works").select("id, title, type, aliases, year") : withPosters;
+}
+
+function toWork({ poster_thumb_url: url, poster_author: author, poster_license: license, poster_license_url, poster_page: page, poster_status, ...w }: WorkRow): Work {
+  const shown = (poster_status === "auto" || poster_status === "approved") && url && author && license && page;
+  return { ...w, poster: shown ? { url, author, license, licenseUrl: poster_license_url ?? null, page, kind: "poster" } : null };
 }

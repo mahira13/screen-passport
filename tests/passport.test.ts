@@ -97,8 +97,9 @@ describe("cleanStartCity", () => {
 describe("parseLocalPassport", () => {
   it("reads a saved passport and survives junk", () => {
     expect(parseLocalPassport('{"id":"abc","editKey":"k","watched":["dark",5],"startCity":"berlin"}')).toEqual({
-      id: "abc", editKey: "k", watched: ["dark"], visited: [], startCity: "berlin",
+      id: "abc", editKey: "k", watched: ["dark"], visited: [], startCity: "berlin", stampedAt: {},
     });
+    expect(parseLocalPassport('{"stampedAt":{"3":"2026-11-22","x":"2026-11-22","4":"today","5":7}}').stampedAt).toEqual({ "3": "2026-11-22" });
     expect(parseLocalPassport('{"watched":[],"visited":[3,"4",3.5,-1,3,7]}').visited).toEqual([3, 7]);
     expect(parseLocalPassport(null)).toBe(EMPTY_PASSPORT);
     expect(parseLocalPassport("{not json")).toBe(EMPTY_PASSPORT);
